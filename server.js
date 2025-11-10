@@ -7,27 +7,34 @@ const cors = require('cors');
 const prisma = new PrismaClient();
 const app = express();
 
-// Add CORS configuration
+// CORS middleware
 app.use(cors({
   origin: true,
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
 }));
 
+// Handle preflight requests
+app.options('*', cors());
+
+// Parse JSON bodies
 app.use(express.json());
+
+// Session configuration
 app.use(session({
   secret: process.env.SESSION_SECRET || 'your-secret-key',
   resave: false,
   saveUninitialized: false,
   cookie: {
     secure: process.env.NODE_ENV === 'production',
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    sameSite: 'none',
+    maxAge: 24 * 60 * 60 * 1000
   }
 }));
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  console.error(err.stack);
+  console.error(err);
   res.status(500).json({ error: 'Internal Server Error' });
 });
 
@@ -79,7 +86,7 @@ app.post('/api/register', async (req, res) => {
     
   } catch (err) {
     console.error('Register error:', err);
-    res.status(500).json({ error: 'Server error' });
+    res.status(500).json({ error: 'Registration failed' });
   }
 });
 
@@ -104,7 +111,7 @@ app.post('/api/login', async (req, res) => {
     res.json({ ok: true });
   } catch (err) {
     console.error('Login error:', err);
-    res.status(500).json({ error: 'Server error' });
+    res.status(500).json({ error: 'Login failed' });
   }
 });
 
