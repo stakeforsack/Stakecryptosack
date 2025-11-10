@@ -198,39 +198,49 @@
   <script>
 document.getElementById('loginForm').addEventListener('submit', async (e) => {
   e.preventDefault();
-  const identifier = document.getElementById('email').value.trim();
-  const password = document.getElementById('password').value;
-  const errEl = document.getElementById('loginError');
-  errEl.style.display = 'none';
-  errEl.textContent = '';
-
-  if (!identifier || !password) {
-    errEl.textContent = 'Fill both fields';
-    errEl.style.display = 'block';
-    return;
-  }
-
+  
+  const errorEl = document.getElementById('loginError'); // Changed from 'error' to 'loginError'
+  const submitBtn = document.querySelector('button[type="submit"]');
+  
   try {
+    // Clear previous errors
+    errorEl.style.display = 'none';
+    errorEl.textContent = '';
+    
+    // Disable button and show loading state
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Logging in...';
+    
     const res = await fetch('/api/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'same-origin',
-      body: JSON.stringify({ identifier, password })
+      body: JSON.stringify({
+        email: document.getElementById('email').value.trim(),
+        password: document.getElementById('password').value
+      })
     });
 
-    const j = await res.json().catch(() => null);
-
+    const data = await res.json();
+    
     if (!res.ok) {
-      errEl.textContent = (j && j.error) || ('Error: ' + res.status);
-      errEl.style.display = 'block';
-      return;
+      throw new Error(data.error || 'Login failed');
     }
 
-    window.location.href = '/account.html';
+    // Show success state briefly before redirect
+    submitBtn.textContent = 'Success!';
+    setTimeout(() => {
+      window.location.href = '/index.html';
+    }, 500);
+    
   } catch (err) {
-    console.error('Fetch error', err);
-    errEl.textContent = 'Network error — check server is running';
-    errEl.style.display = 'block';
+    console.error('Login error:', err);
+    errorEl.textContent = err.message;
+    errorEl.style.display = 'block';
+    
+    // Reset button state
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Login';
   }
 });
   </script>

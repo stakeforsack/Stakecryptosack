@@ -1,230 +1,185 @@
 const express = require('express');
-const path = require('path');
 const session = require('express-session');
 const bcrypt = require('bcryptjs');
-const db = require('./db');
+const { PrismaClient } = require('@prisma/client');
 
+const prisma = new PrismaClient();
 const app = express();
 
-// ===== Middleware =====
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, 'public')));
-
+app.use(express.static('public'));
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'change_this_secret',
+  secret: 'your-secret-key',
   resave: false,
   saveUninitialized: false,
-  cookie: { secure: false } // change to true when using HTTPS
+  cookie: { secure: process.env.NODE_ENV === 'production' }
 }));
 
-// ===== Auth helper =====
-function needAuth(req, res, next) {
-  if (req.session && req.session.userId) return next();
-  return res.status(401).json({ error: 'Not authenticated' });
-}
+// Auth middleware
+const needAuth = async (req, res, next) => {
+  if (!req.session.userId) {
+    return res.status(401).json({ error: 'Please login' });
+  }
+  next();
+};
 
-// ===== Initialize DB =====
-db.init().catch(err => {
-  console.error('DB init failed', err);
-  process.exit(1);
-});
-
-// ===== Auth Routes =====
-
-// Register
+// Update route to include /api prefix
 app.post('/api/register', async (req, res) => {
   try {
-    const { username, email, password } = req.body;
-    if (!username || !email || !password) return res.status(400).json({ error: 'Missing fields' });
+    const { email, username, password } = req.body;
+    
+    // Validate input
+    if (!email || !username || !password) {
+      return res.status(400).json({ error: 'All fields are required' });
+    }
 
-    const existing = await db.getUserByEmail(email);
-    if (existing) return res.status(400).json({ error: 'Email already registered' });
+    // Check if user exists
+    const exists = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { email },
+          { username }
+        ]
+      }
+    });
 
-    const hash = await bcrypt.hash(password, 10);
-    const id = await db.createUser({ username, email, password_hash: hash });
-    req.session.userId = id;
-    return res.json({ ok: true, user: { id, username, email } });
+    if (exists) {
+      return res.status(400).json({ error: 'Email or username already taken' });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    
+    const user = await prisma.user.create({
+      data: {
+        email,
+        username,
+        password: hashedPassword
+      }
+    });
+
+    // Set session
+    req.session.userId = user.id;
+    res.json({ ok: true });
+    
   } catch (err) {
-    console.error('register error', err);
-    return res.status(500).json({ error: 'Server error' });
+    console.error('Register error:', err);
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
-// Login
+// Login endpoint
 app.post('/api/login', async (req, res) => {
   try {
-    const { email, identifier, password } = req.body;
-    const ident = (identifier || email || '').toString().trim();
-    if (!ident || !password) return res.status(400).json({ error: 'Missing credentials' });
+    const { email, password } = req.body;
+    
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password are required' });
+    }
 
-    let user = await db.getUserByEmail(ident);
-    if (!user) user = await db.getUserByUsername(ident);
-    if (!user) return res.status(400).json({ error: 'Invalid credentials' });
+    const user = await prisma.user.findUnique({ 
+      where: { email } 
+    });
 
-    const hash = user.password_hash || '';
-    const ok = await bcrypt.compare(password, hash);
-    if (!ok) return res.status(400).json({ error: 'Invalid credentials' });
+    if (!user || !await bcrypt.compare(password, user.password)) {
+      return res.status(401).json({ error: 'Invalid email or password' });
+    }
 
     req.session.userId = user.id;
-    return res.json({ ok: true, user: { id: user.id, username: user.username, email: user.email } });
-  } catch (err) {
-    console.error('login error', err);
-    return res.status(500).json({ error: 'Server error' });
-  }
-});
-
-// Logout
-app.post('/api/logout', (req, res) => {
-  req.session.destroy(err => {
-    if (err) {
-      console.error('logout error', err);
-      return res.status(500).json({ error: 'Logout failed' });
-    }
-    res.clearCookie('connect.sid');
-    return res.json({ ok: true });
-  });
-});
-
-// ===== Protected Routes =====
-
-// Get current user
-app.get('/api/me', needAuth, async (req, res) => {
-  const user = await db.getUserById(req.session.userId);
-  if (!user) return res.status(404).json({ error: 'User not found' });
-  res.json({ ok: true, user: { id: user.id, username: user.username, email: user.email } });
-});
-
-// Get user profile
-app.get('/api/user-profile', needAuth, async (req, res) => {
-  try {
-    const user = await db.getUserById(req.session.userId);
-    if (!user) return res.status(404).json({ error: 'User not found' });
-    res.json({
-      username: user.username,
-      email: user.email,
-      bio: user.bio || ''
-    });
-  } catch (err) {
-    console.error('profile fetch error', err);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-// Update profile
-app.post('/api/update-profile', needAuth, async (req, res) => {
-  try {
-    const { username, email, bio } = req.body;
-    if (!username || !email) return res.status(400).json({ error: 'Missing fields' });
-
-    await db.updateUser(req.session.userId, { username, email, bio });
     res.json({ ok: true });
   } catch (err) {
-    console.error('update-profile error', err);
+    console.error('Login error:', err);
     res.status(500).json({ error: 'Server error' });
   }
 });
 
-// ===== Deposit Route =====
-app.post('/deposit', needAuth, async (req, res) => {
+// Update deposit endpoint to include /api prefix
+app.post('/api/deposit', needAuth, async (req, res) => {
   try {
     const { coin, amount } = req.body;
-    if (!coin || !amount) return res.status(400).json({ error: 'Missing coin or amount' });
+    const userId = req.session.userId;
 
-    // Map of deposit addresses - replace with your actual addresses
-    const depositAddresses = {
-      USDTBINANCE: 'bnb1yourbinanceaddress',
-      BTC: 'bc1yourbtcaddress',
-      ETH: '0xyourethaddress',
-      TRX: 'TYourtronaddress',
-      USDTETH: '0xyourusdtethaddress',
-      USDTTRON: 'TYourusdttronaddress'
-    };
-
-    const address = depositAddresses[coin];
-    if (!address) return res.status(400).json({ error: 'Invalid coin selected' });
-
-    // Create deposit record in DB
-    const txId = await db.addTransaction({
-      user_id: req.session.userId,
-      type: 'DEPOSIT',
-      coin,
-      amount,
-      status: 'PENDING'
+    const tx = await prisma.transaction.create({
+      data: {
+        userId,
+        type: 'DEPOSIT',
+        coin,
+        amount: parseFloat(amount),
+        status: 'PENDING'
+      }
     });
 
-    return res.json({
+    res.json({ 
       ok: true,
-      coin,
-      address,
-      amount,
-      txId
+      address: getCoinAddress(coin),
+      txId: tx.id
     });
-
   } catch (err) {
-    console.error('deposit error', err);
-    return res.status(500).json({ error: 'Server error' });
+    console.error('Deposit error:', err);
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
-// ===== Withdraw Route =====
-app.post('/withdraw', needAuth, async (req, res) => {
+// Update withdraw endpoint to include /api prefix
+app.post('/api/withdraw', needAuth, async (req, res) => {
   try {
     const { coin, amount, address } = req.body;
-    if (!coin || !amount || !address) {
-      return res.status(400).json({ error: 'Missing required fields' });
-    }
+    const userId = req.session.userId;
 
-    // Optional: Validate address format based on coin
-    const isValidAddress = true; // Add your address validation logic
-    if (!isValidAddress) {
-      return res.status(400).json({ error: 'Invalid withdrawal address' });
-    }
-
-    // Create withdrawal record
-    const txId = await db.addTransaction({
-      user_id: req.session.userId,
-      type: 'WITHDRAW',
-      coin,
-      amount,
-      status: 'PENDING',
-      meta: JSON.stringify({ address })
+    const tx = await prisma.transaction.create({
+      data: {
+        userId,
+        type: 'WITHDRAW',
+        coin,
+        amount: parseFloat(amount),
+        status: 'PENDING',
+        meta: JSON.stringify({ address })
+      }
     });
 
-    return res.json({
-      ok: true,
-      txId,
-      message: 'Withdrawal request submitted'
-    });
-
+    res.json({ ok: true, txId: tx.id });
   } catch (err) {
-    console.error('withdraw error', err);
-    return res.status(500).json({ error: 'Server error' });
+    console.error('Withdraw error:', err);
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
-// ===== Start Server =====
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`✅ Server listening on port ${PORT}`));
-
-async function submitDeposit(coin, amount) {
+// Update transactions endpoint to include /api prefix
+app.get('/api/transactions', needAuth, async (req, res) => {
   try {
-    const res = await fetch('/api/deposit', {
-      method: 'POST',
-      credentials: 'same-origin', // important to include session cookie
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ coin, amount })
+    const transactions = await prisma.transaction.findMany({
+      where: { userId: req.session.userId },
+      orderBy: { createdAt: 'desc' }
     });
-    const j = await res.json().catch(()=>null);
-    if (!res.ok) {
-      console.error('Deposit failed', j || res.status);
-      alert(j?.error || `Deposit failed (${res.status})`);
-      return;
-    }
-    console.log('Deposit OK', j);
-    // show deposit address etc.
+    res.json({ ok: true, transactions });
   } catch (err) {
-    console.error('Network error', err);
-    alert('Network error — make sure server is running and you are logged in');
+    console.error('Transaction history error:', err);
+    res.status(500).json({ error: 'Server error' });
   }
+});
+
+// Add session check endpoint
+app.get('/api/session', async (req, res) => {
+  if (req.session.userId) {
+    const user = await prisma.user.findUnique({
+      where: { id: req.session.userId },
+      select: { id: true, email: true, username: true }
+    });
+    res.json({ ok: true, user });
+  } else {
+    res.status(401).json({ ok: false });
+  }
+});
+
+// Helper function for coin addresses
+function getCoinAddress(coin) {
+  const addresses = {
+    BTC: 'bc1example...',
+    ETH: '0xexample...',
+    USDT: 'TRexample...'
+    // Add more coins as needed
+  };
+  return addresses[coin] || '';
 }
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

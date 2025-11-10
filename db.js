@@ -1,12 +1,12 @@
 const path = require('path');
 const fs = require('fs');
 const sqlite3 = require('sqlite3');
-const { PrismaClient } = require('@prisma/client')
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
 
 const DB_PATH = path.join(__dirname, 'data.sqlite');
 const needInit = !fs.existsSync(DB_PATH);
 const db = new sqlite3.Database(DB_PATH);
-const prisma = new PrismaClient()
 
 // ===== Helpers for Promises =====
 function run(sql, params = []) {
