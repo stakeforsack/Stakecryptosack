@@ -2,18 +2,34 @@ const express = require('express');
 const session = require('express-session');
 const bcrypt = require('bcryptjs');
 const { PrismaClient } = require('@prisma/client');
+const cors = require('cors');
 
 const prisma = new PrismaClient();
 const app = express();
 
+// Add CORS configuration
+app.use(cors({
+  origin: true,
+  credentials: true
+}));
+
 app.use(express.json());
-app.use(express.static('public'));
 app.use(session({
-  secret: 'your-secret-key',
+  secret: process.env.SESSION_SECRET || 'your-secret-key',
   resave: false,
   saveUninitialized: false,
-  cookie: { secure: process.env.NODE_ENV === 'production' }
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  }
 }));
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ error: 'Internal Server Error' });
+});
 
 // Auth middleware
 const needAuth = async (req, res, next) => {
@@ -67,7 +83,7 @@ app.post('/api/register', async (req, res) => {
   }
 });
 
-// Login endpoint
+// Update login endpoint with better error handling
 app.post('/api/login', async (req, res) => {
   try {
     const { email, password } = req.body;
