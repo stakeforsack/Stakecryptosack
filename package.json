@@ -4,11 +4,13 @@
   "description": "Crypto dashboard backend",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
+    "start": "next start",
     "dev": "nodemon server.js",
-    "db:init": "node initdb.js"
+    "db:init": "node initdb.js",
+    "build": "prisma generate && next build"
   },
   "dependencies": {
+    "@prisma/client": "^6.19.0",
     "bcrypt": "^5.1.1",
     "bcryptjs": "^3.0.3",
     "body-parser": "^1.20.3",
@@ -16,6 +18,7 @@
     "express": "^4.21.2",
     "express-session": "^1.18.2",
     "multer": "^2.0.2",
+    "prisma": "^6.19.0",
     "speakeasy": "^2.0.0",
     "sqlite3": "^5.1.7"
   },

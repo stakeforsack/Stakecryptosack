@@ -1,0 +1,28 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  username  String?
+  password  String
+  vip       Int      @default(0)
+  createdAt DateTime @default(now())
+}
+
+model Transaction {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  type      String   // DEPOSIT, WITHDRAW, TRANSFER
+  coin      String
+  amount    Float
+  status    String   // PENDING, COMPLETED, FAILED
+  meta      String?  // JSON string for additional data
+  createdAt DateTime @default(now())
+}

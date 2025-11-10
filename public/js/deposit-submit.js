@@ -45,21 +45,3 @@ async function submitDeposit(coin, amount) {
 
 // expose to global so HTML can call it directly
 window.submitDeposit = submitDeposit;
-
-// call this after successful deposit response (replace your current success block)
-const payload = /* server JSON response */;
-if (!payload.ok) {
-  // handle error...
-} else {
-  // save payload for the result page (sessionStorage cleared on tab close)
-  try {
-    sessionStorage.setItem('lastDeposit', JSON.stringify(payload));
-  } catch (e) {
-    // fallback to query params for small values
-    const q = new URLSearchParams({ coin: payload.coin, address: payload.address }).toString();
-    window.location.href = '/deposit-result.html?' + q;
-    return;
-  }
-  // redirect to result page
-  window.location.href = '/deposit-result.html';
-}

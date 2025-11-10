@@ -1,10 +1,12 @@
 const path = require('path');
 const fs = require('fs');
 const sqlite3 = require('sqlite3');
+const { PrismaClient } = require('@prisma/client')
 
 const DB_PATH = path.join(__dirname, 'data.sqlite');
 const needInit = !fs.existsSync(DB_PATH);
 const db = new sqlite3.Database(DB_PATH);
+const prisma = new PrismaClient()
 
 // ===== Helpers for Promises =====
 function run(sql, params = []) {
@@ -230,7 +232,41 @@ module.exports = {
   },
 
   // Helper to get deposits for a user
-  getDeposits: userId => all(`SELECT * FROM deposits WHERE user_id = ? ORDER BY created_at DESC`, [userId])
+  getDeposits: userId => all(`SELECT * FROM deposits WHERE user_id = ? ORDER BY created_at DESC`, [userId]),
+
+  async createUser({ email, username, password }) {
+    return prisma.user.create({
+      data: { email, username, password }
+    })
+  },
+
+  async getUserById(id) {
+    return prisma.user.findUnique({ where: { id } })
+  },
+
+  async getUserByEmail(email) {
+    return prisma.user.findUnique({ where: { email } })
+  },
+
+  async addTransaction({ user_id, type, coin, amount, status = 'PENDING', meta = null }) {
+    return prisma.transaction.create({
+      data: {
+        userId: user_id,
+        type,
+        coin,
+        amount,
+        status,
+        meta: meta ? JSON.stringify(meta) : null
+      }
+    })
+  },
+
+  async getTransactions(userId) {
+    return prisma.transaction.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' }
+    })
+  }
 };
 
 // Auto-init DB schema
