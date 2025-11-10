@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Transaction History</title>
+
+  <style>
+    /* ===== Global Dark Theme ===== */
+    :root {
+      --bg-color: #0f1117;
+      --card-bg: #1a1d27;
+      --accent: #4e9eff;
+      --accent-hover: #66b2ff;
+      --text-color: #e8ecf2;
+      --text-muted: #9ba3b5;
+      --success: #00e676;
+      --danger: #ff5252;
+      --pending: #fbc02d;
+      --radius: 10px;
+      --transition: 0.25s ease;
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: 'Inter', system-ui, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ===== Header ===== */
+    .header {
+      height: 56px;
+      background: linear-gradient(90deg, #171a22, #10121a);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+    }
+
+    /* ===== Main Container ===== */
+    .account-container {
+      flex: 1;
+      padding: 16px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+    }
+
+    .account-card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      padding: 18px;
+      width: 100%;
+      max-width: 600px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+      transition: transform var(--transition), box-shadow var(--transition);
+      animation: fadeIn 0.5s ease;
+    }
+
+    .account-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 18px rgba(0,0,0,0.6);
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    h2 {
+      color: var(--accent);
+      text-align: center;
+      margin-bottom: 16px;
+    }
+
+    /* ===== Table Styling ===== */
+    .table {
+      border-collapse: collapse;
+      width: 100%;
+      font-size: 0.9rem;
+    }
+
+    .table th, .table td {
+      padding: 10px 8px;
+      text-align: center;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .table thead {
+      background: rgba(255,255,255,0.05);
+      color: var(--accent);
+    }
+
+    .table tbody tr {
+      transition: background 0.25s ease;
+    }
+
+    .table tbody tr:hover {
+      background: rgba(255,255,255,0.05);
+    }
+
+    .status-success {
+      color: var(--success);
+      font-weight: 600;
+    }
+
+    .status-failed {
+      color: var(--danger);
+      font-weight: 600;
+    }
+
+    .status-pending {
+      color: var(--pending);
+      font-weight: 600;
+    }
+
+    /* ===== Controls ===== */
+    .controls {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .btn {
+      background: var(--accent);
+      border: none;
+      color: #fff;
+      padding: 10px 18px;
+      border-radius: var(--radius);
+      cursor: pointer;
+      font-weight: 600;
+      transition: background var(--transition), transform var(--transition), box-shadow var(--transition);
+    }
+
+    .btn:hover {
+      background: var(--accent-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(78,158,255,0.3);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+      box-shadow: none;
+    }
+
+    /* ===== Bottom Navigation ===== */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background: #14161e;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      padding: 8px 0;
+      border-top: 1px solid #252837;
+      z-index: 10;
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      text-decoration: none;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      transition: color var(--transition), transform var(--transition);
+    }
+
+    .nav-item img {
+      width: 22px;
+      filter: brightness(0.8);
+      transition: filter var(--transition);
+    }
+
+    .nav-item:hover {
+      color: var(--accent);
+      transform: translateY(-2px);
+    }
+
+    .nav-item.active {
+      color: var(--accent);
+    }
+
+    .nav-item.active img {
+      filter: brightness(1.2);
+    }
+
+    /* ===== Responsive ===== */
+    @media (max-width: 600px) {
+      .account-card {
+        padding: 14px;
+      }
+
+      h2 {
+        font-size: 1.2rem;
+      }
+
+      .table th, .table td {
+        padding: 8px 4px;
+        font-size: 0.8rem;
+      }
+
+      .btn {
+        padding: 8px 12px;
+        font-size: 0.85rem;
+      }
+
+      .bottom-nav {
+        padding: 6px 0;
+      }
+
+      .nav-item img {
+        width: 20px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header class="header"></header>
+
+  <main class="account-container">
+    <div class="account-card">
+      <h2>Transaction History</h2>
+      <div style="overflow:auto">
+        <table class="table" id="txTable">
+          <thead>
+            <tr><th>Date</th><th>Type</th><th>Coin</th><th>Amount</th><th>Status</th></tr>
+          </thead>
+          <tbody id="txBody"><tr><td colspan="5">Loading…</td></tr></tbody>
+        </table>
+      </div>
+
+      <div class="controls">
+        <button class="btn" id="prev">Prev</button>
+        <button class="btn" id="next">Next</button>
+      </div>
+    </div>
+  </main>
+
+  <nav class="bottom-nav">
+    <a class="nav-item" href="index.html"><img src="/img/house.png"><p>Home</p></a>
+    <a class="nav-item" href="trade.html"><img src="/img/trade.png"><p>Trade</p></a>
+    <a class="nav-item" href="internal-transfer.html"><img src="/img/transfer.png"><p>Transfer</p></a>
+    <a class="nav-item active" href="account.html"><img src="/img/myaccount.png"><p>Account</p></a>
+  </nav>
+
+  <script>
+    let page = 1;
+
+    async function loadPage() {
+      const body = document.getElementById('txBody');
+      body.innerHTML = '<tr><td colspan="5" style="color:#888;">Loading…</td></tr>';
+
+      try {
+        const res = await fetch(`/api/transactions?page=${page}`, { credentials:'same-origin' });
+        if (!res.ok) {
+          body.innerHTML = '<tr><td colspan="5" style="color:#f66;">⚠️ Failed to load data</td></tr>';
+          return;
+        }
+        const j = await res.json();
+
+        if (!j.rows || j.rows.length === 0) {
+          body.innerHTML = '<tr><td colspan="5" style="color:#888;">No transactions</td></tr>';
+          return;
+        }
+
+        body.innerHTML = j.rows.map(r => {
+          let statusClass = 'status-pending';
+          if (r.status?.toLowerCase().includes('success')) statusClass = 'status-success';
+          else if (r.status?.toLowerCase().includes('fail')) statusClass = 'status-failed';
+
+          return `
+            <tr style="animation: fadeIn 0.4s ease;">
+              <td>${new Date(r.created_at).toLocaleString()}</td>
+              <td>${r.type}</td>
+              <td>${r.coin}</td>
+              <td>${r.amount}</td>
+              <td class="${statusClass}">${r.status}</td>
+            </tr>
+          `;
+        }).join('');
+
+      } catch(e) {
+        console.error(e);
+        body.innerHTML = '<tr><td colspan="5" style="color:#f66;">⚠️ Network error</td></tr>';
+      }
+    }
+
+    document.getElementById('prev').addEventListener('click', ()=>{ if(page>1){ page--; loadPage(); }});
+    document.getElementById('next').addEventListener('click', ()=>{ page++; loadPage(); });
+
+    loadPage();
+  </script>
+</body>
+</html>

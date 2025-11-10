@@ -1,0 +1,293 @@
+/* ===== GENERAL RESET ===== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Poppins", sans-serif;
+}
+
+body {
+  background: linear-gradient(180deg, #000000, #121212);
+  color: #fff;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+/* ===== HEADER ===== */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px;
+  background: rgba(10, 10, 10, 0.95);
+  border-bottom: 1px solid #222;
+}
+
+.header .logo img {
+  height: 35px;
+}
+
+.header .language {
+  font-size: 0.9rem;
+  color: #bbb;
+}
+
+/* ===== BANNER ===== */
+.banner {
+  background: #000;
+  height: 120px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 10px;
+  margin: 12px 16px;
+  box-shadow: 0 4px 8px rgba(168, 85, 247, 0.2);
+}
+
+.banner-text {
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: #a855f7;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+/* ===== ACTION BUTTONS ===== */
+.actions {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 12px 0;
+  background: #1a1919;
+  border-radius: 10px;
+  margin: 8px 16px;
+}
+
+.action-item {
+  text-align: center;
+  color: #ccc;
+  font-size: 0.85rem;
+  text-decoration: none; /* REMOVE UNDERLINE */
+  transition: transform 0.2s, color 0.2s, box-shadow 0.2s;
+  padding: 8px;
+  border-radius: 8px;
+}
+
+.action-item img {
+  width: 26px;
+  margin-bottom: 5px;
+}
+
+.action-item:hover {
+  color: #a855f7;
+  transform: translateY(-3px);
+  box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3);
+}
+
+/* ===== MARKET SECTION ===== */
+.market {
+  padding: 16px;
+  flex: 1;
+}
+
+.market h2 {
+  font-size: 1.1rem;
+  color: #fff;
+  margin-bottom: 10px;
+}
+
+.market-cards {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  margin-bottom: 15px;
+}
+
+.market-card {
+  flex: 1 1 calc(33% - 8px);
+  background: #181818;
+  border-radius: 8px;
+  padding: 10px;
+  margin: 4px;
+  text-align: center;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.market-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 12px rgba(168, 85, 247, 0.2);
+}
+
+.market-card h3 {
+  color: #ccc;
+  font-size: 0.85rem;
+}
+
+.market-card .price {
+  color: #ff5e5e;
+  font-weight: bold;
+  font-size: 1rem;
+  margin: 4px 0;
+}
+
+.market-card .change {
+  font-size: 0.8rem;
+}
+
+.market-list {
+  background: #111;
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.market-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #222;
+}
+
+.market-row:last-child {
+  border-bottom: none;
+}
+
+.market-row .coin {
+  font-weight: 500;
+  color: #fff;
+}
+
+.market-row .price {
+  color: #ff5e5e;
+  font-weight: 600;
+}
+
+.market-row .change {
+  color: #ff5e5e;
+}
+
+/* ===== BOTTOM NAV ===== */
+.bottom-nav {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  background: linear-gradient(180deg, #1a1a1a, #000);
+  padding: 10px 0;
+  border-top: 1px solid #222;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+
+.bottom-nav .nav-item {
+  text-align: center;
+  color: #888;
+  font-size: 0.8rem;
+  text-decoration: none; /* REMOVE UNDERLINE */
+}
+
+.bottom-nav .nav-item img {
+  width: 22px;
+  margin-bottom: 3px;
+}
+
+.bottom-nav .active {
+  color: #a855f7;
+}
+
+.bottom-nav a.nav-item:hover {
+    opacity: 0.8;
+}
+
+/* ===== DEPOSIT / WITHDRAW BUTTONS ===== */
+.coin-list {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.coin-button {
+  background: #1a1919;
+  color: #fff;
+  border: 1px solid #2a2a2a;
+  padding: 10px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  text-decoration: none; /* REMOVE UNDERLINE */
+  transition: transform 0.2s, background 0.2s, box-shadow 0.2s;
+}
+
+.coin-button:hover {
+  background: #a855f7;
+  border-color: #8b3fe6;
+  box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3);
+  transform: translateY(-3px);
+}
+
+.coin-button.selected {
+  background: #a855f7;
+  color: #fff;
+  border-color: #8b3fe6;
+  box-shadow: 0 2px 6px rgba(168, 85, 247, 0.12);
+}
+
+.deposit-box input[type="number"] {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #2a2a2a;
+  background: #0f0f0f;
+  color: #fff;
+  margin-top: 6px;
+}
+
+.small-note {
+  color: #bbb;
+  font-size: 0.85rem;
+  margin-top: 6px;
+}
+
+.primary-btn {
+  background: #a855f7;
+  border: none;
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+/* QR result */
+.qr-result {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  background: #111;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #222;
+}
+
+.qr-result img {
+  width: 140px;
+  height: 140px;
+  background: #fff;
+  padding: 6px;
+  border-radius: 6px;
+}
+
+.qr-meta p { margin: 6px 0; }
+
+/* ===== RESPONSIVE ===== */
+@media (min-width: 768px) {
+  .market-card {
+    flex: 1 1 calc(25% - 10px);
+  }
+
+  .actions {
+    justify-content: space-evenly;
+  }
+}

@@ -1,0 +1,405 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Payment Methods</title>
+
+  <style>
+    /* ===== Reset & Theme ===== */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: "Inter", "Segoe UI", Roboto, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    :root {
+      --bg: #0c0d11;
+      --card-bg: rgba(24, 26, 32, 0.8);
+      --accent: #00bcd4;
+      --accent-hover: #00e0c0;
+      --text: #eaeaea;
+      --muted: #999;
+      --radius: 10px;
+      --transition: 0.3s ease;
+    }
+
+    body {
+      background: radial-gradient(circle at top, #0d0e12, #050507);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      animation: fadeIn 0.6s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ===== Header ===== */
+    .header {
+      height: 60px;
+      background: linear-gradient(90deg, #111, #0a0a0a, #111);
+      background-size: 200%;
+      border-bottom: 1px solid #222;
+      animation: gradientMove 6s ease infinite;
+    }
+
+    @keyframes gradientMove {
+      0% { background-position: 0%; }
+      50% { background-position: 100%; }
+      100% { background-position: 0%; }
+    }
+
+    /* ===== Container ===== */
+    .account-container {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 32px 20px 80px;
+    }
+
+    .account-card {
+      background: var(--card-bg);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: var(--radius);
+      padding: 24px;
+      width: 100%;
+      max-width: 460px;
+      box-shadow: 0 6px 24px rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(10px);
+      animation: slideIn 0.8s ease forwards;
+      transform: translateY(15px);
+      opacity: 0;
+    }
+
+    @keyframes slideIn {
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    h2 {
+      text-align: center;
+      color: var(--accent);
+      margin-bottom: 20px;
+      text-shadow: 0 0 6px rgba(0,188,212,0.3);
+    }
+
+    /* ===== Form ===== */
+    .form-row {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .row-item label {
+      display: block;
+      font-size: 0.9rem;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    select, input {
+      width: 100%;
+      background: rgba(30, 32, 38, 0.9);
+      border: 1px solid #2c2f36;
+      color: var(--text);
+      border-radius: var(--radius);
+      padding: 10px 12px;
+      font-size: 0.95rem;
+      transition: border var(--transition), box-shadow var(--transition), background var(--transition);
+    }
+
+    select:focus, input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 5px var(--accent);
+      outline: none;
+    }
+
+    /* ===== Payment List ===== */
+    #pmList {
+      color: var(--text);
+      background: rgba(22, 23, 29, 0.6);
+      border-radius: var(--radius);
+      padding: 10px;
+      font-size: 0.9rem;
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .pm-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      animation: fadeUp 0.4s ease forwards;
+    }
+
+    .pm-item:last-child {
+      border-bottom: none;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .pm-item div:first-child {
+      color: var(--text);
+    }
+
+    .pm-item button {
+      background: transparent;
+      border: 1px solid #ff4444;
+      color: #ff7777;
+      padding: 5px 10px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all var(--transition);
+    }
+
+    .pm-item button:hover {
+      background: #ff4444;
+      color: #fff;
+    }
+
+    /* ===== Buttons ===== */
+    .controls {
+      margin-top: 20px;
+      text-align: center;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(90deg, var(--accent), #007bff);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius);
+      font-weight: 600;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background var(--transition), transform var(--transition);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn:hover {
+      background: linear-gradient(90deg, var(--accent-hover), var(--accent));
+      transform: scale(1.03);
+      box-shadow: 0 4px 10px rgba(0,188,212,0.25);
+    }
+
+    .btn:active {
+      transform: scale(0.97);
+    }
+
+    .btn::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      background: rgba(255,255,255,0.4);
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      opacity: 0;
+      transition: width 0.4s, height 0.4s, opacity 0.8s;
+    }
+
+    .btn:active::after {
+      width: 300%;
+      height: 300%;
+      opacity: 0;
+    }
+
+    /* ===== Bottom Nav ===== */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background: rgba(15, 15, 20, 0.9);
+      backdrop-filter: blur(8px);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      border-top: 1px solid #252837;
+      padding: 8px 0;
+    }
+
+    .nav-item {
+      color: #888;
+      text-decoration: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-size: 0.75rem;
+      transition: color 0.3s, transform 0.3s;
+    }
+
+    .nav-item img {
+      width: 22px;
+      height: 22px;
+      margin-bottom: 4px;
+      filter: brightness(0.7);
+      transition: filter 0.3s;
+    }
+
+    .nav-item:hover, .nav-item.active {
+      color: var(--accent);
+      transform: translateY(-2px);
+    }
+
+    .nav-item:hover img, .nav-item.active img {
+      filter: brightness(1.2);
+    }
+
+    /* ===== Responsive ===== */
+    @media (max-width: 480px) {
+      .account-card { padding: 20px; }
+      h2 { font-size: 1.3rem; }
+      .btn { font-size: 0.95rem; }
+      select, input { font-size: 0.9rem; }
+    }
+  </style>
+</head>
+
+<body>
+  <header class="header"></header>
+
+  <main class="account-container">
+    <div class="account-card">
+      <h2>Payment Methods</h2>
+
+      <div class="form-row">
+        <div id="pmList" class="row-item">Loading…</div>
+      </div>
+
+      <hr style="border-color:rgba(255,255,255,0.05);margin:16px 0;">
+
+      <div class="form-row">
+        <div class="row-item">
+          <label>Type
+            <select id="pmType">
+              <option>Bank</option>
+              <option>USDT (TRC20)</option>
+              <option>BTC</option>
+            </select>
+          </label>
+        </div>
+        <div class="row-item">
+          <label>Details (account / address)
+            <input id="pmDetails" placeholder="Enter details...">
+          </label>
+        </div>
+      </div>
+
+      <div class="controls">
+        <button class="btn" id="btnAdd">Add Method</button>
+      </div>
+    </div>
+  </main>
+
+  <nav class="bottom-nav">
+    <a class="nav-item" href="index.html"><img src="/img/house.png"><p>Home</p></a>
+    <a class="nav-item" href="trade.html"><img src="/img/trade.png"><p>Trade</p></a>
+    <a class="nav-item" href="internal-transfer.html"><img src="/img/transfer.png"><p>Transfer</p></a>
+    <a class="nav-item active" href="account.html"><img src="/img/myaccount.png"><p>Account</p></a>
+  </nav>
+
+  <script src="/js/language.js"></script>
+  <script>document.addEventListener('DOMContentLoaded', initLanguageSelector);</script>
+
+  <script>
+  const pmList = document.getElementById('pmList');
+  let initialLoad = true;
+
+  async function loadMethods(showError = false) {
+    pmList.textContent = 'Loading…';
+    try {
+      const res = await fetch('/api/payment-methods', { credentials: 'same-origin' });
+
+      if (!res.ok) {
+        if (showError) pmList.innerHTML = '<div style="color:#f66;">⚠️ Unable to fetch payment methods.</div>';
+        else pmList.innerHTML = '<div style="color:#888;text-align:center;">No payment methods yet</div>';
+        return;
+      }
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!data.methods || !Array.isArray(data.methods) || data.methods.length === 0) {
+        pmList.innerHTML = '<div style="color:#888;text-align:center;">No payment methods yet</div>';
+        return;
+      }
+
+      pmList.innerHTML = data.methods.map(m => `
+        <div class="pm-item" style="display:flex;justify-content:space-between;align-items:center;background:#1b1d24;border-radius:6px;padding:10px 12px;margin-bottom:10px;">
+          <div style="font-size:0.95rem;color:#ddd;">${m.type} — ${m.details}</div>
+          <button onclick="removeMethod('${m.id}')" style="background:#ff4d4d;border:none;color:#fff;padding:6px 10px;border-radius:4px;cursor:pointer;font-size:0.8rem;">Remove</button>
+        </div>
+      `).join('');
+
+    } catch (err) {
+      console.error('Fetch failed:', err);
+      if (showError) pmList.innerHTML = '<div style="color:#f66;">⚠️ Network error while loading methods.</div>';
+      else pmList.innerHTML = '<div style="color:#888;text-align:center;">No payment methods yet</div>';
+    }
+  }
+
+  async function removeMethod(id) {
+    if (!confirm('Remove this payment method?')) return;
+    try {
+      const res = await fetch('/api/payment-methods/' + id, { method: 'DELETE', credentials: 'same-origin' });
+      if (res.ok) {
+        await loadMethods();
+      } else {
+        alert('❌ Failed to remove method.');
+      }
+    } catch (e) {
+      alert('⚠️ Network error while removing.');
+    }
+  }
+
+  document.getElementById('btnAdd').addEventListener('click', async () => {
+    const type = document.getElementById('pmType').value;
+    const details = document.getElementById('pmDetails').value.trim();
+
+    if (!details) {
+      alert('Please enter method details.');
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/payment-methods', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ type, details })
+      });
+
+      if (res.ok) {
+        document.getElementById('pmDetails').value = '';
+        await loadMethods(true);
+        alert('✅ Method added successfully!');
+      } else {
+        alert('❌ Failed to add method.');
+      }
+    } catch {
+      alert('⚠️ Network error while adding.');
+    }
+  });
+
+  // Load once silently
+  loadMethods(false);
+</script>
+
+</body>
+</html>

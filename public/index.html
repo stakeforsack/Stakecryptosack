@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>GodStake - Crypto Staking Platform</title>
+  <link rel="stylesheet" href="/style.css" />
+
+  <style>
+    :root {
+      --accent: #a855f7;
+      --gradient: linear-gradient(135deg, #a855f7, #7c3aed);
+    }
+
+    /* === Background Enhancements === */
+    body {
+      position: relative;
+      overflow-x: hidden;
+      background: linear-gradient(-45deg, #000000, #0b0b0b, #121212, #1a1a1a);
+      background-size: 400% 400%;
+      animation: gradientFlow 12s ease infinite;
+    }
+
+    @keyframes gradientFlow {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    /* === Floating Glow Elements === */
+    body::before,
+    body::after {
+      content: "";
+      position: absolute;
+      border-radius: 50%;
+      width: 320px;
+      height: 320px;
+      background: radial-gradient(circle, rgba(168,85,247,0.25), transparent 70%);
+      filter: blur(140px);
+      animation: floatGlow 20s infinite alternate ease-in-out;
+      z-index: -1;
+    }
+
+    body::before { top: 10%; left: 70%; animation-delay: 4s; }
+    body::after { bottom: 10%; right: 60%; }
+
+    @keyframes floatGlow {
+      from { transform: translateY(0) scale(1); }
+      to { transform: translateY(-30px) scale(1.1); }
+    }
+
+    /* === Banner Neon Animation === */
+    .banner-text {
+      font-size: 2rem;
+      font-weight: 700;
+      background: linear-gradient(90deg, #a855f7, #7c3aed, #a855f7);
+      background-clip: text;              /* Add standard property */
+      -webkit-background-clip: text;      /* Keep vendor prefix for Safari */
+      -webkit-text-fill-color: transparent;
+      animation: shimmer 4s infinite linear;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+    }
+
+    @keyframes shimmer {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    /* === Page Fade Transition === */
+    .fade-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle at center, rgba(168, 85, 247, 0.2), rgba(0, 0, 0, 0.95));
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.6s ease;
+      z-index: 9999;
+    }
+
+    .fade-overlay.active { opacity: 1; }
+
+    body.fade-out {
+      opacity: 0;
+      transform: scale(0.98);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+
+    body.fade-in {
+      opacity: 1;
+      transform: scale(1);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+
+    /* === Smooth Section Appear === */
+    section {
+      opacity: 0;
+      transform: translateY(20px);
+      animation: fadeUpSmooth 0.8s forwards;
+    }
+
+    @keyframes fadeUpSmooth {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    section:nth-of-type(1) { animation-delay: 0.2s; }
+    section:nth-of-type(2) { animation-delay: 0.4s; }
+    section:nth-of-type(3) { animation-delay: 0.6s; }
+
+    /* === Enhanced Hover Effects === */
+    .action-item:hover, .market-card:hover {
+      transform: translateY(-4px) scale(1.02);
+      box-shadow: 0 0 20px rgba(168, 85, 247, 0.3);
+      border-color: rgba(168, 85, 247, 0.4);
+    }
+
+    .bottom-nav {
+      background: rgba(0,0,0,0.9);
+      backdrop-filter: blur(12px);
+      border-top: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .nav-item:hover {
+      color: var(--accent);
+      transform: translateY(-2px);
+      transition: all 0.3s ease;
+    }
+  </style>
+</head>
+
+<body>
+  <header class="header">
+    <div class="logo">
+      <img src="/img/logo.png" alt="Logo">
+    </div>
+  </header>
+
+  <section class="banner">
+    <div class="banner-text">
+      StakCryptoSack
+    </div>
+  </section>
+
+  <section class="actions">
+    <a class="action-item" href="deposit.html">
+      <img src="/img/deposit.png" alt="Deposit">
+      <p>Deposit</p>
+    </a>
+
+    <a class="action-item" href="withdraw.html">
+      <img src="/img/withdraw.png" alt="Withdraw">
+      <p>Withdraw</p>
+    </a>
+
+    <a class="action-item" href="internal-transfer.html">
+      <img src="/img/money.png" alt="Transfer">
+      <p>Internal Transfer</p>
+    </a>
+
+    <a class="action-item" href="upgrade.html">
+      <img src="/img/vip-card.png" alt="Upgrade">
+      <p>Membership<br>Upgrade</p>
+    </a>
+  </section>
+
+  <section class="market">
+    <h2>USDT Market</h2>
+
+    <div class="market-cards">
+      <div class="market-card" data-coin="bitcoin">
+        <h3>BTC/USDT</h3>
+        <p class="price" data-price-id="bitcoin">—</p>
+        <p class="change" data-change-id="bitcoin"></p>
+      </div>
+      <div class="market-card" data-coin="ethereum">
+        <h3>ETH/USDT</h3>
+        <p class="price" data-price-id="ethereum">—</p>
+        <p class="change" data-change-id="ethereum"></p>
+      </div>
+      <div class="market-card" data-coin="dogecoin">
+        <h3>DOGE/USDT</h3>
+        <p class="price" data-price-id="dogecoin">—</p>
+        <p class="change" data-change-id="dogecoin"></p>
+      </div>
+    </div>
+
+    <div class="market-list">
+      <div class="market-row" data-coin="bitcoin">
+        <span class="coin">BTC/USDT</span>
+        <span class="price" data-price-id="bitcoin">—</span>
+        <span class="change" data-change-id="bitcoin"></span>
+      </div>
+      <div class="market-row" data-coin="ethereum">
+        <span class="coin">ETH/USDT</span>
+        <span class="price" data-price-id="ethereum">—</span>
+        <span class="change" data-change-id="ethereum"></span>
+      </div>
+      <div class="market-row" data-coin="dogecoin">
+        <span class="coin">DOGE/USDT</span>
+        <span class="price" data-price-id="dogecoin">—</span>
+        <span class="change" data-change-id="dogecoin"></span>
+      </div>
+      <div class="market-row" data-coin="eos">
+        <span class="coin">EOS/USDT</span>
+        <span class="price" data-price-id="eos">—</span>
+        <span class="change" data-change-id="eos"></span>
+      </div>
+    </div>
+  </section>
+
+  <nav class="bottom-nav">
+    <a class="nav-item active" href="index.html">
+      <img src="/img/house.png" alt="Home">
+      <p>Home</p>
+    </a>
+    <a class="nav-item" href="trade.html">
+      <img src="/img/trade.png" alt="Trade">
+      <p>Trade</p>
+    </a>
+    <a class="nav-item" href="internal-transfer.html">
+      <img src="/img/transfer.png" alt="Transfer">
+      <p>Transfer</p>
+    </a>
+    <a class="nav-item" href="account.html">
+      <img src="/img/myaccount.png" alt="Account">
+      <p>My Account</p>
+    </a>
+  </nav>
+
+  <!-- Scripts -->
+  <script src="/js/language.js"></script>
+  <script>document.addEventListener('DOMContentLoaded', initLanguageSelector);</script>
+  <script src="script.js"></script>
+  <script src="/js/market-prices.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      MarketPrices.start(['bitcoin','ethereum','dogecoin','eos','tether','cardano','binancecoin','solana'], 10000);
+    });
+
+    
+    document.addEventListener('DOMContentLoaded', () => {
+      // Create overlay once
+      let overlay = document.querySelector('.fade-overlay');
+      if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.classList.add('fade-overlay');
+        document.body.appendChild(overlay);
+      }
+
+      // Always ensure body is visible when loaded/back from cache
+      window.addEventListener('pageshow', (event) => {
+        // Some browsers keep page state cached, so reset fades here
+        if (event.persisted || document.body.classList.contains('fade-out')) {
+          document.body.classList.remove('fade-out');
+          document.body.classList.add('fade-in');
+          overlay.classList.remove('active');
+        }
+      });
+
+      // Fade in on normal load
+      requestAnimationFrame(() => {
+        document.body.classList.add('fade-in');
+      });
+
+      // Smooth fade-out navigation
+      document.querySelectorAll('a').forEach(link => {
+        const href = link.getAttribute('href');
+        if (!href || href.startsWith('#') || href.startsWith('javascript:')) return;
+
+        link.addEventListener('click', e => {
+          if (link.target === '_blank' || href.startsWith('http')) return;
+          e.preventDefault();
+
+          overlay.classList.add('active');
+          document.body.classList.remove('fade-in');
+          document.body.classList.add('fade-out');
+
+          setTimeout(() => {
+            window.location.href = href;
+          }, 400);
+        });
+      });
+    });
+
+
+  </script>
+</body>
+</html>

@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Withdraw</title>
+    <link rel="stylesheet" href="/style.css" />
+    <style>
+        :root {
+          --bg: #0b0b0b;
+          --card: #0f0f0f;
+          --muted: #9aa0a6;
+          --accent: #a855f7;
+          --error: #ff6b6b;
+          --success: #56d364;
+        }
+
+        body {
+          font-family: "Poppins", sans-serif;
+          background: var(--bg);
+          color: #fff;
+          margin: 0;
+          min-height: 100vh;
+        }
+
+        .wrap {
+          max-width: 720px;
+          margin: 48px auto;
+          padding: 20px;
+        }
+
+        .card {
+          background: var(--card);
+          padding: 28px 24px;
+          border-radius: 12px;
+          border: 1px solid #222;
+          box-shadow: 0 3px 12px rgba(0,0,0,0.4);
+        }
+
+        h2 {
+          margin-bottom: 24px;
+          font-weight: 600;
+          font-size: 1.8rem;
+        }
+
+        .input-group {
+          margin-bottom: 18px;
+        }
+
+        label {
+          display: block;
+          color: var(--muted);
+          margin-bottom: 6px;
+          font-size: 0.9rem;
+          font-weight: 500;
+        }
+
+        input, select {
+          width: 100%;
+          padding: 14px;
+          border-radius: 10px;
+          border: 1px solid #262626;
+          background: #111;
+          color: #fff;
+          font-size: 1rem;
+          transition: 0.2s all;
+        }
+
+        input:focus, select:focus {
+          outline: none;
+          border-color: var(--accent);
+          box-shadow: 0 0 0 1px var(--accent);
+        }
+
+        .balance-box {
+          background: #111;
+          padding: 14px;
+          border-radius: 10px;
+          margin-bottom: 22px;
+          font-weight: 600;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          border: 1px solid #222;
+        }
+
+        .primary-btn {
+          width: 100%;
+          padding: 14px;
+          border: none;
+          border-radius: 10px;
+          background: var(--accent);
+          color: #fff;
+          font-size: 1rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: 0.2s all;
+        }
+
+        .primary-btn:hover:not(:disabled) {
+          opacity: 0.9;
+          transform: translateY(-2px);
+        }
+
+        .primary-btn:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+
+        .error, .success {
+          margin-top: 10px;
+          padding: 8px 12px;
+          border-radius: 8px;
+          display: none;
+          font-weight: 500;
+        }
+
+        .error {
+          color: var(--error);
+          background: rgba(255,107,107,0.1);
+        }
+
+        .success {
+          color: var(--success);
+          background: rgba(86,211,100,0.1);
+        }
+
+        .note {
+          color: var(--muted);
+          font-size: 0.88rem;
+          margin-top: 16px;
+          line-height: 1.4;
+        }
+
+        @media(max-width:480px){
+          h2 { font-size:1.5rem; }
+          input, select, .primary-btn, .balance-box { padding: 12px; }
+        }
+
+        .error { color: #ff4d4d; margin-top: 8px; display: none; }
+        select, input { width: 100%; padding: 10px; margin-top: 8px; background: #070707; border: 1px solid #222; color: #fff; border-radius: 8px; }
+        button { width: 100%; padding: 12px; background: #a855f7; color: #fff; border: 0; border-radius: 8px; margin-top: 16px; cursor: pointer; }
+        label { display: block; margin-top: 16px; color: #9aa0a6; }
+
+        .page-transition-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background-color: #0b0b0b;
+          z-index: 9999;
+          opacity: 1;
+          pointer-events: none;
+          transition: opacity 0.4s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <div class="card">
+            <h2>Withdraw Funds</h2>
+
+            <div class="balance-box">
+                <span>Available Balance</span>
+                <span id="balance">—</span>
+            </div>
+
+            <form id="withdrawForm">
+                <div class="input-group">
+                    <label for="currency">Select Currency</label>
+                    <select id="currency">
+                        <option value="USDT" selected>USDT</option>
+                        <option value="BTC">BTC</option>
+                        <option value="ETH">ETH</option>
+                        <option value="BNB">BNB</option>
+                        <option value="ADA">ADA</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <label for="wallet">Wallet Address</label>
+                    <input id="wallet" type="text" placeholder="Enter wallet address" autocomplete="off" spellcheck="false">
+                </div>
+
+                <div class="input-group">
+                    <label for="amount">Amount to Withdraw</label>
+                    <input id="amount" type="number" min="0" step="any" placeholder="0.00">
+                </div>
+
+                <button type="submit" id="submitBtn" class="primary-btn">Withdraw</button>
+
+                <div id="error" class="error"></div>
+                <div id="success" class="success"></div>
+            </form>
+
+            <p class="note">
+                Withdrawals are processed within 24 hours. Make sure your wallet address is correct; incorrect addresses may result in permanent loss of funds.
+            </p>
+        </div>
+    </div>
+
+    <script>
+        (function(){
+          const form = document.getElementById('withdrawForm');
+          const walletEl = document.getElementById('wallet');
+          const amountEl = document.getElementById('amount');
+          const balanceEl = document.getElementById('balance');
+          const currencyEl = document.getElementById('currency');
+          const submitBtn = document.getElementById('submitBtn');
+          const errorEl = document.getElementById('error');
+          const successEl = document.getElementById('success');
+
+          function showError(msg){
+            errorEl.textContent = msg;
+            errorEl.style.display = 'block';
+            successEl.style.display = 'none';
+          }
+
+          function showSuccess(msg){
+            successEl.textContent = msg;
+            successEl.style.display = 'block';
+            errorEl.style.display = 'none';
+          }
+
+          async function fetchBalance(){
+            try {
+              const coin = currencyEl.value;
+              const res = await fetch('/api/balance?coin=' + coin, { credentials: 'same-origin' });
+              if(res.status === 401){
+                balanceEl.textContent = 'Please login';
+                setTimeout(()=> location.href='/login.html', 800);
+                return;
+              }
+              const data = await res.json();
+              balanceEl.textContent = data.balance ? `${data.balance} ${coin}` : `0.00 ${coin}`;
+            } catch(err){
+              console.error(err);
+              balanceEl.textContent = 'Error loading balance';
+            }
+          }
+
+          currencyEl.addEventListener('change', fetchBalance);
+
+          form.addEventListener('submit', async (e)=>{
+            e.preventDefault();
+            errorEl.style.display = 'none';
+            successEl.style.display = 'none';
+
+            const wallet = walletEl.value.trim();
+            const amount = amountEl.value.trim();
+            const coin = currencyEl.value;
+
+            if(!wallet) return showError('Enter wallet address');
+            if(!amount || Number(amount) <= 0) return showError('Enter a valid amount');
+
+            submitBtn.disabled = true;
+            const prevText = submitBtn.textContent;
+            submitBtn.textContent = 'Processing...';
+
+            try{
+              const res = await fetch('/withdraw', {
+                method: 'POST',
+                credentials:'same-origin',
+                headers:{ 'Content-Type':'application/json' },
+                body: JSON.stringify({ wallet, amount, coin })
+              });
+
+              const data = await res.json();
+
+              if(!res.ok || !data.ok){
+                return showError(data.error || 'Withdrawal failed');
+              }
+
+              showSuccess('Withdrawal request submitted!');
+              walletEl.value = '';
+              amountEl.value = '';
+              fetchBalance();
+            } catch(err){
+              console.error(err);
+              showError('Network error, try again');
+            } finally{
+              submitBtn.disabled = false;
+              submitBtn.textContent = prevText;
+            }
+          });
+
+          fetchBalance();
+        })();
+    </script>
+
+    <script>
+      // Create overlay for page transition
+      const createTransitionOverlay = () => {
+        let overlay = document.querySelector('.page-transition-overlay');
+        if (!overlay) {
+          overlay = document.createElement('div');
+          overlay.className = 'page-transition-overlay';
+          document.body.appendChild(overlay);
+        }
+        return overlay;
+      };
+
+      const overlay = createTransitionOverlay();
+
+      // Fade-in on page load
+      window.addEventListener('DOMContentLoaded', () => {
+        requestAnimationFrame(() => {
+          overlay.style.opacity = '0';
+          setTimeout(() => overlay.remove(), 500);
+        });
+      });
+
+      // Fade-out on link click
+      document.querySelectorAll('a[href]').forEach(link => {
+        if (!link.href.startsWith(window.location.origin)) return;
+
+        link.addEventListener('click', e => {
+          e.preventDefault();
+          const href = link.href;
+
+          const newOverlay = createTransitionOverlay();
+          newOverlay.style.opacity = '0';
+          newOverlay.style.pointerEvents = 'auto';
+          document.body.appendChild(newOverlay);
+
+          requestAnimationFrame(() => {
+            newOverlay.style.opacity = '1';
+          });
+
+          setTimeout(() => {
+            window.location.href = href;
+          }, 400);
+        });
+      });
+
+      // Handle back/forward navigation
+      window.addEventListener('pageshow', event => {
+        if (event.persisted) {
+          const newOverlay = createTransitionOverlay();
+          requestAnimationFrame(() => {
+            newOverlay.style.opacity = '0';
+            setTimeout(() => newOverlay.remove(), 500);
+          });
+        }
+      });
+    </script>
+</body>
+</html>

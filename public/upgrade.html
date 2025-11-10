@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Membership Upgrade</title>
+<style>
+  body { font-family: Arial, sans-serif; margin:0; min-height:100vh; background:#0b0b0b; color:#fff; }
+  h1 { text-align:center; font-size:clamp(1.5rem,5vw,2rem); margin:1rem 0 2rem; background: linear-gradient(90deg,#ff00ff,#00ffff,#ff00ff);background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: gradientShift 5s ease infinite; }
+  @keyframes gradientShift {0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+  .container { width:90%; max-width:1200px; margin:0 auto; }
+  .vip-cards { display:grid; grid-template-columns:repeat(auto-fit, minmax(280px,1fr)); gap:16px; }
+  .vip-card { border-radius:20px; padding:24px; display:flex; flex-direction:column; gap:12px; min-height:300px; backdrop-filter:blur(8px); box-shadow:0 0 30px rgba(255,255,255,0.05); cursor:pointer; transition: transform 0.3s, box-shadow 0.3s; position:relative; }
+  .vip-card:hover { transform:translateY(-6px) scale(1.02); box-shadow:0 20px 40px rgba(255,255,255,0.15); }
+  .vip-card.v1{background:linear-gradient(135deg,#1a237e,#0d47a1); border:1px solid rgba(33,150,243,0.6);}
+  .vip-card.v2{background:linear-gradient(135deg,#1b5e20,#2e7d32); border:1px solid rgba(76,175,80,0.6);}
+  .vip-card.v3{background:linear-gradient(135deg,#b71c1c,#c62828); border:1px solid rgba(244,67,54,0.6);}
+  .vip-card.v4{background:linear-gradient(135deg,#ffd700,#daa520); border:1px solid rgba(255,215,0,0.6);}
+  .vip-title { font-size:clamp(2rem,6vw,2.5rem); font-weight:700; display:flex; justify-content:space-between; align-items:center; }
+  .deposit { font-size:clamp(1.1rem,4vw,1.25rem); color:rgba(255,255,255,0.9);}
+  .limit { font-size:clamp(0.85rem,3vw,0.9rem); color:rgba(255,255,255,0.7);}
+  .limit strong { display:block; font-size:clamp(1rem,3.5vw,1.1rem); color:#fff; margin-top:4px; }
+  .purchase-btn { background:linear-gradient(to bottom,rgba(255,255,255,0.2),rgba(255,255,255,0.1)); color:#fff; border:1px solid rgba(255,255,255,0.1); padding:12px; border-radius:12px; font-size:clamp(0.9rem,3vw,1rem); cursor:pointer; margin-top:auto; transition:all 0.3s ease; }
+  .purchase-btn:hover { background:linear-gradient(to bottom,rgba(255,255,255,0.35),rgba(255,255,255,0.2)); transform:translateY(-3px) scale(1.03); }
+  .exclusive { position:absolute; top:16px; right:16px; padding:6px 12px; font-size:0.85rem; font-weight:600; border-radius:12px; background: linear-gradient(45deg,#ff0080,#7928ca); color:#fff; }
+  .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:100; opacity:0; transition: opacity 0.3s ease; }
+  .modal.show { display:block; opacity:1; }
+  .modal-content { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%) scale(0.95); background:#111; padding:28px; border-radius:16px; width:90%; max-width:480px; border:1px solid #333; transition:transform 0.3s ease; text-align:center;}
+  .modal.show .modal-content { transform:translate(-50%,-50%) scale(1); }
+  .payment-btn, .submit-btn { margin:10px; padding:10px 20px; border:none; border-radius:12px; cursor:pointer; font-size:1rem; transition:0.2s; background:linear-gradient(45deg,#ff0080,#7928ca); color:#fff; }
+  .payment-btn:hover, .submit-btn:hover { transform:scale(1.05); }
+  .crypto-info { margin-top:20px; }
+  .crypto-qr { width:150px; height:150px; margin:10px auto; }
+  .countdown { font-size:1.2rem; margin-top:10px; color:#ff0; }
+  @media(max-width:768px){.vip-cards{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>Membership Upgrade</h1>
+<div class="vip-cards">
+  <div class="vip-card v1" onclick="upgradeTo('V1')">
+    <div class="vip-title">V1 <span class="exclusive">Exclusive</span></div>
+    <div class="deposit">Deposit 51.00 USDT</div>
+    <div class="limit">
+      Collection limit for money transfer service
+      <strong>Daily Limit: 10.00 USDT</strong>
+      <strong>Monthly Limit: 50.00 USDT</strong>
+    </div>
+    <button class="purchase-btn">Purchase</button>
+  </div>
+  <div class="vip-card v2" onclick="upgradeTo('V2')">
+    <div class="vip-title">V2 <span class="exclusive">Exclusive</span></div>
+    <div class="deposit">Deposit 1,498.5 USDT</div>
+    <div class="limit">
+      Collection limit for money transfer service
+      <strong>Daily Limit: 100.00 USDT</strong>
+      <strong>Monthly Limit: 3,000.00 USDT</strong>
+    </div>
+    <button class="purchase-btn">Purchase</button>
+  </div>
+  <div class="vip-card v3" onclick="upgradeTo('V3')">
+    <div class="vip-title">V3 <span class="exclusive">HOT</span></div>
+    <div class="deposit">Deposit 3,001 USDT</div>
+    <div class="limit">
+      Collection limit for money transfer service
+      <strong>Daily Limit: 30,000.00 USDT</strong>
+      <strong>Monthly Limit: 900,000.00 USDT</strong>
+    </div>
+    <button class="purchase-btn">Purchase</button>
+  </div>
+  <div class="vip-card v4" onclick="upgradeTo('V4')">
+    <div class="vip-title">V4 <span class="exclusive">Exclusive</span></div>
+    <div class="deposit">Deposit 29,998.5 USDT</div>
+    <div class="limit">
+      Collection limit for money transfer service
+      <strong>Daily Limit: 100,000.00 USDT</strong>
+      <strong>Monthly Limit: 3,000,000.00 USDT</strong>
+    </div>
+    <button class="purchase-btn">Purchase</button>
+  </div>
+</div>
+</div>
+
+<div id="paymentModal" class="modal">
+  <div class="modal-content" id="modalContent"></div>
+</div>
+
+<script>
+  const modal = document.getElementById('paymentModal');
+  const modalContent = document.getElementById('modalContent');
+
+  const cryptoAddresses = {
+    USDT: "TetherWalletAddressHere",
+    BTC: "BitcoinWalletAddressHere",
+    ETH: "EthereumWalletAddressHere"
+  };
+
+  function upgradeTo(level) {
+    modal.classList.add('show');
+    modalContent.innerHTML = `
+      <h2>Select Payment Method for ${level}</h2>
+      <button class="payment-btn" onclick="chooseCrypto('USDT')">USDT</button>
+      <button class="payment-btn" onclick="chooseCrypto('BTC')">BTC</button>
+      <button class="payment-btn" onclick="chooseCrypto('ETH')">ETH</button>
+      <div class="crypto-info" id="cryptoInfo"></div>
+    `;
+  }
+
+  let selectedCrypto = '';
+
+  function chooseCrypto(coin) {
+    selectedCrypto = coin;
+    const info = document.getElementById('cryptoInfo');
+    info.innerHTML = `
+      <h3>${coin} Selected</h3>
+      <button class="submit-btn" onclick="showQRCode()">Submit Payment</button>
+    `;
+  }
+
+  function showQRCode() {
+    const info = document.getElementById('cryptoInfo');
+    let timeLeft = 120; // 2 minutes
+
+    info.innerHTML = `
+      <h3>Scan QR to Pay ${selectedCrypto}</h3>
+      <img src="https://api.qrserver.com/v1/create-qr-code/?data=${cryptoAddresses[selectedCrypto]}&size=150x150" class="crypto-qr" />
+      <p>Address: ${cryptoAddresses[selectedCrypto]}</p>
+      <div class="countdown" id="countdown">${formatTime(timeLeft)}</div>
+    `;
+
+    const countdownEl = document.getElementById('countdown');
+
+    const timer = setInterval(() => {
+      timeLeft--;
+      countdownEl.textContent = formatTime(timeLeft);
+      if(timeLeft <= 0){
+        clearInterval(timer);
+        info.innerHTML = `
+          <h3>Your payment is processing...</h3>
+          <button class="submit-btn" onclick="goBack()">Go Back</button>
+        `;
+      }
+    }, 1000);
+  }
+
+  function formatTime(sec){
+    const m = Math.floor(sec/60).toString().padStart(2,'0');
+    const s = (sec%60).toString().padStart(2,'0');
+    return `${m}:${s}`;
+  }
+
+  function goBack(){
+    window.location.href = "index.html"; // change to your main page URL
+  }
+
+  modal.addEventListener('click', e => { if(e.target===modal) modal.classList.remove('show'); });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>ID Verification</title>
+
+  <style>
+    /* ===== Global Dark Theme ===== */
+    :root {
+      --bg-color: #0f1117;
+      --card-bg: #1a1d27;
+      --accent: #4e9eff;
+      --accent-hover: #66b2ff;
+      --text-color: #e8ecf2;
+      --text-muted: #9ba3b5;
+      --success: #00e676;
+      --danger: #ff5252;
+      --radius: 10px;
+      --transition: 0.25s ease;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      margin: 0;
+      min-height: 100vh;
+      font-family: 'Inter', system-ui, sans-serif;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .header {
+      height: 56px;
+      background: linear-gradient(90deg, #171a22, #10121a);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+    }
+
+    .account-container {
+      flex: 1;
+      padding: 16px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+    }
+
+    .account-card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      padding: 18px;
+      width: 100%;
+      max-width: 500px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+      transition: transform var(--transition), box-shadow var(--transition);
+      animation: fadeIn 0.5s ease;
+    }
+
+    .account-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 18px rgba(0,0,0,0.6);
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    h2 {
+      color: var(--accent);
+      text-align: center;
+      margin-bottom: 8px;
+    }
+
+    .helper {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      text-align: center;
+      margin-bottom: 16px;
+    }
+
+    .form-row {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    label {
+      display: flex;
+      flex-direction: column;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: color var(--transition);
+    }
+
+    label:hover {
+      color: var(--accent);
+    }
+
+    input[type="file"] {
+      margin-top: 6px;
+      padding: 6px;
+      border-radius: var(--radius);
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: var(--text-color);
+      transition: border var(--transition), background var(--transition);
+    }
+
+    input[type="file"]:focus {
+      border-color: var(--accent);
+      outline: none;
+      background: rgba(78,158,255,0.1);
+    }
+
+    .preview-container {
+      display: flex;
+      gap: 10px;
+      margin-top: 8px;
+    }
+
+    .preview-container img {
+      width: 70px;
+      height: 70px;
+      object-fit: cover;
+      border-radius: var(--radius);
+      border: 2px solid rgba(255,255,255,0.1);
+      transition: border var(--transition), transform var(--transition);
+    }
+
+    .preview-container img:hover {
+      border-color: var(--accent);
+      transform: scale(1.05);
+    }
+
+    .controls {
+      display: flex;
+      justify-content: center;
+      margin-top: 12px;
+    }
+
+    .btn {
+      background: var(--accent);
+      border: none;
+      color: #fff;
+      padding: 10px 18px;
+      border-radius: var(--radius);
+      cursor: pointer;
+      font-weight: 600;
+      transition: background var(--transition), transform var(--transition), box-shadow var(--transition);
+    }
+
+    .btn:hover {
+      background: var(--accent-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(78,158,255,0.3);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+      box-shadow: none;
+    }
+
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background: #14161e;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      padding: 8px 0;
+      border-top: 1px solid #252837;
+      z-index: 10;
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      text-decoration: none;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      transition: color var(--transition), transform var(--transition);
+    }
+
+    .nav-item img {
+      width: 22px;
+      filter: brightness(0.8);
+      transition: filter var(--transition);
+    }
+
+    .nav-item:hover {
+      color: var(--accent);
+      transform: translateY(-2px);
+    }
+
+    .nav-item.active {
+      color: var(--accent);
+    }
+
+    .nav-item.active img {
+      filter: brightness(1.2);
+    }
+
+    @media (max-width: 600px) {
+      .account-card { padding: 14px; }
+      h2 { font-size: 1.2rem; }
+      .btn { padding: 8px 12px; font-size: 0.85rem; }
+      .nav-item img { width: 20px; }
+      .preview-container img { width: 50px; height: 50px; }
+    }
+  </style>
+</head>
+
+<body>
+  <header class="header"></header>
+
+  <main class="account-container">
+    <div class="account-card">
+      <h2>ID Verification</h2>
+      <p class="helper">Upload a government ID (front + back) and a selfie holding the ID.</p>
+
+      <div class="form-row">
+        <div class="row-item">
+          <label>Front ID
+            <input id="idFront" type="file" accept="image/*">
+            <div class="preview-container" id="previewFront"></div>
+          </label>
+        </div>
+        <div class="row-item">
+          <label>Back ID
+            <input id="idBack" type="file" accept="image/*">
+            <div class="preview-container" id="previewBack"></div>
+          </label>
+        </div>
+        <div class="row-item">
+          <label>Selfie
+            <input id="idSelfie" type="file" accept="image/*">
+            <div class="preview-container" id="previewSelfie"></div>
+          </label>
+        </div>
+      </div>
+
+      <div class="controls">
+        <button class="btn" id="btnUpload">Upload Documents</button>
+      </div>
+    </div>
+  </main>
+
+  <nav class="bottom-nav">
+    <a class="nav-item" href="index.html"><img src="/img/house.png"><p>Home</p></a>
+    <a class="nav-item" href="trade.html"><img src="/img/trade.png"><p>Trade</p></a>
+    <a class="nav-item" href="internal-transfer.html"><img src="/img/transfer.png"><p>Transfer</p></a>
+    <a class="nav-item active" href="account.html"><img src="/img/myaccount.png"><p>Account</p></a>
+  </nav>
+
+  <script src="/js/language.js"></script>
+  <script>document.addEventListener('DOMContentLoaded', initLanguageSelector);</script>
+
+  <script>
+    function previewImage(input, previewContainerId) {
+      const container = document.getElementById(previewContainerId);
+      container.innerHTML = '';
+      if (input.files && input.files[0]) {
+        const img = document.createElement('img');
+        img.src = URL.createObjectURL(input.files[0]);
+        container.appendChild(img);
+      }
+    }
+
+    document.getElementById('idFront').addEventListener('change', e => previewImage(e.target, 'previewFront'));
+    document.getElementById('idBack').addEventListener('change', e => previewImage(e.target, 'previewBack'));
+    document.getElementById('idSelfie').addEventListener('change', e => previewImage(e.target, 'previewSelfie'));
+
+    document.getElementById('btnUpload').addEventListener('click', async () => {
+      const front = document.getElementById('idFront').files[0];
+      const back = document.getElementById('idBack').files[0];
+      const selfie = document.getElementById('idSelfie').files[0];
+      if (!front || !back || !selfie) return alert('Please select all 3 images');
+
+      const fd = new FormData();
+      fd.append('front', front);
+      fd.append('back', back);
+      fd.append('selfie', selfie);
+
+      try {
+        const res = await fetch('/api/verify-id', { method:'POST', credentials:'same-origin', body: fd });
+        const j = await res.json();
+        if (res.ok) alert('Uploaded, verification in progress'); 
+        else alert(j.error || 'Upload failed');
+      } catch(e){ console.error(e); alert('Network error'); }
+    });
+  </script>
+</body>
+</html>
