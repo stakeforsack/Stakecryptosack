@@ -1,14 +1,7 @@
 {
   "name": "godstake",
   "version": "1.0.0",
-  "description": "Crypto dashboard backend",
   "main": "server.js",
-  "scripts": {
-    "start": "node server.js",
-    "dev": "nodemon server.js",
-    "db:init": "node initdb.js",
-    "build": "prisma generate"
-  },
   "dependencies": {
     "@prisma/client": "^5.6.0",
     "bcryptjs": "^2.4.3",
@@ -17,11 +10,15 @@
     "express-session": "^1.17.3"
   },
   "devDependencies": {
-    "nodemon": "^3.0.1",
-    "prisma": "^5.6.0"
+    "prisma": "^5.6.0",
+    "nodemon": "^3.0.1"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs"
+  "scripts": {
+    "start": "node server.js",
+    "build": "prisma generate",
+    "dev": "nodemon server.js"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
 }
