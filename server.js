@@ -1,129 +1,98 @@
 const express = require('express');
-const session = require('express-session');
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const { PrismaClient } = require('@prisma/client');
 const cors = require('cors');
 
 const prisma = new PrismaClient();
 const app = express();
 
-// CORS middleware
 app.use(cors({
   origin: true,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
 }));
-
-// Handle preflight requests
-app.options('*', cors());
-
-// Parse JSON bodies
 app.use(express.json());
 
-// Session configuration
-app.use(session({
-  secret: process.env.SESSION_SECRET || 'your-secret-key',
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'none',
-    maxAge: 24 * 60 * 60 * 1000
-  }
-}));
+// JWT secret key
+const JWT_SECRET = process.env.JWT_SECRET || 'supersecretjwtkey';
 
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error(err);
-  res.status(500).json({ error: 'Internal Server Error' });
-});
-
-// Auth middleware
+// Middleware: verify JWT
 const needAuth = async (req, res, next) => {
-  if (!req.session.userId) {
-    return res.status(401).json({ error: 'Please login' });
+  const authHeader = req.headers.authorization;
+  if (!authHeader) return res.status(401).json({ error: 'No token provided' });
+
+  const token = authHeader.split(' ')[1];
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    req.userId = decoded.id;
+    next();
+  } catch (err) {
+    return res.status(401).json({ error: 'Invalid or expired token' });
   }
-  next();
 };
 
-// Update route to include /api prefix
+// ----------- AUTH ROUTES -----------
+
+// Register
 app.post('/api/register', async (req, res) => {
   try {
     const { email, username, password } = req.body;
-    
-    // Validate input
     if (!email || !username || !password) {
       return res.status(400).json({ error: 'All fields are required' });
     }
 
-    // Check if user exists
     const exists = await prisma.user.findFirst({
-      where: {
-        OR: [
-          { email },
-          { username }
-        ]
-      }
+      where: { OR: [{ email }, { username }] },
     });
-
     if (exists) {
       return res.status(400).json({ error: 'Email or username already taken' });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    
     const user = await prisma.user.create({
-      data: {
-        email,
-        username,
-        password: hashedPassword
-      }
+      data: { email, username, password: hashedPassword },
     });
 
-    // Set session
-    req.session.userId = user.id;
-    res.json({ ok: true });
-    
+    const token = jwt.sign({ id: user.id }, JWT_SECRET, { expiresIn: '7d' });
+    res.json({ ok: true, token, user: { id: user.id, email, username } });
   } catch (err) {
     console.error('Register error:', err);
     res.status(500).json({ error: 'Registration failed' });
   }
 });
 
-// Update login endpoint with better error handling
+// Login
 app.post('/api/login', async (req, res) => {
   try {
     const { email, password } = req.body;
-    
     if (!email || !password) {
-      return res.status(400).json({ error: 'Email and password are required' });
+      return res.status(400).json({ error: 'Email and password required' });
     }
 
-    const user = await prisma.user.findUnique({ 
-      where: { email } 
-    });
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) return res.status(401).json({ error: 'Invalid credentials' });
 
-    if (!user || !await bcrypt.compare(password, user.password)) {
-      return res.status(401).json({ error: 'Invalid email or password' });
-    }
+    const valid = await bcrypt.compare(password, user.password);
+    if (!valid) return res.status(401).json({ error: 'Invalid credentials' });
 
-    req.session.userId = user.id;
-    res.json({ ok: true });
+    const token = jwt.sign({ id: user.id }, JWT_SECRET, { expiresIn: '7d' });
+    res.json({ ok: true, token, user: { id: user.id, email, username: user.username } });
   } catch (err) {
     console.error('Login error:', err);
     res.status(500).json({ error: 'Login failed' });
   }
 });
 
-// Update deposit endpoint to include /api prefix
+// ----------- TRANSACTIONS -----------
+
+// Deposit
 app.post('/api/deposit', needAuth, async (req, res) => {
   try {
     const { coin, amount } = req.body;
-    const userId = req.session.userId;
-
     const tx = await prisma.transaction.create({
       data: {
-        userId,
+        userId: req.userId,
         type: 'DEPOSIT',
         coin,
         amount: parseFloat(amount),
@@ -131,7 +100,7 @@ app.post('/api/deposit', needAuth, async (req, res) => {
       }
     });
 
-    res.json({ 
+    res.json({
       ok: true,
       address: getCoinAddress(coin),
       txId: tx.id
@@ -142,15 +111,13 @@ app.post('/api/deposit', needAuth, async (req, res) => {
   }
 });
 
-// Update withdraw endpoint to include /api prefix
+// Withdraw
 app.post('/api/withdraw', needAuth, async (req, res) => {
   try {
     const { coin, amount, address } = req.body;
-    const userId = req.session.userId;
-
     const tx = await prisma.transaction.create({
       data: {
-        userId,
+        userId: req.userId,
         type: 'WITHDRAW',
         coin,
         amount: parseFloat(amount),
@@ -166,11 +133,11 @@ app.post('/api/withdraw', needAuth, async (req, res) => {
   }
 });
 
-// Update transactions endpoint to include /api prefix
+// Transactions list
 app.get('/api/transactions', needAuth, async (req, res) => {
   try {
     const transactions = await prisma.transaction.findMany({
-      where: { userId: req.session.userId },
+      where: { userId: req.userId },
       orderBy: { createdAt: 'desc' }
     });
     res.json({ ok: true, transactions });
@@ -180,29 +147,26 @@ app.get('/api/transactions', needAuth, async (req, res) => {
   }
 });
 
-// Add session check endpoint
-app.get('/api/session', async (req, res) => {
-  if (req.session.userId) {
-    const user = await prisma.user.findUnique({
-      where: { id: req.session.userId },
-      select: { id: true, email: true, username: true }
-    });
-    res.json({ ok: true, user });
-  } else {
-    res.status(401).json({ ok: false });
-  }
+// User session info (via token)
+app.get('/api/session', needAuth, async (req, res) => {
+  const user = await prisma.user.findUnique({
+    where: { id: req.userId },
+    select: { id: true, email: true, username: true }
+  });
+  res.json({ ok: true, user });
 });
 
-// Helper function for coin addresses
+// ----------- HELPERS -----------
+
 function getCoinAddress(coin) {
   const addresses = {
     BTC: 'bc1example...',
     ETH: '0xexample...',
     USDT: 'TRexample...'
-    // Add more coins as needed
   };
   return addresses[coin] || '';
 }
 
+// ----------- START SERVER -----------
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`Server running on ${PORT}`));

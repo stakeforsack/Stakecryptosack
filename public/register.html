@@ -17,8 +17,6 @@
       overflow: hidden;
       color: #fff;
     }
-
-    /* Floating animated dark neon shapes */
     body::before, body::after {
       content: '';
       position: absolute;
@@ -30,17 +28,11 @@
       animation: float 15s infinite alternate;
       z-index: 0;
     }
-    body::after {
-      animation-delay: 7s;
-      bottom: -80px; 
-      right: -80px;
-    }
+    body::after { animation-delay: 7s; bottom: -80px; right: -80px; }
     @keyframes float {
       0% { transform: translate(0,0) rotate(0deg); }
       100% { transform: translate(50px,-50px) rotate(360deg); }
     }
-
-    /* Card container */
     .card {
       position: relative;
       z-index: 1;
@@ -54,12 +46,7 @@
       backdrop-filter: blur(10px);
       animation: fadeIn 1s ease forwards;
     }
-
-    @keyframes fadeIn {
-      0% { opacity: 0; transform: translateY(-20px);}
-      100% { opacity: 1; transform: translateY(0);}
-    }
-
+    @keyframes fadeIn { 0%{opacity:0;transform:translateY(-20px);}100%{opacity:1;transform:translateY(0);} }
     .card h2 {
       text-align: center;
       font-size: 2rem;
@@ -76,12 +63,7 @@
       margin: 10px auto 0;
       border-radius: 2px;
     }
-
-    /* Floating labels */
-    .form-group {
-      position: relative;
-      margin-bottom: 25px;
-    }
+    .form-group { position: relative; margin-bottom: 25px; }
     input {
       width: 100%;
       padding: 15px;
@@ -92,12 +74,7 @@
       font-size: 1rem;
       transition: border-color 0.3s, box-shadow 0.3s;
     }
-    input:focus { 
-      border-color: #a855f7; 
-      outline: none; 
-      box-shadow: 0 0 8px #a855f7; 
-    }
-
+    input:focus { border-color: #a855f7; outline: none; box-shadow: 0 0 8px #a855f7; }
     label {
       position: absolute;
       top: 50%;
@@ -116,8 +93,6 @@
       font-size: 0.75rem;
       color: #a855f7;
     }
-
-    /* Buttons */
     button {
       width: 100%;
       padding: 15px;
@@ -130,11 +105,7 @@
       cursor: pointer;
       transition: 0.3s;
     }
-    button:hover {
-      filter: brightness(1.1);
-      transform: scale(1.02);
-    }
-
+    button:hover { filter: brightness(1.1); transform: scale(1.02); }
     .error {
       margin-top: 10px;
       color: #ff6b6b;
@@ -142,7 +113,6 @@
       display: none;
       text-align: center;
     }
-
     .small {
       font-size: 0.85rem;
       color: #999;
@@ -155,8 +125,6 @@
       font-weight: 600;
     }
     .small a:hover { text-decoration: underline; }
-
-    /* Animated glow around card */
     .card::before {
       content: '';
       position: absolute;
@@ -196,58 +164,60 @@
       <button type="submit">Register</button>
     </form>
 
-    <div class="small">Already have an account? <a href="/login.html">Login</a></div>
+    <div class="small">Already have an account? <a href="login.html">Login</a></div>
   </div>
 
   <script>
-document.getElementById('registerForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  
+  const form = document.getElementById('registerForm');
   const errorEl = document.getElementById('registerError');
-  const submitBtn = document.querySelector('button[type="submit"]');
-  
-  try {
-    // Clear previous errors
+  const button = document.querySelector('button[type="submit"]');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
     errorEl.style.display = 'none';
-    errorEl.textContent = '';
-    
-    // Disable button and show loading state
-    submitBtn.disabled = true;
-    submitBtn.textContent = 'Creating Account...';
-    
-    const res = await fetch('/api/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'same-origin',
-      body: JSON.stringify({
-        email: document.getElementById('email').value.trim(),
-        username: document.getElementById('username').value.trim(),
-        password: document.getElementById('password').value
-      })
-    });
+    button.disabled = true;
+    button.textContent = 'Creating Account...';
 
-    const data = await res.json();
-    
-    if (!res.ok) {
-      throw new Error(data.error || 'Registration failed');
+    const email = document.getElementById('email').value.trim();
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value.trim();
+
+    try {
+      const res = await fetch('/api/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, username, password })
+      });
+
+      const text = await res.text();
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        throw new Error(text);
+      }
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Registration failed');
+      }
+
+      // ✅ Save JWT token and redirect
+      if (data.token) {
+        localStorage.setItem('token', data.token);
+      }
+
+      button.textContent = 'Success!';
+      setTimeout(() => {
+        window.location.href = 'dashboard.html';
+      }, 1000);
+    } catch (err) {
+      console.error('Register error:', err);
+      errorEl.textContent = err.message || 'Server error';
+      errorEl.style.display = 'block';
+      button.disabled = false;
+      button.textContent = 'Register';
     }
-
-    // Show success state briefly before redirect
-    submitBtn.textContent = 'Success!';
-    setTimeout(() => {
-      window.location.href = '/index.html';
-    }, 500);
-    
-  } catch (err) {
-    console.error('Register error:', err);
-    errorEl.textContent = err.message;
-    errorEl.style.display = 'block';
-    
-    // Reset button state
-    submitBtn.disabled = false;
-    submitBtn.textContent = 'Create Account';
-  }
-});
+  });
   </script>
 </body>
 </html>
