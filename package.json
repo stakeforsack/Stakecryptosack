@@ -3,23 +3,23 @@
   "version": "1.0.0",
   "main": "server.js",
   "dependencies": {
-    "@prisma/client": "^5.6.0",
-    "bcryptjs": "^2.4.3",
-    "cors": "^2.8.5",
-    "debug": "^4.3.4",
-    "express": "^4.18.2",
-    "express-session": "^1.17.3"
+    "@prisma/client": "5.6.0",
+    "bcryptjs": "2.4.3",
+    "cors": "2.8.5",
+    "debug": "4.3.4",
+    "express": "4.18.2",
+    "express-session": "1.17.3"
   },
   "devDependencies": {
-    "prisma": "^5.6.0",
-    "nodemon": "^3.0.1"
+    "prisma": "5.6.0",
+    "nodemon": "3.0.1"
   },
   "scripts": {
     "start": "node server.js",
-    "build": "prisma generate",
+    "build": "npm install && prisma generate",
     "dev": "nodemon server.js"
   },
   "engines": {
-    "node": ">=16.0.0"
+    "node": "18.x"
   }
 }
