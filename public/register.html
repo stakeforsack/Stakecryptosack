@@ -1,9 +1,9 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Premium Dark Register</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Register | GodStake</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
     * {margin:0; padding:0; box-sizing:border-box;}
@@ -33,6 +33,7 @@
       0% { transform: translate(0,0) rotate(0deg); }
       100% { transform: translate(50px,-50px) rotate(360deg); }
     }
+
     .card {
       position: relative;
       z-index: 1;
@@ -45,10 +46,11 @@
       border: 1px solid rgba(255,255,255,0.1);
       backdrop-filter: blur(10px);
       animation: fadeIn 1s ease forwards;
+      text-align: center;
     }
     @keyframes fadeIn { 0%{opacity:0;transform:translateY(-20px);}100%{opacity:1;transform:translateY(0);} }
+
     .card h2 {
-      text-align: center;
       font-size: 2rem;
       color: #fff;
       margin-bottom: 30px;
@@ -63,6 +65,7 @@
       margin: 10px auto 0;
       border-radius: 2px;
     }
+
     .form-group { position: relative; margin-bottom: 25px; }
     input {
       width: 100%;
@@ -93,6 +96,7 @@
       font-size: 0.75rem;
       color: #a855f7;
     }
+
     button {
       width: 100%;
       padding: 15px;
@@ -106,18 +110,25 @@
       transition: 0.3s;
     }
     button:hover { filter: brightness(1.1); transform: scale(1.02); }
+    button:disabled { opacity: 0.6; cursor: not-allowed; }
+
     .error {
       margin-top: 10px;
       color: #ff6b6b;
       font-size: 0.9rem;
       display: none;
-      text-align: center;
     }
+    .success {
+      margin-top: 10px;
+      color: #90ee90;
+      font-size: 0.9rem;
+      display: none;
+    }
+
     .small {
       font-size: 0.85rem;
       color: #999;
       margin-top: 15px;
-      text-align: center;
     }
     .small a {
       color: #5eead4;
@@ -125,6 +136,7 @@
       font-weight: 600;
     }
     .small a:hover { text-decoration: underline; }
+
     .card::before {
       content: '';
       position: absolute;
@@ -145,82 +157,69 @@
 <body>
   <div class="card">
     <h2>Create Account</h2>
-
-    <form id="registerForm" method="POST">
-      <div class="form-group">
-        <input type="text" id="username" placeholder=" " required />
-        <label for="username">Username</label>
-      </div>
+    <form id="registerForm">
       <div class="form-group">
         <input type="email" id="email" placeholder=" " required />
         <label for="email">Email</label>
       </div>
       <div class="form-group">
+        <input type="text" id="username" placeholder=" " required />
+        <label for="username">Username</label>
+      </div>
+      <div class="form-group">
         <input type="password" id="password" placeholder=" " required />
         <label for="password">Password</label>
       </div>
-
       <div id="registerError" class="error"></div>
-      <button type="submit">Register</button>
+      <div id="registerSuccess" class="success"></div>
+      <button type="submit">Create Account</button>
     </form>
-
     <div class="small">Already have an account? <a href="login.html">Login</a></div>
   </div>
 
-  
   <script>
-      const form = document.getElementById("registerForm");
-      const messageEl = document.getElementById("message");
-      const button = document.querySelector("button[type='submit']");
+    const form = document.getElementById("registerForm");
+    const errorEl = document.getElementById("registerError");
+    const successEl = document.getElementById("registerSuccess");
+    const button = document.querySelector("button[type='submit']");
 
-      form.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        messageEl.style.display = "none";
-        button.disabled = true;
-        button.textContent = "Registering...";
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      errorEl.style.display = 'none';
+      successEl.style.display = 'none';
+      button.disabled = true;
+      button.textContent = 'Creating Account...';
 
-        const email = document.getElementById("email").value.trim();
-        const username = document.getElementById("username").value.trim();
-        const password = document.getElementById("password").value.trim();
+      const email = document.getElementById("email").value.trim();
+      const username = document.getElementById("username").value.trim();
+      const password = document.getElementById("password").value.trim();
 
-        try {
-          const res = await fetch("/api/register", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email, username, password })
-          });
+      try {
+        const res = await fetch("/api/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ email, username, password })
+        });
 
-          const text = await res.text();
-          let data;
-          try {
-            data = JSON.parse(text);
-          } catch {
-            throw new Error(text);
-          }
+        const text = await res.text();
+        let data;
+        try { data = JSON.parse(text); } catch { throw new Error(text); }
 
-          if (!res.ok) throw new Error(data.error || "Registration failed");
+        if (!res.ok) throw new Error(data.error || "Registration failed");
 
-          // Save JWT token and username
-          localStorage.setItem("token", data.token);
-          localStorage.setItem("username", data.user.username);
+        successEl.textContent = "Account created! Redirecting...";
+        successEl.style.display = 'block';
 
-          messageEl.textContent = "Registration successful! Redirecting...";
-          messageEl.style.color = "#90ee90";
-          messageEl.style.display = "block";
-
-          setTimeout(() => {
-            window.location.href = "dashboard.html";
-          }, 1000);
-
-        } catch (err) {
-          console.error("Error:", err);
-          messageEl.textContent = err.message || "Server error. Please try again later.";
-          messageEl.style.color = "#ff6b6b";
-          messageEl.style.display = "block";
-          button.disabled = false;
-          button.textContent = "Register";
-        }
-      });
+        setTimeout(() => window.location.href = "index.html", 1000);
+      } catch (err) {
+        console.error("Error:", err);
+        errorEl.textContent = err.message || "Server error. Please try again later.";
+        errorEl.style.display = 'block';
+        button.disabled = false;
+        button.textContent = 'Create Account';
+      }
+    });
   </script>
 
 </body>

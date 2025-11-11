@@ -110,16 +110,11 @@
       transition: 0.3s;
     }
     button:hover { filter: brightness(1.1); transform: scale(1.02); }
+    button:disabled { opacity: 0.6; cursor: not-allowed; }
 
     .error {
       margin-top: 10px;
       color: #ff6b6b;
-      font-size: 0.9rem;
-      display: none;
-    }
-    .success {
-      margin-top: 10px;
-      color: #90ee90;
       font-size: 0.9rem;
       display: none;
     }
@@ -158,16 +153,15 @@
     <h2>Login to GodStake</h2>
     <form id="loginForm">
       <div class="form-group">
-        <input type="email" id="email" placeholder=" " required />
-        <label for="email">Email</label>
+        <input type="text" id="userInput" placeholder=" " required />
+        <label for="userInput">Username or Email</label>
       </div>
       <div class="form-group">
         <input type="password" id="password" placeholder=" " required />
         <label for="password">Password</label>
       </div>
       <div id="loginError" class="error"></div>
-      <div id="loginSuccess" class="success"></div>
-      <button type="submit">Login</button>
+      <button type="submit" id="loginBtn">Login</button>
     </form>
     <div class="small">Don't have an account? <a href="register.html">Register</a></div>
   </div>
@@ -175,24 +169,29 @@
   <script>
     const form = document.getElementById("loginForm");
     const errorEl = document.getElementById("loginError");
-    const successEl = document.getElementById("loginSuccess");
-    const button = document.querySelector("button[type='submit']");
+    const button = document.getElementById("loginBtn");
+    const userInput = document.getElementById("userInput");
+    const passwordInput = document.getElementById("password");
 
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
       errorEl.style.display = 'none';
-      successEl.style.display = 'none';
       button.disabled = true;
       button.textContent = 'Logging in...';
 
-      const email = document.getElementById("email").value.trim();
-      const password = document.getElementById("password").value.trim();
+      const userOrEmail = userInput.value.trim();
+      const password = passwordInput.value.trim();
 
       try {
         const res = await fetch("/api/login", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password })
+          credentials: "include",
+          body: JSON.stringify({ 
+            username: userOrEmail,
+            email: userOrEmail,
+            password 
+          })
         });
 
         const text = await res.text();
@@ -201,15 +200,14 @@
 
         if (!res.ok) throw new Error(data.error || "Login failed");
 
-        if (data.token) {
-          localStorage.setItem("token", data.token);
+        if (data.user) {
+          localStorage.setItem("userId", data.user.id);
           localStorage.setItem("username", data.user.username);
+          localStorage.setItem("email", data.user.email);
         }
 
-        successEl.textContent = "Login successful! Redirecting...";
-        successEl.style.display = 'block';
-
-        setTimeout(() => window.location.href = "dashboard.html", 1000);
+        // Redirect without showing success message
+        window.location.href = "index.html";
       } catch (err) {
         console.error("Error:", err);
         errorEl.textContent = err.message || "Server error. Please try again later.";
