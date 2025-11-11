@@ -273,8 +273,33 @@
   <section class="account-header">
     <div class="user-info">
       <div class="avatar" id="userAvatar">U</div>
-      <div class="username" id="username">Username</div>
+      <div class="username" id="username" data-username>Loading...</div>
       <div class="vip-badge" id="vipLevel">VIP 1</div>
+    </div>
+  </section>
+
+  <!-- Wallet Section -->
+  <section id="walletSection" style="padding: 16px;">
+    <div style="background: rgba(26,26,26,0.8); border-radius: 12px; padding: 20px; margin-bottom: 16px; animation: fadeUpSmooth 0.8s forwards;">
+      <div style="font-size: 0.9rem; color: #999; margin-bottom: 8px;">Total Balance</div>
+      <div style="font-size: 1.8rem; color: var(--accent); font-weight: 700;" id="totalBalance">0.00</div>
+    </div>
+
+    <!-- Add this container for balance cards: -->
+    <div id="balanceCards" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;">
+      <!-- Balances will load here -->
+    </div>
+
+    <div style="background: rgba(26,26,26,0.8); border-radius: 12px; padding: 16px;">
+      <div style="font-size: 1rem; color: #fff; font-weight: 600; margin-bottom: 12px;">Quick Actions</div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <a href="deposit.html" style="background: var(--gradient); color: #fff; padding: 12px; border-radius: 8px; text-align: center; text-decoration: none; font-weight: 600; transition: 0.3s;">
+          Deposit
+        </a>
+        <a href="withdraw.html" style="background: #333; color: #fff; padding: 12px; border-radius: 8px; text-align: center; text-decoration: none; font-weight: 600; transition: 0.3s;">
+          Withdraw
+        </a>
+      </div>
     </div>
   </section>
 
@@ -300,6 +325,7 @@
     </a>
   </div>
 
+  <!-- Logout Button -->
   <button class="logout-btn" onclick="logout()">Logout</button>
 
   <!-- Bottom Navigation -->
@@ -321,25 +347,114 @@
   <script>
     document.addEventListener('DOMContentLoaded', async () => {
       try {
-        const res = await fetch('/api/me', { credentials: 'same-origin' });
-        if (res.status === 401) { window.location.href = '/login.html'; return; }
-        const j = await res.json().catch(() => null);
-        const user = (j && j.user) || {};
+        console.log('Loading profile...');
+        
+        const res = await fetch('/api/profile', { 
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+
+        console.log('Profile response status:', res.status);
+
+        if (res.status === 401) {
+          console.log('Not authenticated, redirecting to login');
+          setTimeout(() => {
+            window.location.href = '/login.html';
+          }, 1000);
+          return;
+        }
+        
+        if (!res.ok) {
+          const errorData = await res.json();
+          throw new Error(errorData.error || 'Failed to load profile');
+        }
+
+        const data = await res.json();
+        console.log('Profile data:', data);
+        
+        const user = data.user || {};
+        const balance = data.balance || {};
+        
+        // Display username
         const username = user.username || user.email || 'User';
-        document.getElementById('username').textContent = username;
-        document.getElementById('vipLevel').textContent = `VIP ${user.vip || 0}`;
-        document.getElementById('userAvatar').textContent = (username[0] || 'U').toUpperCase();
+        console.log('Setting username to:', username);
+        
+        const userElements = document.querySelectorAll('[data-username]');
+        userElements.forEach(el => {
+          el.textContent = username;
+        });
+
+        // Display email
+        const emailElements = document.querySelectorAll('[data-email]');
+        emailElements.forEach(el => {
+          el.textContent = user.email;
+        });
+
+        // Display wallet balances
+        displayBalances(balance);
+
       } catch (err) {
         console.error('Failed to load profile:', err);
+        alert('Error: ' + err.message);
         window.location.href = '/login.html';
       }
     });
 
+    function displayBalances(balance) {
+      console.log('Displaying balances:', balance);
+
+      const balanceContainer = document.getElementById('balanceCards');
+
+      if (!balanceContainer) {
+        console.warn('balanceCards container not found');
+        return;
+      }
+
+      balanceContainer.innerHTML = '';
+
+      const coins = Object.keys(balance || {});
+      let totalBalance = 0;
+
+      if (coins.length === 0) {
+        // Show 0 balance when no coins
+        document.getElementById('totalBalance').textContent = '0.00';
+        balanceContainer.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #999; padding: 20px;">No balance yet. Start depositing!</div>';
+        return;
+      }
+
+      coins.forEach(coin => {
+        const amount = balance[coin];
+        totalBalance += amount;
+        balanceContainer.innerHTML += `
+          <div style="background: rgba(26,26,26,0.8); border-radius: 10px; padding: 12px; text-align: center; border-left: 3px solid var(--accent);">
+            <div style="font-size: 0.8rem; color: #999; margin-bottom: 6px;">${coin}</div>
+            <div style="font-size: 1.3rem; color: var(--accent); font-weight: 700;">${amount.toFixed(4)}</div>
+            <div style="font-size: 0.75rem; color: #666; margin-top: 4px;">${coin}</div>
+          </div>
+        `;
+      });
+
+      // Update total balance
+      document.getElementById('totalBalance').textContent = totalBalance.toFixed(4);
+    }
+
     async function logout() {
       try {
-        await fetch('/api/logout', { method: 'POST', credentials: 'same-origin' });
-        window.location.href = '/login.html';
-      } catch (err) { alert('Logout failed.'); }
+        const res = await fetch('/api/logout', { 
+          method: 'POST', 
+          credentials: 'include' 
+        });
+        
+        if (res.ok) {
+          localStorage.clear();
+          window.location.href = '/login.html';
+        }
+      } catch (err) { 
+        console.error('Logout error:', err);
+        alert('Logout failed.');
+      }
     }
 
     function toggleLanguage(e) {

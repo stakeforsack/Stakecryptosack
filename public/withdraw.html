@@ -211,6 +211,8 @@
           const errorEl = document.getElementById('error');
           const successEl = document.getElementById('success');
 
+          let userBalance = {};
+
           function showError(msg){
             errorEl.textContent = msg;
             errorEl.style.display = 'block';
@@ -223,24 +225,39 @@
             errorEl.style.display = 'none';
           }
 
-          async function fetchBalance(){
+          async function loadUserBalance(){
             try {
-              const coin = currencyEl.value;
-              const res = await fetch('/api/balance?coin=' + coin, { credentials: 'same-origin' });
+              const res = await fetch('/api/profile', { 
+                credentials: 'include' 
+              });
+
               if(res.status === 401){
                 balanceEl.textContent = 'Please login';
                 setTimeout(()=> location.href='/login.html', 800);
                 return;
               }
+
+              if(!res.ok) throw new Error('Failed to load balance');
+
               const data = await res.json();
-              balanceEl.textContent = data.balance ? `${data.balance} ${coin}` : `0.00 ${coin}`;
+              userBalance = data.balance || {};
+              console.log('User balance loaded:', userBalance);
+              
+              // Display balance for selected currency
+              updateBalanceDisplay();
             } catch(err){
-              console.error(err);
+              console.error('Error loading balance:', err);
               balanceEl.textContent = 'Error loading balance';
             }
           }
 
-          currencyEl.addEventListener('change', fetchBalance);
+          function updateBalanceDisplay(){
+            const coin = currencyEl.value;
+            const amount = userBalance[coin] || 0;
+            balanceEl.textContent = `${amount.toFixed(4)} ${coin}`;
+          }
+
+          currencyEl.addEventListener('change', updateBalanceDisplay);
 
           form.addEventListener('submit', async (e)=>{
             e.preventDefault();
@@ -248,20 +265,26 @@
             successEl.style.display = 'none';
 
             const wallet = walletEl.value.trim();
-            const amount = amountEl.value.trim();
+            const amount = parseFloat(amountEl.value.trim());
             const coin = currencyEl.value;
 
             if(!wallet) return showError('Enter wallet address');
-            if(!amount || Number(amount) <= 0) return showError('Enter a valid amount');
+            if(!amount || amount <= 0) return showError('Enter a valid amount');
+
+            // Check if balance is sufficient
+            const availableBalance = userBalance[coin] || 0;
+            if(amount > availableBalance){
+              return showError(`Insufficient balance. Available: ${availableBalance.toFixed(4)} ${coin}`);
+            }
 
             submitBtn.disabled = true;
             const prevText = submitBtn.textContent;
             submitBtn.textContent = 'Processing...';
 
             try{
-              const res = await fetch('/withdraw', {
+              const res = await fetch('/api/withdraw', {
                 method: 'POST',
-                credentials:'same-origin',
+                credentials:'include',
                 headers:{ 'Content-Type':'application/json' },
                 body: JSON.stringify({ wallet, amount, coin })
               });
@@ -272,10 +295,12 @@
                 return showError(data.error || 'Withdrawal failed');
               }
 
-              showSuccess('Withdrawal request submitted!');
+              showSuccess('Withdrawal request submitted! Transaction ID: ' + data.txId);
               walletEl.value = '';
               amountEl.value = '';
-              fetchBalance();
+              loadUserBalance();
+
+              setTimeout(()=> location.href='/account.html', 3000);
             } catch(err){
               console.error(err);
               showError('Network error, try again');
@@ -285,7 +310,8 @@
             }
           });
 
-          fetchBalance();
+          // Load balance when page loads
+          window.addEventListener('load', loadUserBalance);
         })();
     </script>
 

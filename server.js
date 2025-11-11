@@ -31,10 +31,11 @@ app.use(session({
   resave: false,
   saveUninitialized: true,  // Changed to true
   cookie: {
-    secure: false,  // Set to false for localhost/testing
+    secure: false,  // Set to false for localhost/http
     httpOnly: true,
     sameSite: 'lax',
-    maxAge: 24 * 60 * 60 * 1000
+    maxAge: 24 * 60 * 60 * 1000,
+    path: '/'  // Add this
   }
 }));
 
@@ -49,7 +50,7 @@ mongoose.connect(process.env.MONGO_URI, {
   process.exit(1);
 });
 
-// User Schema
+// User Schema - FIX THE MISSING DEFAULT VALUE
 const userSchema = new mongoose.Schema({
   email: { type: String, unique: true, required: true },
   username: { type: String, unique: true, required: true },
@@ -66,19 +67,19 @@ const transactionSchema = new mongoose.Schema({
   type: { type: String, enum: ['DEPOSIT', 'WITHDRAW', 'TRANSFER'], required: true },
   coin: { type: String, required: true },
   amount: { type: Number, required: true },
-  status: { type: String, default: 'PENDING' },
+  status: { type: String, default: 'PENDING', enum: ['PENDING', 'CONFIRMED', 'FAILED'] },
   meta: mongoose.Schema.Types.Mixed,
   createdAt: { type: Date, default: Date.now }
 });
 
 const Transaction = mongoose.model('Transaction', transactionSchema);
 
-// Fix the needAuth middleware
+// Auth middleware with logging
 const needAuth = (req, res, next) => {
   console.log('🔐 Auth check:');
   console.log('   Session ID:', req.sessionID);
-  console.log('   Session userId:', req.session?.userId);
-  console.log('   All session:', req.session);
+  console.log('   Session data:', req.session);
+  console.log('   User ID:', req.session?.userId);
   
   if (!req.session || !req.session.userId) {
     console.log('❌ Not authenticated');
@@ -183,34 +184,52 @@ app.post("/api/login", async (req, res) => {
 // Deposit endpoint
 app.post("/api/deposit", needAuth, async (req, res) => {
   try {
+    console.log("💰 Deposit request received");
+    console.log("User ID:", req.session.userId);
+    console.log("Body:", req.body);
+
+    if (!req.session.userId) {
+      console.log("❌ No session userId");
+      return res.status(401).json({ error: "Please login first" });
+    }
+
     const { coin, amount } = req.body;
 
     if (!coin || !amount) {
+      console.log("❌ Missing coin or amount");
       return res.status(400).json({ error: "Coin and amount required" });
     }
 
     const numAmount = parseFloat(amount);
     if (isNaN(numAmount) || numAmount <= 0) {
+      console.log("❌ Invalid amount");
       return res.status(400).json({ error: "Amount must be greater than 0" });
     }
 
+    console.log("✓ Validation passed");
+
+    // Create transaction with PENDING status
     const tx = new Transaction({
-      userId: req.session.userId,
+      userId: new mongoose.Types.ObjectId(req.session.userId),
       type: "DEPOSIT",
       coin: coin.toUpperCase(),
       amount: numAmount,
-      status: "PENDING"
+      status: "PENDING",
+      createdAt: new Date()
     });
 
     const savedTx = await tx.save();
+    console.log("✓ Deposit transaction saved:", savedTx._id);
+    console.log("Transaction data:", savedTx);
 
     res.json({ 
       ok: true, 
       txId: savedTx._id,
-      message: "Deposit request received"
+      message: "Deposit request received. Transaction created with PENDING status."
     });
   } catch (err) {
-    console.error("Deposit error:", err);
+    console.error("❌ Deposit error:", err);
+    console.error("Error stack:", err.stack);
     res.status(500).json({ error: err.message || "Server error" });
   }
 });
@@ -218,10 +237,10 @@ app.post("/api/deposit", needAuth, async (req, res) => {
 // Withdraw endpoint
 app.post("/api/withdraw", needAuth, async (req, res) => {
   try {
-    const { coin, amount, address } = req.body;
+    const { coin, amount, wallet } = req.body;
 
-    if (!coin || !amount || !address) {
-      return res.status(400).json({ error: "Coin, amount, and address required" });
+    if (!coin || !amount || !wallet) {
+      return res.status(400).json({ error: "Coin, amount, and wallet address required" });
     }
 
     const numAmount = parseFloat(amount);
@@ -235,7 +254,7 @@ app.post("/api/withdraw", needAuth, async (req, res) => {
       coin: coin.toUpperCase(),
       amount: numAmount,
       status: "PENDING",
-      meta: { address }
+      meta: { wallet }
     });
 
     const savedTx = await tx.save();
@@ -247,17 +266,6 @@ app.post("/api/withdraw", needAuth, async (req, res) => {
     });
   } catch (err) {
     console.error("Withdraw error:", err);
-    res.status(500).json({ error: err.message || "Server error" });
-  }
-});
-
-// Get transactions
-app.get("/api/transactions", needAuth, async (req, res) => {
-  try {
-    const transactions = await Transaction.find({ userId: req.session.userId }).sort({ createdAt: -1 });
-    res.json({ ok: true, transactions });
-  } catch (err) {
-    console.error("Transactions error:", err);
     res.status(500).json({ error: err.message || "Server error" });
   }
 });
@@ -399,12 +407,110 @@ app.get("/api/health", (req, res) => {
   res.json({ ok: true, message: "Server is running" });
 });
 
-// 404 handler
+// Get user profile - MOVE THIS BEFORE THE 404 HANDLER
+app.get("/api/profile", needAuth, async (req, res) => {
+  try {
+    console.log('📋 Profile request for user:', req.session.userId);
+    
+    const user = await User.findById(req.session.userId).select('-password');
+    
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Get confirmed deposits by coin
+    const deposits = await Transaction.aggregate([
+      {
+        $match: {
+          userId: new mongoose.Types.ObjectId(req.session.userId),
+          type: "DEPOSIT",
+          status: "CONFIRMED"
+        }
+      },
+      {
+        $group: {
+          _id: "$coin",
+          total: { $sum: "$amount" }
+        }
+      }
+    ]);
+
+    // Get confirmed withdrawals by coin
+    const withdrawals = await Transaction.aggregate([
+      {
+        $match: {
+          userId: new mongoose.Types.ObjectId(req.session.userId),
+          type: "WITHDRAW",
+          status: "CONFIRMED"
+        }
+      },
+      {
+        $group: {
+          _id: "$coin",
+          total: { $sum: "$amount" }
+        }
+      }
+    ]);
+
+    const balance = {};
+    
+    deposits.forEach(dep => {
+      balance[dep._id] = (balance[dep._id] || 0) + dep.total;
+    });
+
+    withdrawals.forEach(wit => {
+      balance[wit._id] = (balance[wit._id] || 0) - wit.total;
+    });
+
+    console.log('✓ Profile loaded:', user.username);
+
+    res.json({ 
+      ok: true, 
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        vip: user.vip,
+        createdAt: user.createdAt
+      },
+      balance 
+    });
+  } catch (err) {
+    console.error("Profile error:", err);
+    res.status(500).json({ error: err.message || "Server error" });
+  }
+});
+
+// Get all transactions for user
+app.get("/api/transactions", needAuth, async (req, res) => {
+  try {
+    const transactions = await Transaction.find({ 
+      userId: req.session.userId 
+    }).sort({ createdAt: -1 }).limit(50);
+    
+    res.json({ ok: true, transactions });
+  } catch (err) {
+    console.error("Transactions error:", err);
+    res.status(500).json({ error: err.message || "Server error" });
+  }
+});
+
+// Logout
+app.post("/api/logout", (req, res) => {
+  req.session.destroy((err) => {
+    if (err) {
+      return res.status(500).json({ error: "Logout failed" });
+    }
+    res.json({ ok: true, message: "Logged out successfully" });
+  });
+});
+
+// 404 handler - MOVE TO END
 app.use((req, res) => {
   res.status(404).json({ error: 'Endpoint not found' });
 });
 
-// Error handler
+// Error handler - MOVE TO END
 app.use((err, req, res, next) => {
   console.error('Error:', err);
   res.status(500).json({ error: err.message || 'Internal server error' });

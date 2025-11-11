@@ -1,306 +1,427 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Transaction History</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Transaction History - GodStake</title>
+  <link rel="stylesheet" href="/style.css" />
 
   <style>
-    /* ===== Global Dark Theme ===== */
     :root {
-      --bg-color: #0f1117;
-      --card-bg: #1a1d27;
-      --accent: #4e9eff;
-      --accent-hover: #66b2ff;
-      --text-color: #e8ecf2;
-      --text-muted: #9ba3b5;
-      --success: #00e676;
-      --danger: #ff5252;
-      --pending: #fbc02d;
-      --radius: 10px;
-      --transition: 0.25s ease;
-    }
-
-    * {
-      box-sizing: border-box;
-      font-family: 'Inter', system-ui, sans-serif;
-      -webkit-tap-highlight-color: transparent;
+      --accent: #a855f7;
+      --gradient: linear-gradient(135deg, #a855f7, #7c3aed);
     }
 
     body {
-      background-color: var(--bg-color);
-      color: var(--text-color);
+      font-family: Arial, Helvetica, sans-serif;
+      background: linear-gradient(-45deg, #000000, #0b0b0b, #121212, #1a1a1a);
+      background-size: 400% 400%;
+      animation: gradientFlow 12s ease infinite;
+      color: #fff;
       margin: 0;
-      min-height: 100vh;
+      padding-bottom: 80px;
+      overflow-x: hidden;
+    }
+
+    @keyframes gradientFlow {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    /* === Header === */
+    header.header {
       display: flex;
-      flex-direction: column;
+      align-items: center;
+      padding: 16px;
+      background: rgba(15,15,15,0.9);
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      backdrop-filter: blur(12px);
+      gap: 12px;
     }
 
-    /* ===== Header ===== */
-    .header {
-      height: 56px;
-      background: linear-gradient(90deg, #171a22, #10121a);
-      box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+    .back-btn {
+      background: none;
+      border: none;
+      color: var(--accent);
+      font-size: 1.5rem;
+      cursor: pointer;
+      padding: 0;
+      display: flex;
+      align-items: center;
     }
 
-    /* ===== Main Container ===== */
-    .account-container {
+    header h1 {
+      margin: 0;
+      font-size: 1.3rem;
       flex: 1;
+    }
+
+    /* === Filter Section === */
+    .filter-section {
       padding: 16px;
       display: flex;
-      justify-content: center;
-      align-items: flex-start;
-    }
-
-    .account-card {
-      background: var(--card-bg);
-      border-radius: var(--radius);
-      padding: 18px;
-      width: 100%;
-      max-width: 600px;
-      box-shadow: 0 4px 14px rgba(0,0,0,0.4);
-      transition: transform var(--transition), box-shadow var(--transition);
-      animation: fadeIn 0.5s ease;
-    }
-
-    .account-card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 18px rgba(0,0,0,0.6);
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    h2 {
-      color: var(--accent);
-      text-align: center;
-      margin-bottom: 16px;
-    }
-
-    /* ===== Table Styling ===== */
-    .table {
-      border-collapse: collapse;
-      width: 100%;
-      font-size: 0.9rem;
-    }
-
-    .table th, .table td {
-      padding: 10px 8px;
-      text-align: center;
-      border-bottom: 1px solid rgba(255,255,255,0.05);
-    }
-
-    .table thead {
-      background: rgba(255,255,255,0.05);
-      color: var(--accent);
-    }
-
-    .table tbody tr {
-      transition: background 0.25s ease;
-    }
-
-    .table tbody tr:hover {
-      background: rgba(255,255,255,0.05);
-    }
-
-    .status-success {
-      color: var(--success);
-      font-weight: 600;
-    }
-
-    .status-failed {
-      color: var(--danger);
-      font-weight: 600;
-    }
-
-    .status-pending {
-      color: var(--pending);
-      font-weight: 600;
-    }
-
-    /* ===== Controls ===== */
-    .controls {
-      display: flex;
-      justify-content: center;
       gap: 10px;
-      margin-top: 16px;
+      overflow-x: auto;
     }
 
-    .btn {
-      background: var(--accent);
-      border: none;
-      color: #fff;
-      padding: 10px 18px;
-      border-radius: var(--radius);
+    .filter-btn {
+      padding: 8px 16px;
+      background: rgba(26,26,26,0.8);
+      border: 1px solid #333;
+      color: #999;
+      border-radius: 20px;
       cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.3s;
+      font-weight: 500;
+    }
+
+    .filter-btn.active {
+      background: var(--gradient);
+      color: #fff;
+      border-color: var(--accent);
+    }
+
+    .filter-btn:hover {
+      border-color: var(--accent);
+    }
+
+    /* === Transaction List === */
+    .tx-container {
+      padding: 16px;
+    }
+
+    .tx-item {
+      background: rgba(26,26,26,0.8);
+      padding: 16px;
+      margin-bottom: 12px;
+      border-radius: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-left: 4px solid var(--accent);
+      animation: slideIn 0.4s ease;
+      transition: all 0.3s;
+    }
+
+    .tx-item:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 20px rgba(168,85,247,0.2);
+    }
+
+    .tx-item.withdraw {
+      border-left-color: #ff6b6b;
+    }
+
+    .tx-item.transfer {
+      border-left-color: #5eead4;
+    }
+
+    .tx-item.confirmed {
+      border-left-color: #90ee90;
+    }
+
+    .tx-item.pending {
+      opacity: 0.7;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateX(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    .tx-left {
+      flex: 1;
+    }
+
+    .tx-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: rgba(168,85,247,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 12px;
+      font-size: 1.2rem;
+    }
+
+    .tx-item.withdraw .tx-icon {
+      background: rgba(255,107,107,0.2);
+    }
+
+    .tx-item.transfer .tx-icon {
+      background: rgba(94,234,212,0.2);
+    }
+
+    .tx-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .tx-details h4 {
+      margin: 0 0 4px 0;
+      font-size: 1rem;
+      color: #fff;
       font-weight: 600;
-      transition: background var(--transition), transform var(--transition), box-shadow var(--transition);
     }
 
-    .btn:hover {
-      background: var(--accent-hover);
-      transform: translateY(-1px);
-      box-shadow: 0 4px 8px rgba(78,158,255,0.3);
+    .tx-details p {
+      margin: 0;
+      font-size: 0.85rem;
+      color: #999;
     }
 
-    .btn:active {
-      transform: translateY(0);
-      box-shadow: none;
+    .tx-right {
+      text-align: right;
     }
 
-    /* ===== Bottom Navigation ===== */
+    .tx-amount {
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: var(--accent);
+      margin-bottom: 4px;
+    }
+
+    .tx-item.withdraw .tx-amount {
+      color: #ff6b6b;
+    }
+
+    .tx-item.transfer .tx-amount {
+      color: #5eead4;
+    }
+
+    .tx-status {
+      font-size: 0.75rem;
+      background: rgba(168,85,247,0.2);
+      color: var(--accent);
+      padding: 4px 10px;
+      border-radius: 12px;
+      display: inline-block;
+      font-weight: 600;
+    }
+
+    .tx-status.confirmed {
+      background: rgba(144,238,144,0.2);
+      color: #90ee90;
+    }
+
+    .tx-status.pending {
+      background: rgba(251,191,36,0.2);
+      color: #fbbf24;
+    }
+
+    .tx-status.failed {
+      background: rgba(255,107,107,0.2);
+      color: #ff6b6b;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #999;
+    }
+
+    .empty-state svg {
+      width: 80px;
+      height: 80px;
+      margin-bottom: 20px;
+      opacity: 0.5;
+    }
+
+    .empty-state p {
+      margin: 0;
+      font-size: 1rem;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #999;
+    }
+
+    /* === Bottom Navigation === */
     .bottom-nav {
       position: fixed;
       bottom: 0;
       left: 0;
-      width: 100%;
-      background: #14161e;
+      right: 0;
+      background: rgba(15,15,15,0.9);
+      border-top: 1px solid rgba(255,255,255,0.05);
       display: flex;
       justify-content: space-around;
       align-items: center;
-      padding: 8px 0;
-      border-top: 1px solid #252837;
+      height: 60px;
       z-index: 10;
+      backdrop-filter: blur(12px);
     }
 
-    .nav-item {
+    .bottom-nav a {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 4px;
       text-decoration: none;
-      color: var(--text-muted);
-      font-size: 0.8rem;
-      transition: color var(--transition), transform var(--transition);
+      font-size: 12px;
+      color: #999;
+      transition: all 0.3s ease;
     }
 
-    .nav-item img {
-      width: 22px;
-      filter: brightness(0.8);
-      transition: filter var(--transition);
+    .bottom-nav a.active {
+      color: var(--accent);
     }
 
-    .nav-item:hover {
+    .bottom-nav a:hover {
       color: var(--accent);
       transform: translateY(-2px);
     }
 
-    .nav-item.active {
-      color: var(--accent);
-    }
-
-    .nav-item.active img {
-      filter: brightness(1.2);
-    }
-
-    /* ===== Responsive ===== */
-    @media (max-width: 600px) {
-      .account-card {
-        padding: 14px;
-      }
-
-      h2 {
-        font-size: 1.2rem;
-      }
-
-      .table th, .table td {
-        padding: 8px 4px;
-        font-size: 0.8rem;
-      }
-
-      .btn {
-        padding: 8px 12px;
-        font-size: 0.85rem;
-      }
-
-      .bottom-nav {
-        padding: 6px 0;
-      }
-
-      .nav-item img {
-        width: 20px;
-      }
+    .bottom-nav img {
+      width: 24px;
+      height: 24px;
+      margin-bottom: 2px;
     }
   </style>
 </head>
-
 <body>
-  <header class="header"></header>
+  <!-- Header -->
+  <header class="header">
+    <button class="back-btn" onclick="window.history.back()">←</button>
+    <h1>Transaction History</h1>
+  </header>
 
-  <main class="account-container">
-    <div class="account-card">
-      <h2>Transaction History</h2>
-      <div style="overflow:auto">
-        <table class="table" id="txTable">
-          <thead>
-            <tr><th>Date</th><th>Type</th><th>Coin</th><th>Amount</th><th>Status</th></tr>
-          </thead>
-          <tbody id="txBody"><tr><td colspan="5">Loading…</td></tr></tbody>
-        </table>
-      </div>
+  <!-- Filters -->
+  <div class="filter-section">
+    <button class="filter-btn active" onclick="filterTransactions('all')">All</button>
+    <button class="filter-btn" onclick="filterTransactions('DEPOSIT')">Deposits</button>
+    <button class="filter-btn" onclick="filterTransactions('WITHDRAW')">Withdrawals</button>
+    <button class="filter-btn" onclick="filterTransactions('TRANSFER')">Transfers</button>
+    <button class="filter-btn" onclick="filterTransactions('CONFIRMED')">Confirmed</button>
+    <button class="filter-btn" onclick="filterTransactions('PENDING')">Pending</button>
+  </div>
 
-      <div class="controls">
-        <button class="btn" id="prev">Prev</button>
-        <button class="btn" id="next">Next</button>
-      </div>
-    </div>
-  </main>
+  <!-- Transactions -->
+  <div class="tx-container" id="txContainer">
+    <div class="loading">Loading transactions...</div>
+  </div>
 
+  <!-- Bottom Navigation -->
   <nav class="bottom-nav">
-    <a class="nav-item" href="index.html"><img src="/img/house.png"><p>Home</p></a>
-    <a class="nav-item" href="trade.html"><img src="/img/trade.png"><p>Trade</p></a>
-    <a class="nav-item" href="internal-transfer.html"><img src="/img/transfer.png"><p>Transfer</p></a>
-    <a class="nav-item active" href="account.html"><img src="/img/myaccount.png"><p>Account</p></a>
+    <a href="index.html">
+      <img src="/img/house.png" alt="Home"><span>Home</span>
+    </a>
+    <a href="trade.html">
+      <img src="/img/trade.png" alt="Trade"><span>Trade</span>
+    </a>
+    <a href="internal-transfer.html">
+      <img src="/img/transfer.png" alt="Transfer"><span>Transfer</span>
+    </a>
+    <a href="account.html">
+      <img src="/img/myaccount.png" alt="Account"><span>Account</span>
+    </a>
   </nav>
 
   <script>
-    let page = 1;
+    let allTransactions = [];
+    let currentFilter = 'all';
 
-    async function loadPage() {
-      const body = document.getElementById('txBody');
-      body.innerHTML = '<tr><td colspan="5" style="color:#888;">Loading…</td></tr>';
-
+    async function loadTransactions() {
       try {
-        const res = await fetch(`/api/transactions?page=${page}`, { credentials:'same-origin' });
-        if (!res.ok) {
-          body.innerHTML = '<tr><td colspan="5" style="color:#f66;">⚠️ Failed to load data</td></tr>';
-          return;
-        }
-        const j = await res.json();
-
-        if (!j.rows || j.rows.length === 0) {
-          body.innerHTML = '<tr><td colspan="5" style="color:#888;">No transactions</td></tr>';
-          return;
-        }
-
-        body.innerHTML = j.rows.map(r => {
-          let statusClass = 'status-pending';
-          if (r.status?.toLowerCase().includes('success')) statusClass = 'status-success';
-          else if (r.status?.toLowerCase().includes('fail')) statusClass = 'status-failed';
-
-          return `
-            <tr style="animation: fadeIn 0.4s ease;">
-              <td>${new Date(r.created_at).toLocaleString()}</td>
-              <td>${r.type}</td>
-              <td>${r.coin}</td>
-              <td>${r.amount}</td>
-              <td class="${statusClass}">${r.status}</td>
-            </tr>
-          `;
-        }).join('');
-
-      } catch(e) {
-        console.error(e);
-        body.innerHTML = '<tr><td colspan="5" style="color:#f66;">⚠️ Network error</td></tr>';
+        const res = await fetch('/api/transactions', { credentials: 'include' });
+        if (res.status === 401) { window.location.href = '/login.html'; return; }
+        if (!res.ok) throw new Error('Failed to load');
+        
+        const data = await res.json();
+        allTransactions = data.transactions || [];
+        displayTransactions();
+      } catch (err) {
+        console.error('Error:', err);
+        document.getElementById('txContainer').innerHTML = '<div class="empty-state"><p>Error loading transactions</p></div>';
       }
     }
 
-    document.getElementById('prev').addEventListener('click', ()=>{ if(page>1){ page--; loadPage(); }});
-    document.getElementById('next').addEventListener('click', ()=>{ page++; loadPage(); });
+    function getIcon(type) {
+      const icons = {
+        'DEPOSIT': '📥',
+        'WITHDRAW': '📤',
+        'TRANSFER': '↔️'
+      };
+      return icons[type] || '💸';
+    }
 
-    loadPage();
+    function displayTransactions() {
+      const container = document.getElementById('txContainer');
+      
+      let filtered = allTransactions;
+      
+      if (currentFilter !== 'all') {
+        filtered = allTransactions.filter(tx => {
+          if (currentFilter === 'CONFIRMED' || currentFilter === 'PENDING') {
+            return tx.status === currentFilter;
+          }
+          return tx.type === currentFilter;
+        });
+      }
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <p>No transactions found</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = filtered.map(tx => {
+        const date = new Date(tx.createdAt);
+        const dateStr = date.toLocaleDateString();
+        const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        
+        const typeClass = tx.type === 'WITHDRAW' ? 'withdraw' : tx.type === 'TRANSFER' ? 'transfer' : '';
+        const statusClass = tx.status.toLowerCase();
+        const icon = getIcon(tx.type);
+        const sign = tx.type === 'WITHDRAW' ? '-' : '+';
+
+        return `
+          <div class="tx-item ${typeClass} ${statusClass}">
+            <div class="tx-info">
+              <div class="tx-icon">${icon}</div>
+              <div class="tx-details">
+                <h4>${tx.type}</h4>
+                <p>${tx.coin} • ${dateStr} ${timeStr}</p>
+              </div>
+            </div>
+            <div class="tx-right">
+              <div class="tx-amount">${sign} ${tx.amount}</div>
+              <div class="tx-status ${statusClass}">${tx.status}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function filterTransactions(type) {
+      currentFilter = type;
+      
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      event.target.classList.add('active');
+      
+      displayTransactions();
+    }
+
+    window.addEventListener('load', loadTransactions);
   </script>
 </body>
 </html>
