@@ -248,7 +248,17 @@
 
       } catch (err) {
         console.error('Deposit error:', err);
-        errorDiv.textContent = '✗ ' + err.message;
+        
+        let errorMessage = 'Server error. Please try again.';
+        if (err instanceof Error) {
+          errorMessage = err.message;
+        } else if (typeof err === 'string') {
+          errorMessage = err;
+        } else if (err && err.message) {
+          errorMessage = err.message;
+        }
+        
+        errorDiv.textContent = '✗ ' + errorMessage;
         errorDiv.style.display = 'block';
         submitBtn.disabled = false;
         submitBtn.textContent = 'Submit Deposit';
