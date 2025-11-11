@@ -304,5 +304,25 @@ app.get("/api/health", (req, res) => {
   res.json({ ok: true, message: "Server is running" });
 });
 
+// Add this middleware to log all requests
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  next();
+});
+
+// Error handling middleware - ADD THIS at the end before listen
+app.use((err, req, res, next) => {
+  console.error('❌ Global error handler:', err);
+  console.error('Error message:', err.message);
+  console.error('Error stack:', err.stack);
+  res.status(500).json({ error: err.message || 'Internal server error' });
+});
+
+// 404 handler
+app.use((req, res) => {
+  console.log('❌ 404 Not Found:', req.url);
+  res.status(404).json({ error: 'Endpoint not found' });
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`✓ Server running on port ${PORT}`));
