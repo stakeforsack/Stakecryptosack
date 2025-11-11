@@ -4,83 +4,186 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Login | GodStake</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
+    * {margin:0; padding:0; box-sizing:border-box;}
     body {
-      font-family: Arial, sans-serif;
-      background: linear-gradient(135deg, #141e30, #243b55);
-      color: white;
+      font-family: 'Inter', sans-serif;
+      height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
-      height: 100vh;
-      margin: 0;
+      background: #0b0b0b;
+      overflow: hidden;
+      color: #fff;
     }
-    .login-container {
-      background: rgba(255, 255, 255, 0.1);
-      padding: 2rem;
-      border-radius: 16px;
-      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
-      width: 320px;
+    body::before, body::after {
+      content: '';
+      position: absolute;
+      width: 300px;
+      height: 300px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.03);
+      box-shadow: 0 0 80px 10px rgba(168,85,247,0.2);
+      animation: float 15s infinite alternate;
+      z-index: 0;
+    }
+    body::after { animation-delay: 7s; bottom: -80px; right: -80px; }
+    @keyframes float {
+      0% { transform: translate(0,0) rotate(0deg); }
+      100% { transform: translate(50px,-50px) rotate(360deg); }
+    }
+
+    .card {
+      position: relative;
+      z-index: 1;
+      background: rgba(20,20,20,0.95);
+      border-radius: 20px;
+      padding: 40px 30px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.7);
+      border: 1px solid rgba(255,255,255,0.1);
+      backdrop-filter: blur(10px);
+      animation: fadeIn 1s ease forwards;
       text-align: center;
-      backdrop-filter: blur(8px);
     }
-    h2 {
-      margin-bottom: 1rem;
+    @keyframes fadeIn { 0%{opacity:0;transform:translateY(-20px);}100%{opacity:1;transform:translateY(0);} }
+
+    .card h2 {
+      font-size: 2rem;
+      color: #fff;
+      margin-bottom: 30px;
+      position: relative;
     }
+    .card h2::after {
+      content: '';
+      width: 60px;
+      height: 3px;
+      background: #a855f7;
+      display: block;
+      margin: 10px auto 0;
+      border-radius: 2px;
+    }
+
+    .form-group { position: relative; margin-bottom: 25px; }
     input {
       width: 100%;
-      padding: 0.7rem;
-      margin-bottom: 1rem;
-      border: none;
-      border-radius: 8px;
-      outline: none;
+      padding: 15px;
+      background: #0b0b0b;
+      border: 1px solid #333;
+      border-radius: 10px;
+      color: #fff;
       font-size: 1rem;
+      transition: border-color 0.3s, box-shadow 0.3s;
     }
+    input:focus { border-color: #a855f7; outline: none; box-shadow: 0 0 8px #a855f7; }
+    label {
+      position: absolute;
+      top: 50%;
+      left: 15px;
+      color: #aaa;
+      transform: translateY(-50%);
+      pointer-events: none;
+      transition: 0.3s ease all;
+      background: rgba(20,20,20,0.95);
+      padding: 0 5px;
+    }
+    input:focus + label,
+    input:not(:placeholder-shown) + label {
+      top: -10px;
+      left: 10px;
+      font-size: 0.75rem;
+      color: #a855f7;
+    }
+
     button {
       width: 100%;
-      padding: 0.8rem;
-      background-color: #00c6ff;
+      padding: 15px;
       border: none;
-      border-radius: 8px;
-      color: white;
+      border-radius: 12px;
+      background: linear-gradient(90deg,#a855f7,#5eead4);
+      color: #fff;
+      font-weight: 600;
       font-size: 1rem;
       cursor: pointer;
       transition: 0.3s;
     }
-    button:hover {
-      background-color: #0072ff;
-    }
-    .message {
-      margin-top: 1rem;
+    button:hover { filter: brightness(1.1); transform: scale(1.02); }
+
+    .error {
+      margin-top: 10px;
+      color: #ff6b6b;
       font-size: 0.9rem;
-      color: #ffb3b3;
+      display: none;
     }
-    a {
-      color: #00c6ff;
+    .success {
+      margin-top: 10px;
+      color: #90ee90;
+      font-size: 0.9rem;
+      display: none;
+    }
+
+    .small {
+      font-size: 0.85rem;
+      color: #999;
+      margin-top: 15px;
+    }
+    .small a {
+      color: #5eead4;
       text-decoration: none;
+      font-weight: 600;
+    }
+    .small a:hover { text-decoration: underline; }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: -10px; left: -10px; right: -10px; bottom: -10px;
+      background: linear-gradient(45deg,#5eead4,#a855f7,#ff5ca2,#5eead4);
+      z-index: -1;
+      filter: blur(20px);
+      border-radius: 25px;
+      animation: glow 6s linear infinite;
+    }
+    @keyframes glow {
+      0%{background-position:0% 50%;}
+      50%{background-position:100% 50%;}
+      100%{background-position:0% 50%;}
     }
   </style>
 </head>
 <body>
-
-  <div class="login-container">
+  <div class="card">
     <h2>Login to GodStake</h2>
     <form id="loginForm">
-      <input type="email" id="email" placeholder="Email" required />
-      <input type="password" id="password" placeholder="Password" required />
+      <div class="form-group">
+        <input type="email" id="email" placeholder=" " required />
+        <label for="email">Email</label>
+      </div>
+      <div class="form-group">
+        <input type="password" id="password" placeholder=" " required />
+        <label for="password">Password</label>
+      </div>
+      <div id="loginError" class="error"></div>
+      <div id="loginSuccess" class="success"></div>
       <button type="submit">Login</button>
     </form>
-    <div class="message" id="message"></div>
-    <p>Don't have an account? <a href="register.html">Register</a></p>
+    <div class="small">Don't have an account? <a href="register.html">Register</a></div>
   </div>
 
   <script>
     const form = document.getElementById("loginForm");
-    const message = document.getElementById("message");
+    const errorEl = document.getElementById("loginError");
+    const successEl = document.getElementById("loginSuccess");
+    const button = document.querySelector("button[type='submit']");
 
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
-      message.textContent = "";
+      errorEl.style.display = 'none';
+      successEl.style.display = 'none';
+      button.disabled = true;
+      button.textContent = 'Logging in...';
 
       const email = document.getElementById("email").value.trim();
       const password = document.getElementById("password").value.trim();
@@ -92,36 +195,26 @@
           body: JSON.stringify({ email, password })
         });
 
-        // Read response safely
         const text = await res.text();
         let data;
-        try {
-          data = JSON.parse(text);
-        } catch {
-          throw new Error(text);
-        }
+        try { data = JSON.parse(text); } catch { throw new Error(text); }
 
-        if (!res.ok) {
-          message.textContent = data.error || "Login failed";
-          return;
-        }
+        if (!res.ok) throw new Error(data.error || "Login failed");
 
-        // Save JWT token
-        localStorage.setItem("token", data.token);
-        message.style.color = "#90ee90";
-        message.textContent = "Login successful! Redirecting...";
+        if (data.token) localStorage.setItem("token", data.token);
 
-        // Redirect after a short delay
-        setTimeout(() => {
-          window.location.href = "dashboard.html";
-        }, 1000);
+        successEl.textContent = "Login successful! Redirecting...";
+        successEl.style.display = 'block';
 
+        setTimeout(() => window.location.href = "dashboard.html", 1000);
       } catch (err) {
         console.error("Error:", err);
-        message.textContent = "Server error. Please try again later.";
+        errorEl.textContent = err.message || "Server error. Please try again later.";
+        errorEl.style.display = 'block';
+        button.disabled = false;
+        button.textContent = 'Login';
       }
     });
   </script>
-
 </body>
 </html>
