@@ -190,7 +190,7 @@
         headers: {
           "Content-Type": "application/json"
         },
-        credentials: "include",
+        credentials: "include",  // IMPORTANT - This sends cookies
         body: JSON.stringify({ 
           username: userOrEmail,
           email: userOrEmail,

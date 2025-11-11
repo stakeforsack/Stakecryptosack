@@ -29,11 +29,11 @@ app.use(express.static(path.join(__dirname, "public")));
 app.use(session({
   secret: process.env.SESSION_SECRET || "your-secret-key-change-this",
   resave: false,
-  saveUninitialized: false,
+  saveUninitialized: true,  // Changed to true
   cookie: {
-    secure: process.env.NODE_ENV === 'production',
+    secure: false,  // Set to false for localhost/testing
     httpOnly: true,
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    sameSite: 'lax',
     maxAge: 24 * 60 * 60 * 1000
   }
 }));
@@ -73,11 +73,19 @@ const transactionSchema = new mongoose.Schema({
 
 const Transaction = mongoose.model('Transaction', transactionSchema);
 
-// Auth middleware
+// Fix the needAuth middleware
 const needAuth = (req, res, next) => {
+  console.log('🔐 Auth check:');
+  console.log('   Session ID:', req.sessionID);
+  console.log('   Session userId:', req.session?.userId);
+  console.log('   All session:', req.session);
+  
   if (!req.session || !req.session.userId) {
+    console.log('❌ Not authenticated');
     return res.status(401).json({ error: "Please login" });
   }
+  
+  console.log('✓ Authenticated - userId:', req.session.userId);
   next();
 };
 
@@ -250,6 +258,138 @@ app.get("/api/transactions", needAuth, async (req, res) => {
     res.json({ ok: true, transactions });
   } catch (err) {
     console.error("Transactions error:", err);
+    res.status(500).json({ error: err.message || "Server error" });
+  }
+});
+
+// Payment verification endpoint
+app.post("/api/verify-payment", needAuth, async (req, res) => {
+  try {
+    const { txId, coin } = req.body;
+
+    if (!txId || !coin) {
+      return res.status(400).json({ error: "Transaction ID and coin required" });
+    }
+
+    const tx = await Transaction.findById(txId);
+
+    if (!tx || tx.userId.toString() !== req.session.userId.toString()) {
+      return res.status(403).json({ error: "Transaction not found" });
+    }
+
+    // Here you would integrate with blockchain APIs to verify payment
+    // For now, we'll use a manual admin verification system
+    
+    res.json({ 
+      ok: true, 
+      status: tx.status,
+      amount: tx.amount,
+      coin: tx.coin
+    });
+  } catch (err) {
+    console.error("Verify payment error:", err);
+    res.status(500).json({ error: err.message || "Server error" });
+  }
+});
+
+// Get single transaction details
+app.get("/api/transaction/:id", needAuth, async (req, res) => {
+  try {
+    const tx = await Transaction.findById(req.params.id);
+
+    if (!tx || tx.userId.toString() !== req.session.userId.toString()) {
+      return res.status(403).json({ error: "Transaction not found" });
+    }
+
+    res.json({ ok: true, transaction: tx });
+  } catch (err) {
+    console.error("Get transaction error:", err);
+    res.status(500).json({ error: err.message || "Server error" });
+  }
+});
+
+// Admin endpoint to mark payment as confirmed (webhook from blockchain or manual)
+app.post("/api/admin/confirm-payment", async (req, res) => {
+  try {
+    // In production, add proper admin authentication
+    const adminKey = req.headers['x-admin-key'];
+    if (adminKey !== process.env.ADMIN_KEY) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    const { txId } = req.body;
+
+    const tx = await Transaction.findByIdAndUpdate(
+      txId,
+      { status: "CONFIRMED" },
+      { new: true }
+    );
+
+    if (!tx) {
+      return res.status(404).json({ error: "Transaction not found" });
+    }
+
+    console.log("✓ Payment confirmed for transaction:", txId);
+
+    res.json({ 
+      ok: true, 
+      message: "Payment confirmed",
+      transaction: tx
+    });
+  } catch (err) {
+    console.error("Confirm payment error:", err);
+    res.status(500).json({ error: err.message || "Server error" });
+  }
+});
+
+// Get user balance (sum of confirmed deposits minus withdrawals)
+app.get("/api/balance", needAuth, async (req, res) => {
+  try {
+    const deposits = await Transaction.aggregate([
+      {
+        $match: {
+          userId: new mongoose.Types.ObjectId(req.session.userId),
+          type: "DEPOSIT",
+          status: "CONFIRMED"
+        }
+      },
+      {
+        $group: {
+          _id: "$coin",
+          total: { $sum: "$amount" }
+        }
+      }
+    ]);
+
+    const withdrawals = await Transaction.aggregate([
+      {
+        $match: {
+          userId: new mongoose.Types.ObjectId(req.session.userId),
+          type: "WITHDRAW",
+          status: "CONFIRMED"
+        }
+      },
+      {
+        $group: {
+          _id: "$coin",
+          total: { $sum: "$amount" }
+        }
+      }
+    ]);
+
+    const balance = {};
+    
+    deposits.forEach(dep => {
+      balance[dep._id] = (balance[dep._id] || 0) + dep.total;
+    });
+
+    withdrawals.forEach(wit => {
+      balance[wit._id] = (balance[wit._id] || 0) - wit.total;
+    });
+
+    res.json({ ok: true, balance });
+  } catch (err) {
+    console.error("Balance error:", err);
     res.status(500).json({ error: err.message || "Server error" });
   }
 });

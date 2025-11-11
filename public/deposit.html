@@ -50,7 +50,6 @@
       border-radius: 8px;
       color: #fff;
       font-size: 1rem;
-      transition: border-color 0.2s;
     }
 
     select:focus, input:focus {
@@ -66,20 +65,12 @@
       border-radius: 8px;
       color: #fff;
       font-weight: 600;
-      font-size: 1rem;
       cursor: pointer;
-      transition: 0.2s;
       margin-top: 10px;
     }
 
-    button:hover:not(:disabled) {
-      background: #9333ea;
-    }
-
-    button:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
+    button:hover:not(:disabled) { background: #9333ea; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
 
     .error {
       color: #ff6b6b;
@@ -90,16 +81,6 @@
       display: none;
     }
 
-    .success {
-      color: #90ee90;
-      margin-top: 10px;
-      padding: 10px;
-      background: rgba(144,238,144,0.1);
-      border-radius: 8px;
-      display: none;
-    }
-
-    /* Payment Details Section */
     .payment-section {
       display: none;
       margin-top: 30px;
@@ -107,8 +88,32 @@
       border-top: 1px solid #333;
     }
 
-    .payment-section.active {
-      display: block;
+    .payment-section.active { display: block; }
+
+    .status-box {
+      background: #0b0b0b;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 15px 0;
+      border-left: 4px solid #fbbf24;
+    }
+
+    .status-label {
+      font-weight: 600;
+      margin-bottom: 5px;
+    }
+
+    .status-value {
+      color: #fbbf24;
+      font-size: 1.1rem;
+    }
+
+    .status-confirmed .status-value {
+      color: #90ee90;
+    }
+
+    .status-confirmed .status-box {
+      border-left-color: #90ee90;
     }
 
     .qr-container {
@@ -148,12 +153,9 @@
       cursor: pointer;
       font-weight: 600;
       margin-top: 10px;
-      transition: 0.2s;
     }
 
-    .copy-btn:hover {
-      background: #2dd4bf;
-    }
+    .copy-btn:hover { background: #2dd4bf; }
 
     .info-text {
       color: #999;
@@ -161,6 +163,24 @@
       margin: 15px 0;
       line-height: 1.6;
     }
+
+    .transaction-id {
+      background: #0b0b0b;
+      padding: 10px;
+      border-radius: 6px;
+      margin: 10px 0;
+      font-family: monospace;
+      font-size: 0.85rem;
+      word-break: break-all;
+    }
+
+    .check-status-btn {
+      background: #5eead4;
+      color: #000;
+      margin-top: 15px;
+    }
+
+    .check-status-btn:hover { background: #2dd4bf; }
 
     .back-link {
       text-align: center;
@@ -171,24 +191,6 @@
       color: #5eead4;
       text-decoration: none;
       font-weight: 600;
-    }
-
-    .back-link a:hover {
-      text-decoration: underline;
-    }
-
-    .crypto-info {
-      background: #0b0b0b;
-      padding: 15px;
-      border-radius: 8px;
-      margin-bottom: 20px;
-      border-left: 3px solid #a855f7;
-    }
-
-    .crypto-info p {
-      font-size: 0.9rem;
-      color: #ccc;
-      margin: 5px 0;
     }
   </style>
 </head>
@@ -203,7 +205,7 @@
           <option value="">-- Select Coin --</option>
           <option value="BTC">Bitcoin (BTC)</option>
           <option value="ETH">Ethereum (ETH)</option>
-          <option value="USDT">Tether USDT (Ethereum)</option>
+          <option value="USDT">Tether USDT</option>
           <option value="BNB">Binance Coin (BNB)</option>
         </select>
       </div>
@@ -214,8 +216,6 @@
       </div>
 
       <div id="error" class="error"></div>
-      <div id="success" class="success"></div>
-
       <button type="submit" id="submitBtn">Proceed to Payment</button>
     </form>
 
@@ -223,37 +223,38 @@
     <div id="paymentSection" class="payment-section">
       <h3 style="color: #a855f7; margin-bottom: 20px;">📝 Payment Instructions</h3>
       
-      <div class="crypto-info">
-        <p><strong>Coin:</strong> <span id="selectedCoin"></span></p>
-        <p><strong>Amount:</strong> <span id="depositAmount"></span></p>
-        <p><strong>Status:</strong> <span style="color: #fbbf24;">Pending Payment</span></p>
+      <div class="status-box" id="statusBox">
+        <div class="status-label">Payment Status:</div>
+        <div class="status-value" id="statusValue">⏳ Waiting for Payment</div>
       </div>
 
       <div class="info-text">
-        ⚠️ Please send exactly <strong id="exactAmount"></strong> <span id="coinSymbol"></span> to the address below. Payment will be confirmed automatically once received on the blockchain.
+        <strong>Transaction ID:</strong>
+        <div class="transaction-id" id="txId"></div>
+      </div>
+
+      <div class="info-text">
+        ⚠️ Send exactly <strong id="exactAmount"></strong> <span id="coinSymbol"></span> to the address below.
       </div>
 
       <div class="qr-container">
         <p style="margin-bottom: 10px; font-weight: 600;">Scan with your wallet:</p>
-        <div class="qr-code" id="qrCode">
-          <img id="qrImage" src="" alt="QR Code" style="display: none;">
+        <div class="qr-code">
+          <img id="qrImage" src="" alt="QR Code">
         </div>
       </div>
 
       <div>
-        <p style="margin-bottom: 10px; font-weight: 600;">Or send to this address:</p>
-        <div class="address-box" id="addressBox">
-          <!-- Address will be populated here -->
-        </div>
+        <p style="margin-bottom: 10px; font-weight: 600;">Send to this address:</p>
+        <div class="address-box" id="addressBox"></div>
         <button type="button" class="copy-btn" onclick="copyAddress()">📋 Copy Address</button>
       </div>
 
-      <div class="info-text">
-        <strong>⏱️ Waiting for payment...</strong><br>
-        Your deposit request has been created. Once payment is confirmed on the blockchain, your account will be credited automatically.
-      </div>
+      <button type="button" class="check-status-btn" onclick="checkPaymentStatus()">🔄 Check Payment Status</button>
 
-      <button type="button" style="background: #5eead4; color: #000; margin-top: 20px;" onclick="goBack()">← Back to Deposit</button>
+      <div id="statusMessage" class="info-text" style="display: none; margin-top: 20px; padding: 15px; background: rgba(144,238,144,0.1); border-radius: 8px; border-left: 3px solid #90ee90;"></div>
+
+      <button type="button" style="background: #5eead4; color: #000; margin-top: 20px;" onclick="goBack()">← New Deposit</button>
     </div>
   </div>
 
@@ -262,7 +263,6 @@
   </div>
 
   <script>
-    // Crypto payment data (Replace with your actual addresses and QR codes)
     const cryptoData = {
       BTC: {
         address: 'YOUR_BTC_ADDRESS_HERE',
@@ -282,60 +282,49 @@
       }
     };
 
+    let currentTxId = null;
+    let currentCoin = null;
+
     const form = document.getElementById('depositForm');
     const errorDiv = document.getElementById('error');
-    const successDiv = document.getElementById('success');
     const submitBtn = document.getElementById('submitBtn');
     const paymentSection = document.getElementById('paymentSection');
-    const coinSelect = document.getElementById('coin');
-    const amountInput = document.getElementById('amount');
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       
       errorDiv.style.display = 'none';
-      successDiv.style.display = 'none';
       submitBtn.disabled = true;
       submitBtn.textContent = 'Processing...';
 
-      const coin = coinSelect.value;
-      const amount = amountInput.value;
+      const coin = document.getElementById('coin').value;
+      const amount = document.getElementById('amount').value;
 
       try {
-        console.log('Submitting deposit:', { coin, amount });
-
         const response = await fetch('/api/deposit', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
           credentials: 'include',
           body: JSON.stringify({ coin, amount: parseFloat(amount) })
         });
 
-        console.log('Response status:', response.status);
-
         if (!response.ok) {
-          let errorData;
-          try {
-            errorData = await response.json();
-          } catch (parseErr) {
-            console.error('Response text:', await response.text());
-            throw new Error('Server error: ' + response.status);
-          }
-          throw new Error(errorData.error || 'Deposit failed');
+          const data = await response.json();
+          throw new Error(data.error || 'Deposit failed');
         }
 
         const data = await response.json();
-        console.log('Deposit successful:', data);
+        currentTxId = data.txId;
+        currentCoin = coin;
 
-        // Show payment instructions
         showPaymentDetails(coin, amount);
-        successDiv.textContent = '✓ Deposit request created! Please complete the payment below.';
-        successDiv.style.display = 'block';
+        form.style.display = 'none';
 
       } catch (err) {
-        console.error('Deposit error:', err);
-        const errorMsg = err instanceof Error ? err.message : 'Server error';
-        errorDiv.textContent = '✗ ' + errorMsg;
+        errorDiv.textContent = '✗ ' + err.message;
         errorDiv.style.display = 'block';
         submitBtn.disabled = false;
         submitBtn.textContent = 'Proceed to Payment';
@@ -344,29 +333,50 @@
 
     function showPaymentDetails(coin, amount) {
       const data = cryptoData[coin];
-      if (!data) {
-        console.error('Coin not found:', coin);
-        return;
-      }
-
-      document.getElementById('selectedCoin').textContent = coin;
-      document.getElementById('depositAmount').textContent = amount + ' ' + coin;
       document.getElementById('exactAmount').textContent = amount;
       document.getElementById('coinSymbol').textContent = coin;
       document.getElementById('addressBox').textContent = data.address;
       document.getElementById('qrImage').src = data.qrCode;
-      document.getElementById('qrImage').style.display = 'block';
-
+      document.getElementById('txId').textContent = currentTxId;
       paymentSection.classList.add('active');
-      form.style.display = 'none';
+    }
+
+    async function checkPaymentStatus() {
+      try {
+        const response = await fetch(`/api/verify-payment`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ txId: currentTxId, coin: currentCoin })
+        });
+
+        const data = await response.json();
+        const statusBox = document.getElementById('statusBox');
+        const statusValue = document.getElementById('statusValue');
+        const statusMessage = document.getElementById('statusMessage');
+
+        if (data.status === 'CONFIRMED') {
+          statusBox.classList.add('status-confirmed');
+          statusValue.textContent = '✓ Payment Confirmed!';
+          statusMessage.innerHTML = `<strong>✓ Success!</strong> Your deposit of ${data.amount} ${data.coin} has been confirmed. Funds will be added to your account shortly.`;
+          statusMessage.style.display = 'block';
+        } else if (data.status === 'PENDING') {
+          statusValue.textContent = '⏳ Still Waiting...';
+          statusMessage.textContent = 'Payment not yet detected. This can take a few minutes.';
+          statusMessage.style.display = 'block';
+        } else {
+          statusMessage.textContent = 'Status: ' + data.status;
+          statusMessage.style.display = 'block';
+        }
+      } catch (err) {
+        alert('Error checking status: ' + err.message);
+      }
     }
 
     function copyAddress() {
       const address = document.getElementById('addressBox').textContent;
       navigator.clipboard.writeText(address).then(() => {
-        alert('Address copied to clipboard!');
-      }).catch(err => {
-        console.error('Failed to copy:', err);
+        alert('Address copied!');
       });
     }
 
@@ -374,6 +384,7 @@
       paymentSection.classList.remove('active');
       form.style.display = 'block';
       form.reset();
+      document.getElementById('statusBox').classList.remove('status-confirmed');
     }
   </script>
 </body>
