@@ -4,7 +4,8 @@ generator client {
 
 datasource db {
   provider = "postgresql" // ✅ Cloud-safe provider
-  url      = env("DATABASE_URL") // ✅ Comes from your Vercel environment variable
+  url      = env("postgresql://USERNAME:PASSWORD@HOST/DATABASE?sslmode=require
+") // ✅ Comes from your Vercel environment variable
 }
 
 model User {
