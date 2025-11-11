@@ -1,5 +1,14 @@
 {
   "version": 2,
+  "buildCommand": "npm install",
+  "env": {
+    "NODE_ENV": "production"
+  },
+  "functions": {
+    "api/**/*.js": {
+      "maxDuration": 30
+    }
+  },
   "builds": [
     {
       "src": "server.js",

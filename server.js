@@ -22,33 +22,49 @@ app.use(cors({
 }));
 
 // Body parsing
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
 app.use(express.static(path.join(__dirname, "public")));
 
-// Session configuration
+// Session configuration for Vercel
 app.use(session({
   secret: process.env.SESSION_SECRET || "your-secret-key-change-this",
   resave: false,
-  saveUninitialized: true,  // Changed to true
+  saveUninitialized: false,
   cookie: {
-    secure: false,  // Set to false for localhost/http
+    secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
-    sameSite: 'lax',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
     maxAge: 24 * 60 * 60 * 1000,
-    path: '/'  // Add this
+    path: '/'
   }
 }));
 
-// MongoDB Connection
-mongoose.connect(process.env.MONGO_URI, {
-  serverSelectionTimeoutMS: 5000,
-  socketTimeoutMS: 45000
-}).then(() => {
-  console.log('✓ Connected to MongoDB');
-}).catch(err => {
-  console.error('✗ MongoDB connection error:', err.message);
-  process.exit(1);
-});
+// MongoDB Connection with Vercel timeout
+let mongoConnected = false;
+
+async function connectMongo() {
+  if (mongoConnected) return;
+  
+  try {
+    await mongoose.connect(process.env.MONGO_URI, {
+      serverSelectionTimeoutMS: 10000,
+      socketTimeoutMS: 45000,
+      connectTimeoutMS: 10000,
+      retryWrites: true,
+      w: 'majority'
+    });
+    mongoConnected = true;
+    console.log('✓ Connected to MongoDB');
+  } catch (err) {
+    console.error('✗ MongoDB connection error:', err.message);
+    mongoConnected = false;
+    throw err;
+  }
+}
+
+// Call on startup
+connectMongo().catch(err => console.error('Initial connection failed:', err));
 
 // User Schema - FIX THE MISSING DEFAULT VALUE
 const userSchema = new mongoose.Schema({
@@ -74,67 +90,24 @@ const transactionSchema = new mongoose.Schema({
 
 const Transaction = mongoose.model('Transaction', transactionSchema);
 
-// Auth middleware with logging
+// Auth middleware
 const needAuth = (req, res, next) => {
-  console.log('🔐 Auth check:');
-  console.log('   Session ID:', req.sessionID);
-  console.log('   Session data:', req.session);
-  console.log('   User ID:', req.session?.userId);
-  
   if (!req.session || !req.session.userId) {
-    console.log('❌ Not authenticated');
     return res.status(401).json({ error: "Please login" });
   }
-  
-  console.log('✓ Authenticated - userId:', req.session.userId);
   next();
 };
 
-// Register endpoint
-app.post('/api/register', async (req, res) => {
-  try {
-    const { email, username, password } = req.body;
-
-    if (!email || !username || !password) {
-      return res.status(400).json({ error: 'All fields required' });
-    }
-
-    const exists = await User.findOne({
-      $or: [{ email }, { username }]
-    });
-
-    if (exists) {
-      return res.status(400).json({ error: 'Email or username already exists' });
-    }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    const user = new User({
-      email,
-      username,
-      password: hashedPassword
-    });
-
-    await user.save();
-
-    req.session.userId = user._id;
-    req.session.username = user.username;
-    
-    req.session.save((err) => {
-      if (err) {
-        return res.status(500).json({ error: 'Session error' });
-      }
-      res.json({ ok: true, user: { id: user._id, email, username } });
-    });
-  } catch (err) {
-    console.error('Register error:', err);
-    res.status(500).json({ error: err.message || 'Server error' });
-  }
+// Health check endpoint
+app.get("/api/health", (req, res) => {
+  res.json({ ok: true, message: "Server is running", mongoConnected });
 });
 
 // Login endpoint
 app.post("/api/login", async (req, res) => {
   try {
+    await connectMongo();
+    
     const { username, email, password } = req.body;
     const userOrEmail = username || email;
 
@@ -159,7 +132,7 @@ app.post("/api/login", async (req, res) => {
       return res.status(401).json({ error: "Invalid credentials" });
     }
 
-    req.session.userId = user._id;
+    req.session.userId = user._id.toString();
     req.session.username = user.username;
     
     req.session.save((err) => {
@@ -181,55 +154,153 @@ app.post("/api/login", async (req, res) => {
   }
 });
 
+// Register endpoint
+app.post('/api/register', async (req, res) => {
+  try {
+    await connectMongo();
+    
+    const { email, username, password } = req.body;
+
+    if (!email || !username || !password) {
+      return res.status(400).json({ error: 'All fields required' });
+    }
+
+    const exists = await User.findOne({
+      $or: [{ email }, { username }]
+    });
+
+    if (exists) {
+      return res.status(400).json({ error: 'Email or username already exists' });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const user = new User({
+      email,
+      username,
+      password: hashedPassword
+    });
+
+    await user.save();
+
+    req.session.userId = user._id.toString();
+    req.session.username = user.username;
+    
+    req.session.save((err) => {
+      if (err) {
+        return res.status(500).json({ error: 'Session error' });
+      }
+      res.json({ ok: true, user: { id: user._id, email, username } });
+    });
+  } catch (err) {
+    console.error('Register error:', err);
+    res.status(500).json({ error: err.message || 'Server error' });
+  }
+});
+
+// Get user profile
+app.get("/api/profile", needAuth, async (req, res) => {
+  try {
+    await connectMongo();
+    
+    const user = await User.findById(req.session.userId).select('-password');
+    
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const deposits = await Transaction.aggregate([
+      {
+        $match: {
+          userId: new mongoose.Types.ObjectId(req.session.userId),
+          type: "DEPOSIT",
+          status: "CONFIRMED"
+        }
+      },
+      {
+        $group: {
+          _id: "$coin",
+          total: { $sum: "$amount" }
+        }
+      }
+    ]);
+
+    const withdrawals = await Transaction.aggregate([
+      {
+        $match: {
+          userId: new mongoose.Types.ObjectId(req.session.userId),
+          type: "WITHDRAW",
+          status: "CONFIRMED"
+        }
+      },
+      {
+        $group: {
+          _id: "$coin",
+          total: { $sum: "$amount" }
+        }
+      }
+    ]);
+
+    const balance = {};
+    
+    deposits.forEach(dep => {
+      balance[dep._id] = (balance[dep._id] || 0) + dep.total;
+    });
+
+    withdrawals.forEach(wit => {
+      balance[wit._id] = (balance[wit._id] || 0) - wit.total;
+    });
+
+    res.json({ 
+      ok: true, 
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        vip: user.vip,
+        createdAt: user.createdAt
+      },
+      balance 
+    });
+  } catch (err) {
+    console.error("Profile error:", err);
+    res.status(500).json({ error: err.message || "Server error" });
+  }
+});
+
 // Deposit endpoint
 app.post("/api/deposit", needAuth, async (req, res) => {
   try {
-    console.log("💰 Deposit request received");
-    console.log("User ID:", req.session.userId);
-    console.log("Body:", req.body);
-
-    if (!req.session.userId) {
-      console.log("❌ No session userId");
-      return res.status(401).json({ error: "Please login first" });
-    }
-
+    await connectMongo();
+    
     const { coin, amount } = req.body;
 
     if (!coin || !amount) {
-      console.log("❌ Missing coin or amount");
       return res.status(400).json({ error: "Coin and amount required" });
     }
 
     const numAmount = parseFloat(amount);
     if (isNaN(numAmount) || numAmount <= 0) {
-      console.log("❌ Invalid amount");
       return res.status(400).json({ error: "Amount must be greater than 0" });
     }
 
-    console.log("✓ Validation passed");
-
-    // Create transaction with PENDING status
     const tx = new Transaction({
-      userId: new mongoose.Types.ObjectId(req.session.userId),
+      userId: req.session.userId,
       type: "DEPOSIT",
       coin: coin.toUpperCase(),
       amount: numAmount,
-      status: "PENDING",
-      createdAt: new Date()
+      status: "PENDING"
     });
 
     const savedTx = await tx.save();
-    console.log("✓ Deposit transaction saved:", savedTx._id);
-    console.log("Transaction data:", savedTx);
 
     res.json({ 
       ok: true, 
       txId: savedTx._id,
-      message: "Deposit request received. Transaction created with PENDING status."
+      message: "Deposit request received"
     });
   } catch (err) {
-    console.error("❌ Deposit error:", err);
-    console.error("Error stack:", err.stack);
+    console.error("Deposit error:", err);
     res.status(500).json({ error: err.message || "Server error" });
   }
 });
@@ -237,10 +308,12 @@ app.post("/api/deposit", needAuth, async (req, res) => {
 // Withdraw endpoint
 app.post("/api/withdraw", needAuth, async (req, res) => {
   try {
+    await connectMongo();
+    
     const { coin, amount, wallet } = req.body;
 
     if (!coin || !amount || !wallet) {
-      return res.status(400).json({ error: "Coin, amount, and wallet address required" });
+      return res.status(400).json({ error: "Coin, amount, and wallet required" });
     }
 
     const numAmount = parseFloat(amount);
@@ -270,224 +343,12 @@ app.post("/api/withdraw", needAuth, async (req, res) => {
   }
 });
 
-// Payment verification endpoint
-app.post("/api/verify-payment", needAuth, async (req, res) => {
-  try {
-    const { txId, coin } = req.body;
-
-    if (!txId || !coin) {
-      return res.status(400).json({ error: "Transaction ID and coin required" });
-    }
-
-    const tx = await Transaction.findById(txId);
-
-    if (!tx || tx.userId.toString() !== req.session.userId.toString()) {
-      return res.status(403).json({ error: "Transaction not found" });
-    }
-
-    // Here you would integrate with blockchain APIs to verify payment
-    // For now, we'll use a manual admin verification system
-    
-    res.json({ 
-      ok: true, 
-      status: tx.status,
-      amount: tx.amount,
-      coin: tx.coin
-    });
-  } catch (err) {
-    console.error("Verify payment error:", err);
-    res.status(500).json({ error: err.message || "Server error" });
-  }
-});
-
-// Get single transaction details
-app.get("/api/transaction/:id", needAuth, async (req, res) => {
-  try {
-    const tx = await Transaction.findById(req.params.id);
-
-    if (!tx || tx.userId.toString() !== req.session.userId.toString()) {
-      return res.status(403).json({ error: "Transaction not found" });
-    }
-
-    res.json({ ok: true, transaction: tx });
-  } catch (err) {
-    console.error("Get transaction error:", err);
-    res.status(500).json({ error: err.message || "Server error" });
-  }
-});
-
-// Admin endpoint to mark payment as confirmed (webhook from blockchain or manual)
-app.post("/api/admin/confirm-payment", async (req, res) => {
-  try {
-    // In production, add proper admin authentication
-    const adminKey = req.headers['x-admin-key'];
-    if (adminKey !== process.env.ADMIN_KEY) {
-      return res.status(401).json({ error: "Unauthorized" });
-    }
-
-    const { txId } = req.body;
-
-    const tx = await Transaction.findByIdAndUpdate(
-      txId,
-      { status: "CONFIRMED" },
-      { new: true }
-    );
-
-    if (!tx) {
-      return res.status(404).json({ error: "Transaction not found" });
-    }
-
-    console.log("✓ Payment confirmed for transaction:", txId);
-
-    res.json({ 
-      ok: true, 
-      message: "Payment confirmed",
-      transaction: tx
-    });
-  } catch (err) {
-    console.error("Confirm payment error:", err);
-    res.status(500).json({ error: err.message || "Server error" });
-  }
-});
-
-// Get user balance (sum of confirmed deposits minus withdrawals)
-app.get("/api/balance", needAuth, async (req, res) => {
-  try {
-    const deposits = await Transaction.aggregate([
-      {
-        $match: {
-          userId: new mongoose.Types.ObjectId(req.session.userId),
-          type: "DEPOSIT",
-          status: "CONFIRMED"
-        }
-      },
-      {
-        $group: {
-          _id: "$coin",
-          total: { $sum: "$amount" }
-        }
-      }
-    ]);
-
-    const withdrawals = await Transaction.aggregate([
-      {
-        $match: {
-          userId: new mongoose.Types.ObjectId(req.session.userId),
-          type: "WITHDRAW",
-          status: "CONFIRMED"
-        }
-      },
-      {
-        $group: {
-          _id: "$coin",
-          total: { $sum: "$amount" }
-        }
-      }
-    ]);
-
-    const balance = {};
-    
-    deposits.forEach(dep => {
-      balance[dep._id] = (balance[dep._id] || 0) + dep.total;
-    });
-
-    withdrawals.forEach(wit => {
-      balance[wit._id] = (balance[wit._id] || 0) - wit.total;
-    });
-
-    res.json({ ok: true, balance });
-  } catch (err) {
-    console.error("Balance error:", err);
-    res.status(500).json({ error: err.message || "Server error" });
-  }
-});
-
-// Health check
-app.get("/api/health", (req, res) => {
-  res.json({ ok: true, message: "Server is running" });
-});
-
-// Get user profile - MOVE THIS BEFORE THE 404 HANDLER
-app.get("/api/profile", needAuth, async (req, res) => {
-  try {
-    console.log('📋 Profile request for user:', req.session.userId);
-    
-    const user = await User.findById(req.session.userId).select('-password');
-    
-    if (!user) {
-      return res.status(404).json({ error: "User not found" });
-    }
-
-    // Get confirmed deposits by coin
-    const deposits = await Transaction.aggregate([
-      {
-        $match: {
-          userId: new mongoose.Types.ObjectId(req.session.userId),
-          type: "DEPOSIT",
-          status: "CONFIRMED"
-        }
-      },
-      {
-        $group: {
-          _id: "$coin",
-          total: { $sum: "$amount" }
-        }
-      }
-    ]);
-
-    // Get confirmed withdrawals by coin
-    const withdrawals = await Transaction.aggregate([
-      {
-        $match: {
-          userId: new mongoose.Types.ObjectId(req.session.userId),
-          type: "WITHDRAW",
-          status: "CONFIRMED"
-        }
-      },
-      {
-        $group: {
-          _id: "$coin",
-          total: { $sum: "$amount" }
-        }
-      }
-    ]);
-
-    const balance = {};
-    
-    deposits.forEach(dep => {
-      balance[dep._id] = (balance[dep._id] || 0) + dep.total;
-    });
-
-    withdrawals.forEach(wit => {
-      balance[wit._id] = (balance[wit._id] || 0) - wit.total;
-    });
-
-    console.log('✓ Profile loaded:', user.username);
-
-    res.json({ 
-      ok: true, 
-      user: {
-        id: user._id,
-        username: user.username,
-        email: user.email,
-        vip: user.vip,
-        createdAt: user.createdAt
-      },
-      balance 
-    });
-  } catch (err) {
-    console.error("Profile error:", err);
-    res.status(500).json({ error: err.message || "Server error" });
-  }
-});
-
-// Get all transactions for user
+// Get transactions
 app.get("/api/transactions", needAuth, async (req, res) => {
   try {
-    const transactions = await Transaction.find({ 
-      userId: req.session.userId 
-    }).sort({ createdAt: -1 }).limit(50);
+    await connectMongo();
     
+    const transactions = await Transaction.find({ userId: req.session.userId }).sort({ createdAt: -1 }).limit(100);
     res.json({ ok: true, transactions });
   } catch (err) {
     console.error("Transactions error:", err);
@@ -505,16 +366,16 @@ app.post("/api/logout", (req, res) => {
   });
 });
 
-// 404 handler - MOVE TO END
+// 404 handler
 app.use((req, res) => {
   res.status(404).json({ error: 'Endpoint not found' });
 });
 
-// Error handler - MOVE TO END
+// Error handler
 app.use((err, req, res, next) => {
   console.error('Error:', err);
   res.status(500).json({ error: err.message || 'Internal server error' });
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`✓ Server running on port ${PORT}`));
+// Export for Vercel
+export default app;
