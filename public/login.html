@@ -167,59 +167,82 @@
   </div>
 
   <script>
-    const form = document.getElementById("loginForm");
-    const errorEl = document.getElementById("loginError");
-    const button = document.getElementById("loginBtn");
-    const userInput = document.getElementById("userInput");
-    const passwordInput = document.getElementById("password");
+  const form = document.getElementById("loginForm");
+  const errorEl = document.getElementById("loginError");
+  const button = document.getElementById("loginBtn");
+  const userInput = document.getElementById("userInput");
+  const passwordInput = document.getElementById("password");
 
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      errorEl.style.display = 'none';
-      button.disabled = true;
-      button.textContent = 'Logging in...';
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    errorEl.style.display = 'none';
+    button.disabled = true;
+    button.textContent = 'Logging in...';
 
-      const userOrEmail = userInput.value.trim();
-      const password = passwordInput.value.trim();
+    const userOrEmail = userInput.value.trim();
+    const password = passwordInput.value.trim();
 
+    try {
+      console.log('Logging in with:', userOrEmail);
+
+      const res = await fetch("/api/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        credentials: "include",
+        body: JSON.stringify({ 
+          username: userOrEmail,
+          email: userOrEmail,
+          password 
+        })
+      });
+
+      console.log('Response status:', res.status);
+
+      const text = await res.text();
+      console.log('Response text:', text);
+
+      let data;
       try {
-        const res = await fetch('/api/login', {
-          method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          },
-          credentials: 'include',
-          body: JSON.stringify({ 
-            username: userOrEmail,
-            email: userOrEmail,
-            password 
-          })
-        });
+        data = JSON.parse(text);
+      } catch (e) {
+        console.error('JSON parse error:', e);
+        throw new Error('Invalid server response: ' + text);
+      }
 
-        const text = await res.text();
-        let data;
-        try { data = JSON.parse(text); } catch { throw new Error(text); }
+      console.log('Response data:', data);
 
-        if (!res.ok) throw new Error(data.error || "Login failed");
-
+      if (res.ok) {
         if (data.user) {
           localStorage.setItem("userId", data.user.id);
           localStorage.setItem("username", data.user.username);
           localStorage.setItem("email", data.user.email);
         }
-
-        // Redirect without showing success message
-        window.location.href = "index.html";
-      } catch (err) {
-        console.error('Error:', err);
-        const errorMsg = err.message || 'Server error. Please try again later.';
-        errorEl.textContent = errorMsg;
-        errorEl.style.display = 'block';
-        button.disabled = false;
-        button.textContent = 'Login';
+        console.log('Login successful, redirecting...');
+        window.location.href = "/index.html";
+      } else {
+        const errorMsg = data.error || 'Login failed';
+        throw new Error(errorMsg);
       }
-    });
+    } catch (error) {
+      console.error('Login error:', error);
+      
+      let errorMessage = 'Server error. Please try again.';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (typeof error === 'string') {
+        errorMessage = error;
+      } else if (error && error.message) {
+        errorMessage = error.message;
+      }
+      
+      errorEl.textContent = errorMessage;
+      errorEl.style.display = 'block';
+      button.disabled = false;
+      button.textContent = 'Login';
+    }
+  });
   </script>
 
 </body>

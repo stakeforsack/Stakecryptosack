@@ -213,8 +213,18 @@
 
         setTimeout(() => window.location.href = "index.html", 1000);
       } catch (err) {
-        console.error("Error:", err);
-        errorEl.textContent = err.message || "Server error. Please try again later.";
+        console.error('Error:', err);
+        
+        let errorMessage = 'Server error. Please try again.';
+        if (err instanceof Error) {
+          errorMessage = err.message;
+        } else if (typeof err === 'string') {
+          errorMessage = err;
+        } else if (err && err.message) {
+          errorMessage = err.message;
+        }
+        
+        errorEl.textContent = errorMessage;
         errorEl.style.display = 'block';
         button.disabled = false;
         button.textContent = 'Create Account';
