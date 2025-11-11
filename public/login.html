@@ -201,7 +201,10 @@
 
         if (!res.ok) throw new Error(data.error || "Login failed");
 
-        if (data.token) localStorage.setItem("token", data.token);
+        if (data.token) {
+          localStorage.setItem("token", data.token);
+          localStorage.setItem("username", data.user.username);
+        }
 
         successEl.textContent = "Login successful! Redirecting...";
         successEl.style.display = 'block';
@@ -216,5 +219,6 @@
       }
     });
   </script>
+
 </body>
 </html>

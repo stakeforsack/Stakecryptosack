@@ -1,81 +1,71 @@
-// db.js
 import mongoose from "mongoose";
 
-const connectDB = async () => {
+let isConnected = false;
+
+/**
+ * Connect to MongoDB Atlas
+ */
+export async function connectDB() {
+  if (isConnected) return; // Prevent multiple connections in serverless environment
   try {
-    const uri = process.env.MONGO_URI || "mongodb+srv://user:pass@cluster.mongodb.net/godstake";
-    await mongoose.connect(uri);
-    console.log("✅ MongoDB Connected");
+    await mongoose.connect(process.env.MONGO_URI, {
+      dbName: "godstake",
+      autoIndex: true,
+    });
+    isConnected = true;
+    console.log("✅ MongoDB connected");
   } catch (err) {
-    console.error("❌ MongoDB Connection Error:", err);
-    process.exit(1);
+    console.error("❌ MongoDB connection error:", err);
+    throw err;
   }
-};
+}
 
-// ===== SCHEMAS =====
-const userSchema = new mongoose.Schema({
-  username: { type: String, unique: true, required: true },
-  email: { type: String, unique: true, required: true },
-  password_hash: { type: String, required: true },
-  bio: String,
-  vip: { type: Number, default: 0 },
-  twofa_enabled: { type: Boolean, default: false },
-  twofa_secret: String,
-  created_at: { type: Date, default: Date.now }
-});
+// ====== User Schema & Model ======
+const userSchema = new mongoose.Schema(
+  {
+    email: { type: String, unique: true, required: true },
+    username: { type: String, unique: true, required: true },
+    password: { type: String, required: true },
+    vip: { type: Boolean, default: false },
+    bio: { type: String, default: "" },
+    twofa_enabled: { type: Boolean, default: false },
+    twofa_secret: { type: String, default: "" },
+  },
+  { timestamps: true }
+);
 
-const transactionSchema = new mongoose.Schema({
-  user_id: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-  type: String,
-  coin: String,
-  amount: Number,
-  status: { type: String, default: "PENDING" },
-  meta: Object,
-  created_at: { type: Date, default: Date.now }
-});
+export const User = mongoose.models.User || mongoose.model("User", userSchema);
 
-const depositSchema = new mongoose.Schema({
-  user_id: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-  coin: String,
-  amount_expected: Number,
-  amount_received: Number,
-  address: String,
-  tx_hash: String,
-  status: { type: String, default: "PENDING" },
-  confirmations: { type: Number, default: 0 },
-  created_at: { type: Date, default: Date.now }
-});
+// ====== Transaction Schema & Model ======
+const transactionSchema = new mongoose.Schema(
+  {
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    type: { type: String, enum: ["DEPOSIT", "WITHDRAW"], required: true },
+    coin: { type: String, required: true },
+    amount: { type: Number, required: true },
+    status: { type: String, default: "PENDING" },
+    meta: { type: Object, default: {} },
+  },
+  { timestamps: true }
+);
 
-const paymentSchema = new mongoose.Schema({
-  user_id: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-  type: String,
-  details: String,
-  created_at: { type: Date, default: Date.now }
-});
+export const Transaction =
+  mongoose.models.Transaction || mongoose.model("Transaction", transactionSchema);
 
-const verificationSchema = new mongoose.Schema({
-  user_id: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-  front_path: String,
-  back_path: String,
-  selfie_path: String,
-  status: { type: String, default: "PENDING" },
-  created_at: { type: Date, default: Date.now }
-});
+// ====== Deposit Schema & Model ======
+const depositSchema = new mongoose.Schema(
+  {
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    coin: { type: String, required: true },
+    amount_expected: { type: Number, required: true },
+    amount_received: { type: Number, default: 0 },
+    address: { type: String, required: true },
+    tx_hash: { type: String, default: "" },
+    status: { type: String, default: "PENDING" },
+    confirmations: { type: Number, default: 0 },
+  },
+  { timestamps: true }
+);
 
-const ticketSchema = new mongoose.Schema({
-  user_id: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-  subject: String,
-  message: String,
-  status: { type: String, default: "OPEN" },
-  created_at: { type: Date, default: Date.now }
-});
-
-// ===== MODELS =====
-const User = mongoose.model("User", userSchema);
-const Transaction = mongoose.model("Transaction", transactionSchema);
-const Deposit = mongoose.model("Deposit", depositSchema);
-const Payment = mongoose.model("PaymentMethod", paymentSchema);
-const Verification = mongoose.model("Verification", verificationSchema);
-const Ticket = mongoose.model("Ticket", ticketSchema);
-
-export { connectDB, User, Transaction, Deposit, Payment, Verification, Ticket };
+export const Deposit =
+  mongoose.models.Deposit || mongoose.model("Deposit", depositSchema);

@@ -2,8 +2,8 @@ import express from "express";
 import cors from "cors";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import mongoose from "mongoose";
 import dotenv from "dotenv";
+import { connectDB, User, Transaction, Deposit } from "./db.js";
 
 dotenv.config();
 
@@ -17,34 +17,14 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// --- ENVIRONMENT VARIABLES ---
+// --- ENV VARIABLES ---
 const JWT_SECRET = process.env.JWT_SECRET || "supersecretjwtkey";
-const MONGO_URI = process.env.MONGO_URI || "your-mongodb-connection-string";
 
-// --- CONNECT MONGODB ---
-mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => console.log("✅ MongoDB connected"))
-  .catch(err => console.error("❌ MongoDB connection error:", err));
-
-// --- MONGOOSE MODELS ---
-const userSchema = new mongoose.Schema({
-  email: { type: String, unique: true, required: true },
-  username: { type: String, unique: true, required: true },
-  password: { type: String, required: true }
-}, { timestamps: true });
-
-const transactionSchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-  type: { type: String, enum: ["DEPOSIT", "WITHDRAW"], required: true },
-  coin: { type: String, required: true },
-  amount: { type: Number, required: true },
-  status: { type: String, default: "PENDING" },
-  meta: { type: Object }
-}, { timestamps: true });
-
-const User = mongoose.model("User", userSchema);
-const Transaction = mongoose.model("Transaction", transactionSchema);
+// --- CONNECT DB ---
+connectDB().catch(err => {
+  console.error("Failed to connect to DB:", err);
+  process.exit(1);
+});
 
 // --- AUTH MIDDLEWARE ---
 const needAuth = (req, res, next) => {
@@ -63,7 +43,7 @@ const needAuth = (req, res, next) => {
 
 // --- ROUTES ---
 
-// ✅ Register
+// Register
 app.post("/api/register", async (req, res) => {
   try {
     const { email, username, password } = req.body;
@@ -85,7 +65,7 @@ app.post("/api/register", async (req, res) => {
   }
 });
 
-// ✅ Login
+// Login
 app.post("/api/login", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -106,7 +86,7 @@ app.post("/api/login", async (req, res) => {
   }
 });
 
-// ✅ Deposit
+// Deposit
 app.post("/api/deposit", needAuth, async (req, res) => {
   try {
     const { coin, amount } = req.body;
@@ -125,7 +105,7 @@ app.post("/api/deposit", needAuth, async (req, res) => {
   }
 });
 
-// ✅ Withdraw
+// Withdraw
 app.post("/api/withdraw", needAuth, async (req, res) => {
   try {
     const { coin, amount, address } = req.body;
@@ -145,7 +125,7 @@ app.post("/api/withdraw", needAuth, async (req, res) => {
   }
 });
 
-// ✅ Transactions List
+// Transactions
 app.get("/api/transactions", needAuth, async (req, res) => {
   try {
     const transactions = await Transaction.find({ userId: req.userId }).sort({ createdAt: -1 });
@@ -156,13 +136,13 @@ app.get("/api/transactions", needAuth, async (req, res) => {
   }
 });
 
-// ✅ Session Info
+// Session
 app.get("/api/session", needAuth, async (req, res) => {
   const user = await User.findById(req.userId).select("id email username");
   res.json({ ok: true, user });
 });
 
-// --- Helper: Crypto Wallet Addresses ---
+// --- Helper
 function getCoinAddress(coin) {
   const addresses = {
     BTC: "bc1example...",
@@ -172,6 +152,6 @@ function getCoinAddress(coin) {
   return addresses[coin] || "";
 }
 
-// --- START SERVER ---
+// --- Start Server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));

@@ -167,57 +167,61 @@
     <div class="small">Already have an account? <a href="login.html">Login</a></div>
   </div>
 
+  
   <script>
-  const form = document.getElementById('registerForm');
-  const errorEl = document.getElementById('registerError');
-  const button = document.querySelector('button[type="submit"]');
+      const form = document.getElementById("registerForm");
+      const messageEl = document.getElementById("message");
+      const button = document.querySelector("button[type='submit']");
 
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    errorEl.style.display = 'none';
-    button.disabled = true;
-    button.textContent = 'Creating Account...';
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        messageEl.style.display = "none";
+        button.disabled = true;
+        button.textContent = "Registering...";
 
-    const email = document.getElementById('email').value.trim();
-    const username = document.getElementById('username').value.trim();
-    const password = document.getElementById('password').value.trim();
+        const email = document.getElementById("email").value.trim();
+        const username = document.getElementById("username").value.trim();
+        const password = document.getElementById("password").value.trim();
 
-    try {
-      const res = await fetch('/api/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, username, password })
+        try {
+          const res = await fetch("/api/register", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, username, password })
+          });
+
+          const text = await res.text();
+          let data;
+          try {
+            data = JSON.parse(text);
+          } catch {
+            throw new Error(text);
+          }
+
+          if (!res.ok) throw new Error(data.error || "Registration failed");
+
+          // Save JWT token and username
+          localStorage.setItem("token", data.token);
+          localStorage.setItem("username", data.user.username);
+
+          messageEl.textContent = "Registration successful! Redirecting...";
+          messageEl.style.color = "#90ee90";
+          messageEl.style.display = "block";
+
+          setTimeout(() => {
+            window.location.href = "dashboard.html";
+          }, 1000);
+
+        } catch (err) {
+          console.error("Error:", err);
+          messageEl.textContent = err.message || "Server error. Please try again later.";
+          messageEl.style.color = "#ff6b6b";
+          messageEl.style.display = "block";
+          button.disabled = false;
+          button.textContent = "Register";
+        }
       });
-
-      const text = await res.text();
-      let data;
-      try {
-        data = JSON.parse(text);
-      } catch {
-        throw new Error(text);
-      }
-
-      if (!res.ok) {
-        throw new Error(data.error || 'Registration failed');
-      }
-
-      // ✅ Save JWT token and redirect
-      if (data.token) {
-        localStorage.setItem('token', data.token);
-      }
-
-      button.textContent = 'Success!';
-      setTimeout(() => {
-        window.location.href = 'dashboard.html';
-      }, 1000);
-    } catch (err) {
-      console.error('Register error:', err);
-      errorEl.textContent = err.message || 'Server error';
-      errorEl.style.display = 'block';
-      button.disabled = false;
-      button.textContent = 'Register';
-    }
-  });
   </script>
+
 </body>
 </html>
