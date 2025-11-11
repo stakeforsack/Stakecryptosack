@@ -314,8 +314,14 @@
         console.log('Response status:', response.status);
 
         if (!response.ok) {
-          const data = await response.json();
-          throw new Error(data.error || 'Deposit failed');
+          let errorData;
+          try {
+            errorData = await response.json();
+          } catch (parseErr) {
+            console.error('Response text:', await response.text());
+            throw new Error('Server error: ' + response.status);
+          }
+          throw new Error(errorData.error || 'Deposit failed');
         }
 
         const data = await response.json();

@@ -71,14 +71,15 @@ const Transaction = mongoose.model('Transaction', transactionSchema);
 
 // Auth middleware
 const needAuth = (req, res, next) => {
-  console.log('🔐 Checking auth, session userId:', req.session.userId);
+  console.log("🔐 Auth check - Session:", req.session);
+  console.log("🔐 Auth check - userId:", req.session?.userId);
   
-  if (!req.session.userId) {
-    console.log('❌ Not authenticated');
+  if (!req.session || !req.session.userId) {
+    console.log("❌ Not authenticated");
     return res.status(401).json({ error: "Please login" });
   }
   
-  console.log('✓ Authenticated');
+  console.log("✓ Authenticated - userId:", req.session.userId);
   next();
 };
 
@@ -204,6 +205,11 @@ app.post("/api/deposit", needAuth, async (req, res) => {
     console.log("User ID:", req.session.userId);
     console.log("Body:", req.body);
 
+    if (!req.session.userId) {
+      console.log("❌ No session userId");
+      return res.status(401).json({ error: "Please login first" });
+    }
+
     const { coin, amount } = req.body;
 
     if (!coin || !amount) {
@@ -211,31 +217,34 @@ app.post("/api/deposit", needAuth, async (req, res) => {
       return res.status(400).json({ error: "Coin and amount required" });
     }
 
-    if (isNaN(amount) || parseFloat(amount) <= 0) {
+    const numAmount = parseFloat(amount);
+    if (isNaN(numAmount) || numAmount <= 0) {
       console.log("❌ Invalid amount");
       return res.status(400).json({ error: "Amount must be greater than 0" });
     }
 
-    console.log("✓ Validation passed");
+    console.log("✓ Validation passed, creating transaction...");
 
     const tx = new Transaction({
-      userId: req.session.userId,
+      userId: new mongoose.Types.ObjectId(req.session.userId),
       type: "DEPOSIT",
       coin: coin.toUpperCase(),
-      amount: parseFloat(amount),
+      amount: numAmount,
       status: "PENDING"
     });
 
-    await tx.save();
-    console.log("✓ Deposit transaction saved:", tx._id);
+    const savedTx = await tx.save();
+    console.log("✓ Deposit transaction saved:", savedTx._id);
 
     res.json({ 
       ok: true, 
-      txId: tx._id,
-      message: "Deposit request received. Awaiting payment confirmation."
+      txId: savedTx._id,
+      message: "Deposit request received"
     });
   } catch (err) {
     console.error("❌ Deposit error:", err);
+    console.error("Error message:", err.message);
+    console.error("Error type:", err.name);
     res.status(500).json({ error: err.message || "Server error" });
   }
 });
