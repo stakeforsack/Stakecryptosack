@@ -96,7 +96,6 @@ app.post('/api/register', async (req, res) => {
 
     console.log('✓ Fields validated');
 
-    // Check if user exists
     const exists = await User.findOne({
       $or: [{ email }, { username }]
     });
@@ -108,11 +107,9 @@ app.post('/api/register', async (req, res) => {
 
     console.log('✓ User does not exist');
 
-    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
     console.log('✓ Password hashed');
 
-    // Create user
     const user = new User({
       email,
       username,
@@ -122,11 +119,19 @@ app.post('/api/register', async (req, res) => {
     await user.save();
     console.log('✓ User saved to database:', user._id);
 
-    // Set session
+    // Set session and save it
     req.session.userId = user._id;
-    console.log('✓ Session created');
-
-    res.json({ ok: true, user: { id: user._id, email, username } });
+    req.session.username = user.username;
+    
+    req.session.save((err) => {
+      if (err) {
+        console.error('Session save error:', err);
+        return res.status(500).json({ error: 'Session error' });
+      }
+      
+      console.log('✓ Session created and saved');
+      res.json({ ok: true, user: { id: user._id, email, username } });
+    });
   } catch (err) {
     console.error('❌ Register error:', err);
     res.status(500).json({ error: err.message || 'Server error' });
@@ -145,7 +150,6 @@ app.post("/api/login", async (req, res) => {
       return res.status(400).json({ error: "Username/Email and password required" });
     }
 
-    // Find user by username OR email
     const user = await User.findOne({
       $or: [
         { username: userOrEmail },
@@ -159,7 +163,6 @@ app.post("/api/login", async (req, res) => {
       return res.status(401).json({ error: "Invalid credentials" });
     }
 
-    // Compare password
     const passwordMatch = await bcrypt.compare(password, user.password);
     console.log("Password match:", passwordMatch);
 
@@ -167,16 +170,25 @@ app.post("/api/login", async (req, res) => {
       return res.status(401).json({ error: "Invalid credentials" });
     }
 
+    // Set session and save it
     req.session.userId = user._id;
-    console.log("✓ Login successful for:", user.username);
-
-    res.json({ 
-      ok: true, 
-      user: {
-        id: user._id,
-        username: user.username,
-        email: user.email
+    req.session.username = user.username;
+    
+    req.session.save((err) => {
+      if (err) {
+        console.error('Session save error:', err);
+        return res.status(500).json({ error: 'Session error' });
       }
+      
+      console.log("✓ Login successful for:", user.username);
+      res.json({ 
+        ok: true, 
+        user: {
+          id: user._id,
+          username: user.username,
+          email: user.email
+        }
+      });
     });
   } catch (err) {
     console.error("❌ Login error:", err);
