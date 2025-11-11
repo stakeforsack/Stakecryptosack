@@ -1,6 +1,6 @@
 import express from "express";
 import cors from "cors";
-import bcrypt from "bcryptjs";
+import bcryptjs from "bcryptjs";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import { connectDB, User, Transaction, Deposit } from "./db.js";
