@@ -6,7 +6,7 @@
   <title>Login | GodStake</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
-    * {margin:0; padding:0; box-sizing:border-box;}
+    * { margin:0; padding:0; box-sizing:border-box; }
     body {
       font-family: 'Inter', sans-serif;
       height: 100vh;
@@ -48,7 +48,10 @@
       animation: fadeIn 1s ease forwards;
       text-align: center;
     }
-    @keyframes fadeIn { 0%{opacity:0;transform:translateY(-20px);}100%{opacity:1;transform:translateY(0);} }
+    @keyframes fadeIn {
+      0%{opacity:0;transform:translateY(-20px);}
+      100%{opacity:1;transform:translateY(0);}
+    }
 
     .card h2 {
       font-size: 2rem;
@@ -77,7 +80,11 @@
       font-size: 1rem;
       transition: border-color 0.3s, box-shadow 0.3s;
     }
-    input:focus { border-color: #a855f7; outline: none; box-shadow: 0 0 8px #a855f7; }
+    input:focus {
+      border-color: #a855f7;
+      outline: none;
+      box-shadow: 0 0 8px #a855f7;
+    }
     label {
       position: absolute;
       top: 50%;
@@ -167,83 +174,61 @@
   </div>
 
   <script>
-  const form = document.getElementById("loginForm");
-  const errorEl = document.getElementById("loginError");
-  const button = document.getElementById("loginBtn");
-  const userInput = document.getElementById("userInput");
-  const passwordInput = document.getElementById("password");
+    const form = document.getElementById("loginForm");
+    const errorEl = document.getElementById("loginError");
+    const button = document.getElementById("loginBtn");
 
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    errorEl.style.display = 'none';
-    button.disabled = true;
-    button.textContent = 'Logging in...';
-
-    const userOrEmail = userInput.value.trim();
-    const password = passwordInput.value.trim();
-
-    try {
-      console.log('Logging in with:', userOrEmail);
-
-      const res = await fetch("/api/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        credentials: "include",  // IMPORTANT - This sends cookies
-        body: JSON.stringify({ 
-          username: userOrEmail,
-          email: userOrEmail,
-          password 
-        })
-      });
-
-      console.log('Response status:', res.status);
-
-      const text = await res.text();
-      console.log('Response text:', text);
-
-      let data;
+    // 🔹 Auto-redirect if already logged in
+    (async () => {
       try {
-        data = JSON.parse(text);
+        const res = await fetch("/api/profile", {
+          method: "GET",
+          credentials: "include",
+        });
+        if (res.ok) {
+          const user = await res.json();
+          if (user && user.username) {
+            window.location.href = "/index.html";
+          }
+        }
       } catch (e) {
-        console.error('JSON parse error:', e);
-        throw new Error('Invalid server response: ' + text);
+        console.log("Not logged in yet.");
       }
+    })();
 
-      console.log('Response data:', data);
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      errorEl.style.display = "none";
+      button.disabled = true;
+      button.textContent = "Logging in...";
 
-      if (res.ok) {
-        if (data.user) {
+      const userOrEmail = document.getElementById("userInput").value.trim();
+      const password = document.getElementById("password").value.trim();
+
+      try {
+        const res = await fetch("/api/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include", // ✅ Important for cookies
+          body: JSON.stringify({ username: userOrEmail, email: userOrEmail, password })
+        });
+
+        const data = await res.json();
+        if (res.ok && data.user) {
           localStorage.setItem("userId", data.user.id);
           localStorage.setItem("username", data.user.username);
           localStorage.setItem("email", data.user.email);
+          window.location.href = "/index.html";
+        } else {
+          throw new Error(data.error || "Invalid credentials");
         }
-        console.log('Login successful, redirecting...');
-        window.location.href = "/index.html";
-      } else {
-        const errorMsg = data.error || 'Login failed';
-        throw new Error(errorMsg);
+      } catch (err) {
+        errorEl.textContent = err.message || "Login failed. Please try again.";
+        errorEl.style.display = "block";
+        button.disabled = false;
+        button.textContent = "Login";
       }
-    } catch (error) {
-      console.error('Login error:', error);
-      
-      let errorMessage = 'Server error. Please try again.';
-      if (error instanceof Error) {
-        errorMessage = error.message;
-      } else if (typeof error === 'string') {
-        errorMessage = error;
-      } else if (error && error.message) {
-        errorMessage = error.message;
-      }
-      
-      errorEl.textContent = errorMessage;
-      errorEl.style.display = 'block';
-      button.disabled = false;
-      button.textContent = 'Login';
-    }
-  });
+    });
   </script>
-
 </body>
 </html>

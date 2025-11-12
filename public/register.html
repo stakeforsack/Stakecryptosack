@@ -112,18 +112,13 @@
     button:hover { filter: brightness(1.1); transform: scale(1.02); }
     button:disabled { opacity: 0.6; cursor: not-allowed; }
 
-    .error {
+    .error, .success {
       margin-top: 10px;
-      color: #ff6b6b;
       font-size: 0.9rem;
       display: none;
     }
-    .success {
-      margin-top: 10px;
-      color: #90ee90;
-      font-size: 0.9rem;
-      display: none;
-    }
+    .error { color: #ff6b6b; }
+    .success { color: #90ee90; }
 
     .small {
       font-size: 0.85rem;
@@ -183,6 +178,25 @@
     const successEl = document.getElementById("registerSuccess");
     const button = document.querySelector("button[type='submit']");
 
+    // 🔹 Auto-redirect if already logged in
+    (async () => {
+      try {
+        const res = await fetch("/api/profile", {
+          method: "GET",
+          credentials: "include"
+        });
+        if (res.ok) {
+          const user = await res.json();
+          if (user && user.username) {
+            window.location.href = "/index.html";
+          }
+        }
+      } catch (e) {
+        console.log("Not logged in yet.");
+      }
+    })();
+
+    // 🔹 Handle registration
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
       errorEl.style.display = 'none';
@@ -198,39 +212,36 @@
         const res = await fetch('/api/register', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
+          credentials: 'include', // ✅ ensure cookies
           body: JSON.stringify({ email, username, password })
         });
 
-        const text = await res.text();
-        let data;
-        try { data = JSON.parse(text); } catch { throw new Error(text); }
+        const data = await res.json();
 
-        if (!res.ok) throw new Error(data.error || "Registration failed");
+        if (res.ok) {
+          successEl.textContent = "Account created successfully! Redirecting...";
+          successEl.style.display = 'block';
 
-        successEl.textContent = "Account created! Redirecting...";
-        successEl.style.display = 'block';
+          // Save user data locally
+          if (data.user) {
+            localStorage.setItem("userId", data.user.id);
+            localStorage.setItem("username", data.user.username);
+            localStorage.setItem("email", data.user.email);
+          }
 
-        setTimeout(() => window.location.href = "index.html", 1000);
-      } catch (err) {
-        console.error('Error:', err);
-        
-        let errorMessage = 'Server error. Please try again.';
-        if (err instanceof Error) {
-          errorMessage = err.message;
-        } else if (typeof err === 'string') {
-          errorMessage = err;
-        } else if (err && err.message) {
-          errorMessage = err.message;
+          // Redirect to index after delay
+          setTimeout(() => window.location.href = "/index.html", 1200);
+        } else {
+          throw new Error(data.error || "Registration failed");
         }
-        
-        errorEl.textContent = errorMessage;
+      } catch (err) {
+        console.error("Error:", err);
+        errorEl.textContent = err.message || "Server error. Please try again.";
         errorEl.style.display = 'block';
         button.disabled = false;
         button.textContent = 'Create Account';
       }
     });
   </script>
-
 </body>
 </html>

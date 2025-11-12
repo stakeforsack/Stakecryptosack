@@ -345,144 +345,150 @@
   </nav>
 
   <script>
-    document.addEventListener('DOMContentLoaded', async () => {
-      try {
-        console.log('Loading profile...');
-        
-        const res = await fetch('/api/profile', { 
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        });
+  document.addEventListener('DOMContentLoaded', async () => {
+    try {
+      console.log('Loading profile...');
 
-        console.log('Profile response status:', res.status);
-
-        if (res.status === 401) {
-          console.log('Not authenticated, redirecting to login');
-          setTimeout(() => {
-            window.location.href = '/login.html';
-          }, 1000);
-          return;
+      const res = await fetch('https://stakecryptosack.vercel.app/api/profile', {
+        method: 'GET',
+        credentials: 'include', // 👈 include cookies/sessions
+        headers: {
+          'Content-Type': 'application/json'
         }
-        
-        if (!res.ok) {
-          const errorData = await res.json();
-          throw new Error(errorData.error || 'Failed to load profile');
-        }
+      });
 
-        const data = await res.json();
-        console.log('Profile data:', data);
-        
-        const user = data.user || {};
-        const balance = data.balance || {};
-        
-        // Display username
-        const username = user.username || user.email || 'User';
-        console.log('Setting username to:', username);
-        
-        const userElements = document.querySelectorAll('[data-username]');
-        userElements.forEach(el => {
-          el.textContent = username;
-        });
+      console.log('Profile response status:', res.status);
 
-        // Display email
-        const emailElements = document.querySelectorAll('[data-email]');
-        emailElements.forEach(el => {
-          el.textContent = user.email;
-        });
-
-        // Display wallet balances
-        displayBalances(balance);
-
-      } catch (err) {
-        console.error('Failed to load profile:', err);
-        alert('Error: ' + err.message);
-        window.location.href = '/login.html';
+      if (res.status === 401) {
+        console.log('Not authenticated, redirecting to login');
+        setTimeout(() => {
+          window.location.href = '/login.html';
+        }, 1000);
+        return;
       }
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to load profile');
+      }
+
+      const data = await res.json();
+      console.log('Profile data:', data);
+
+      const user = data.user || {};
+      const balance = data.balance || {};
+
+      // Display username
+      const username = user.username || user.email || 'User';
+      console.log('Setting username to:', username);
+
+      const userElements = document.querySelectorAll('[data-username]');
+      userElements.forEach(el => {
+        el.textContent = username;
+      });
+
+      // Display email
+      const emailElements = document.querySelectorAll('[data-email]');
+      emailElements.forEach(el => {
+        el.textContent = user.email;
+      });
+
+      // Display wallet balances
+      displayBalances(balance);
+
+    } catch (err) {
+      console.error('Failed to load profile:', err);
+      alert('Error: ' + err.message);
+      window.location.href = '/login.html';
+    }
+  });
+
+  function displayBalances(balance) {
+    console.log('Displaying balances:', balance);
+
+    const balanceContainer = document.getElementById('balanceCards');
+
+    if (!balanceContainer) {
+      console.warn('balanceCards container not found');
+      return;
+    }
+
+    balanceContainer.innerHTML = '';
+
+    const coins = Object.keys(balance || {});
+    let totalBalance = 0;
+
+    if (coins.length === 0) {
+      // Show 0 balance when no coins
+      document.getElementById('totalBalance').textContent = '0.00';
+      balanceContainer.innerHTML =
+        '<div style="grid-column: 1/-1; text-align: center; color: #999; padding: 20px;">No balance yet. Start depositing!</div>';
+      return;
+    }
+
+    coins.forEach(coin => {
+      const amount = balance[coin];
+      totalBalance += amount;
+      balanceContainer.innerHTML += `
+        <div style="background: rgba(26,26,26,0.8); border-radius: 10px; padding: 12px; text-align: center; border-left: 3px solid var(--accent);">
+          <div style="font-size: 0.8rem; color: #999; margin-bottom: 6px;">${coin}</div>
+          <div style="font-size: 1.3rem; color: var(--accent); font-weight: 700;">${amount.toFixed(4)}</div>
+          <div style="font-size: 0.75rem; color: #666; margin-top: 4px;">${coin}</div>
+        </div>
+      `;
     });
 
-    function displayBalances(balance) {
-      console.log('Displaying balances:', balance);
+    // Update total balance
+    document.getElementById('totalBalance').textContent = totalBalance.toFixed(4);
+  }
 
-      const balanceContainer = document.getElementById('balanceCards');
-
-      if (!balanceContainer) {
-        console.warn('balanceCards container not found');
-        return;
-      }
-
-      balanceContainer.innerHTML = '';
-
-      const coins = Object.keys(balance || {});
-      let totalBalance = 0;
-
-      if (coins.length === 0) {
-        // Show 0 balance when no coins
-        document.getElementById('totalBalance').textContent = '0.00';
-        balanceContainer.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #999; padding: 20px;">No balance yet. Start depositing!</div>';
-        return;
-      }
-
-      coins.forEach(coin => {
-        const amount = balance[coin];
-        totalBalance += amount;
-        balanceContainer.innerHTML += `
-          <div style="background: rgba(26,26,26,0.8); border-radius: 10px; padding: 12px; text-align: center; border-left: 3px solid var(--accent);">
-            <div style="font-size: 0.8rem; color: #999; margin-bottom: 6px;">${coin}</div>
-            <div style="font-size: 1.3rem; color: var(--accent); font-weight: 700;">${amount.toFixed(4)}</div>
-            <div style="font-size: 0.75rem; color: #666; margin-top: 4px;">${coin}</div>
-          </div>
-        `;
+  async function logout() {
+    try {
+      const res = await fetch('https://stakecryptosack.vercel.app/api/logout', {
+        method: 'POST',
+        credentials: 'include'
       });
 
-      // Update total balance
-      document.getElementById('totalBalance').textContent = totalBalance.toFixed(4);
-    }
-
-    async function logout() {
-      try {
-        const res = await fetch('/api/logout', { 
-          method: 'POST', 
-          credentials: 'include' 
-        });
-        
-        if (res.ok) {
-          localStorage.clear();
-          window.location.href = '/login.html';
-        }
-      } catch (err) { 
-        console.error('Logout error:', err);
-        alert('Logout failed.');
+      if (res.ok) {
+        localStorage.clear();
+        window.location.href = '/login.html';
       }
+    } catch (err) {
+      console.error('Logout error:', err);
+      alert('Logout failed.');
     }
+  }
 
-    function toggleLanguage(e) {
-      e.stopPropagation();
-      document.getElementById('langDropdown').classList.toggle('show');
-    }
+  function toggleLanguage(e) {
+    e.stopPropagation();
+    document.getElementById('langDropdown').classList.toggle('show');
+  }
 
-    function selectLanguage(lang, e) {
-      e.preventDefault(); e.stopPropagation();
-      const langMap = { en:'English', cn:'中文', kr:'한국어' };
-      document.getElementById('currentLang').textContent = langMap[lang] + ' 🌐';
-      document.querySelectorAll('.lang-option').forEach(opt => opt.classList.remove('selected'));
-      e.currentTarget.classList.add('selected');
-      localStorage.setItem('preferredLanguage', lang);
-      document.getElementById('langDropdown').classList.remove('show');
-    }
+  function selectLanguage(lang, e) {
+    e.preventDefault();
+    e.stopPropagation();
+    const langMap = { en: 'English', cn: '中文', kr: '한국어' };
+    document.getElementById('currentLang').textContent = langMap[lang] + ' 🌐';
+    document.querySelectorAll('.lang-option').forEach(opt => opt.classList.remove('selected'));
+    e.currentTarget.classList.add('selected');
+    localStorage.setItem('preferredLanguage', lang);
+    document.getElementById('langDropdown').classList.remove('show');
+  }
 
-    document.addEventListener('click', () => { document.getElementById('langDropdown').classList.remove('show'); });
+  document.addEventListener('click', () => {
+    document.getElementById('langDropdown').classList.remove('show');
+  });
 
-    const savedLang = localStorage.getItem('preferredLanguage');
-    if(savedLang){
-      const langMap = { en:'English', cn:'中文', kr:'한국어' };
-      document.getElementById('currentLang').textContent = langMap[savedLang] + ' 🌐';
-      document.querySelectorAll('.lang-option').forEach(opt => {
-        opt.classList.remove('selected');
-        if(opt.getAttribute('onclick').includes(savedLang)) opt.classList.add('selected');
-      });
-    }
-  </script>
+  const savedLang = localStorage.getItem('preferredLanguage');
+  if (savedLang) {
+    const langMap = { en: 'English', cn: '中文', kr: '한국어' };
+    document.getElementById('currentLang').textContent = langMap[savedLang] + ' 🌐';
+    document.querySelectorAll('.lang-option').forEach(opt => {
+      opt.classList.remove('selected');
+      if (opt.getAttribute('onclick').includes(savedLang)) opt.classList.add('selected');
+    });
+  }
+</script>
+
 </body>
 </html>

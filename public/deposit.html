@@ -30,9 +30,7 @@
       color: #a855f7;
     }
 
-    .form-group {
-      margin-bottom: 20px;
-    }
+    .form-group { margin-bottom: 20px; }
 
     label {
       display: block;
@@ -98,42 +96,14 @@
       border-left: 4px solid #fbbf24;
     }
 
-    .status-label {
-      font-weight: 600;
-      margin-bottom: 5px;
-    }
+    .status-label { font-weight: 600; margin-bottom: 5px; }
+    .status-value { color: #fbbf24; font-size: 1.1rem; }
+    .status-confirmed .status-value { color: #90ee90; }
+    .status-confirmed .status-box { border-left-color: #90ee90; }
 
-    .status-value {
-      color: #fbbf24;
-      font-size: 1.1rem;
-    }
-
-    .status-confirmed .status-value {
-      color: #90ee90;
-    }
-
-    .status-confirmed .status-box {
-      border-left-color: #90ee90;
-    }
-
-    .qr-container {
-      text-align: center;
-      margin: 20px 0;
-    }
-
-    .qr-code {
-      width: 200px;
-      height: 200px;
-      background: #fff;
-      padding: 10px;
-      border-radius: 8px;
-      display: inline-block;
-    }
-
-    .qr-code img {
-      width: 100%;
-      height: 100%;
-    }
+    .qr-container { text-align: center; margin: 20px 0; }
+    .qr-code { width: 200px; height: 200px; background: #fff; padding: 10px; border-radius: 8px; display: inline-block; }
+    .qr-code img { width: 100%; height: 100%; }
 
     .address-box {
       background: #0b0b0b;
@@ -156,13 +126,7 @@
     }
 
     .copy-btn:hover { background: #2dd4bf; }
-
-    .info-text {
-      color: #999;
-      font-size: 0.9rem;
-      margin: 15px 0;
-      line-height: 1.6;
-    }
+    .info-text { color: #999; font-size: 0.9rem; margin: 15px 0; line-height: 1.6; }
 
     .transaction-id {
       background: #0b0b0b;
@@ -263,27 +227,33 @@
   </div>
 
   <script>
-    const cryptoData = {
-      BTC: {
-        address: 'YOUR_BTC_ADDRESS_HERE',
-        qrCode: 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=bitcoin:YOUR_BTC_ADDRESS_HERE'
-      },
-      ETH: {
-        address: 'YOUR_ETH_ADDRESS_HERE',
-        qrCode: 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=ethereum:YOUR_ETH_ADDRESS_HERE'
-      },
-      USDT: {
-        address: 'YOUR_USDT_ADDRESS_HERE',
-        qrCode: 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=ethereum:YOUR_USDT_ADDRESS_HERE'
-      },
-      BNB: {
-        address: 'YOUR_BNB_ADDRESS_HERE',
-        qrCode: 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=bnb:YOUR_BNB_ADDRESS_HERE'
+    const baseUrl = window.location.origin; // dynamically works on Vercel or localhost
+
+    // 🔒 Check if user is logged in
+    window.addEventListener("DOMContentLoaded", async () => {
+      try {
+        const res = await fetch(`${baseUrl}/api/profile`, {
+          method: "GET",
+          credentials: "include"
+        });
+
+        if (!res.ok) {
+          window.location.href = "login.html";
+        }
+      } catch (err) {
+        console.error("Auth check failed:", err);
+        window.location.href = "login.html";
       }
+    });
+
+    const cryptoData = {
+      BTC: { address: 'YOUR_BTC_ADDRESS_HERE', qrCode: `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=bitcoin:YOUR_BTC_ADDRESS_HERE` },
+      ETH: { address: 'YOUR_ETH_ADDRESS_HERE', qrCode: `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=ethereum:YOUR_ETH_ADDRESS_HERE` },
+      USDT: { address: 'YOUR_USDT_ADDRESS_HERE', qrCode: `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=ethereum:YOUR_USDT_ADDRESS_HERE` },
+      BNB: { address: 'YOUR_BNB_ADDRESS_HERE', qrCode: `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=bnb:YOUR_BNB_ADDRESS_HERE` }
     };
 
-    let currentTxId = null;
-    let currentCoin = null;
+    let currentTxId = null, currentCoin = null;
 
     const form = document.getElementById('depositForm');
     const errorDiv = document.getElementById('error');
@@ -292,7 +262,6 @@
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
-      
       errorDiv.style.display = 'none';
       submitBtn.disabled = true;
       submitBtn.textContent = 'Processing...';
@@ -301,31 +270,24 @@
       const amount = document.getElementById('amount').value;
 
       try {
-        const response = await fetch('/api/deposit', {
+        const res = await fetch(`${baseUrl}/api/deposit`, {
           method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          },
+          headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
           body: JSON.stringify({ coin, amount: parseFloat(amount) })
         });
 
-        if (!response.ok) {
-          const data = await response.json();
-          throw new Error(data.error || 'Deposit failed');
-        }
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Deposit failed');
 
-        const data = await response.json();
         currentTxId = data.txId;
         currentCoin = coin;
-
         showPaymentDetails(coin, amount);
         form.style.display = 'none';
-
       } catch (err) {
         errorDiv.textContent = '✗ ' + err.message;
         errorDiv.style.display = 'block';
+      } finally {
         submitBtn.disabled = false;
         submitBtn.textContent = 'Proceed to Payment';
       }
@@ -343,14 +305,14 @@
 
     async function checkPaymentStatus() {
       try {
-        const response = await fetch(`/api/verify-payment`, {
+        const res = await fetch(`${baseUrl}/api/verify-payment`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
           body: JSON.stringify({ txId: currentTxId, coin: currentCoin })
         });
 
-        const data = await response.json();
+        const data = await res.json();
         const statusBox = document.getElementById('statusBox');
         const statusValue = document.getElementById('statusValue');
         const statusMessage = document.getElementById('statusMessage');
@@ -358,26 +320,24 @@
         if (data.status === 'CONFIRMED') {
           statusBox.classList.add('status-confirmed');
           statusValue.textContent = '✓ Payment Confirmed!';
-          statusMessage.innerHTML = `<strong>✓ Success!</strong> Your deposit of ${data.amount} ${data.coin} has been confirmed. Funds will be added to your account shortly.`;
-          statusMessage.style.display = 'block';
-        } else if (data.status === 'PENDING') {
-          statusValue.textContent = '⏳ Still Waiting...';
-          statusMessage.textContent = 'Payment not yet detected. This can take a few minutes.';
-          statusMessage.style.display = 'block';
+          statusMessage.innerHTML = `<strong>✓ Success!</strong> Your deposit of ${data.amount} ${data.coin} has been confirmed.`;
         } else {
-          statusMessage.textContent = 'Status: ' + data.status;
-          statusMessage.style.display = 'block';
+          statusValue.textContent = data.status === 'PENDING' ? '⏳ Waiting for confirmation...' : '⚠️ Unknown status';
+          statusMessage.textContent = data.status === 'PENDING'
+            ? 'Still waiting for network confirmation...'
+            : 'Payment not found or expired.';
         }
+
+        statusMessage.style.display = 'block';
       } catch (err) {
         alert('Error checking status: ' + err.message);
       }
     }
 
     function copyAddress() {
-      const address = document.getElementById('addressBox').textContent;
-      navigator.clipboard.writeText(address).then(() => {
-        alert('Address copied!');
-      });
+      const addr = document.getElementById('addressBox').textContent;
+      navigator.clipboard.writeText(addr);
+      alert('Address copied!');
     }
 
     function goBack() {
