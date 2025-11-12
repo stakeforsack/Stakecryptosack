@@ -209,11 +209,19 @@
         const res = await fetch("/api/login", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          credentials: "include", // ✅ Important for cookies
-          body: JSON.stringify({ username: userOrEmail, email: userOrEmail, password })
+          credentials: "include", // ✅ Keeps session cookie
+          body: JSON.stringify({ username: userOrEmail, email: userOrEmail, password }),
         });
 
-        const data = await res.json();
+        // ✅ Safer JSON parse
+        let data;
+        try {
+          data = await res.json();
+        } catch {
+          const text = await res.text();
+          throw new Error("Server error: " + text);
+        }
+
         if (res.ok && data.user) {
           localStorage.setItem("userId", data.user.id);
           localStorage.setItem("username", data.user.username);
@@ -222,9 +230,12 @@
         } else {
           throw new Error(data.error || "Invalid credentials");
         }
+
       } catch (err) {
         errorEl.textContent = err.message || "Login failed. Please try again.";
         errorEl.style.display = "block";
+        console.error(err);
+      } finally {
         button.disabled = false;
         button.textContent = "Login";
       }
