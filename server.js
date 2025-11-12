@@ -1,6 +1,7 @@
 import express from "express";
 import session from "express-session";
 import bcrypt from "bcryptjs";
+import mongoose from "mongoose";
 import cors from "cors";
 import dotenv from "dotenv";
 import path from "path";
@@ -158,10 +159,12 @@ app.get("/api/profile", needAuth, async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
 
+    const userId = new mongoose.Types.ObjectId(req.session.userId);
+
     const deposits = await Transaction.aggregate([
       {
         $match: {
-          userId: new mongoose.Types.ObjectId(req.session.userId),
+          userId: userId,
           type: "DEPOSIT",
           status: "CONFIRMED"
         }
@@ -177,7 +180,7 @@ app.get("/api/profile", needAuth, async (req, res) => {
     const withdrawals = await Transaction.aggregate([
       {
         $match: {
-          userId: new mongoose.Types.ObjectId(req.session.userId),
+          userId: userId,
           type: "WITHDRAW",
           status: "CONFIRMED"
         }
