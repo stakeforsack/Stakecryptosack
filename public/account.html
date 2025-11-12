@@ -20,6 +20,7 @@
       margin: 0;
       padding-bottom: 80px;
       overflow-x: hidden;
+      position: relative;
     }
 
     @keyframes gradientFlow {
@@ -163,7 +164,7 @@
   <section id="walletSection" style="padding: 16px;">
     <div style="background: rgba(26,26,26,0.8); border-radius: 12px; padding: 20px; margin-bottom: 16px;">
       <div style="font-size: 0.9rem; color: #999;">Total Balance</div>
-      <div style="font-size: 1.8rem; color: var(--accent); font-weight: 700;" id="totalBalance">0.00</div>
+      <div style="font-size: 1.8rem; color: var(--accent); font-weight: 700;" id="totalBalance">Loading...</div>
     </div>
     <div id="balanceCards" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;"></div>
   </section>
@@ -185,32 +186,37 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', async () => {
+      // Check authentication first
       try {
-        const res = await fetch('/api/profile', {
+        const authCheck = await fetch('/api/profile', {
           method: 'GET',
           credentials: 'include',
           headers: { 'Content-Type': 'application/json' }
         });
 
-        if (res.status === 401) {
+        if (authCheck.status === 401) {
+          // User is not logged in
           window.location.href = '/login.html';
           return;
         }
 
-        if (!res.ok) throw new Error('Failed to load profile');
-
-        const data = await res.json();
+        const data = await authCheck.json();
         const user = data.user || {};
         const balance = data.balance || {};
 
+        // Set username and avatar
         const username = user.username || user.email?.split('@')[0] || 'User';
         document.querySelector('[data-username]').textContent = username;
         document.getElementById('userAvatar').textContent = username[0].toUpperCase();
 
+        // Display balances
         displayBalances(balance);
       } catch (err) {
         console.error('Profile load failed:', err);
-        window.location.href = '/login.html';
+        // Show message instead of redirect
+        document.querySelector('[data-username]').textContent = 'Error loading user';
+        document.getElementById('totalBalance').textContent = '0.00';
+        document.getElementById('balanceCards').innerHTML = '<div style="color:#999;text-align:center;">Unable to load balances.</div>';
       }
     });
 
@@ -221,6 +227,7 @@
       let total = 0;
       if (!coins.length) {
         container.innerHTML = `<div style="color:#999;text-align:center;">No balance yet.</div>`;
+        document.getElementById('totalBalance').textContent = '0.00';
         return;
       }
       coins.forEach(coin => {

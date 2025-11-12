@@ -7,18 +7,18 @@ import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
 import { connectDB, User, Transaction } from "./db.js";
-import MongoStore from "connect-mongo"; // ✅ persistent sessions
 
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
 const app = express();
 
-// ✅ Your frontend domain (update this to match actual deployed frontend)
-const FRONTEND_URL = process.env.FRONTEND_URL || "https://stakecryptosack.vercel.app";
+// ✅ Frontend URL (replace with your Vercel domain)
+const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
 
-// ✅ CORS setup (MUST match the frontend domain exactly)
+// ✅ CORS
 app.use(
   cors({
     origin: FRONTEND_URL,
@@ -27,33 +27,25 @@ app.use(
   })
 );
 
-// ✅ Middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// ✅ Body parsers
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ limit: "10mb", extended: true }));
 
-// ✅ Serve static (optional for local)
+// ✅ Static files (for local testing)
 app.use(express.static(path.join(__dirname, "public")));
 
-// ✅ Trust proxy for secure cookies on Vercel
+// ✅ Trust proxy for Vercel HTTPS
 app.set("trust proxy", 1);
 
-// ✅ Persistent sessions using MongoStore (important for Vercel)
+// ✅ Session setup
 app.use(
   session({
-    secret: process.env.SESSION_SECRET || "change-this-secret",
+    secret: process.env.SESSION_SECRET || "your-secret-key",
     resave: false,
     saveUninitialized: false,
-    store:
-      process.env.NODE_ENV === "production"
-        ? MongoStore.create({
-            mongoUrl: process.env.MONGO_URI,
-            dbName: "godstake",
-            ttl: 24 * 60 * 60, // 1 day
-          })
-        : undefined,
     cookie: {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production", // only HTTPS
+      secure: process.env.NODE_ENV === "production",
       sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       maxAge: 24 * 60 * 60 * 1000,
       path: "/",
@@ -63,7 +55,7 @@ app.use(
 
 // ✅ Auth middleware
 const needAuth = (req, res, next) => {
-  if (!req.session?.userId) {
+  if (!req.session || !req.session.userId) {
     return res.status(401).json({ error: "Please login" });
   }
   next();
@@ -71,38 +63,38 @@ const needAuth = (req, res, next) => {
 
 // ✅ Health check
 app.get("/api/health", (req, res) => {
-  res.json({ ok: true, message: "Server is healthy ✅" });
+  res.json({ ok: true, message: "Server running fine ✅" });
 });
 
-// ✅ Register route
+// ✅ Register
 app.post("/api/register", async (req, res) => {
   try {
     await connectDB();
     const { email, username, password } = req.body;
-
     if (!email || !username || !password)
       return res.status(400).json({ error: "All fields required" });
 
-    const existing = await User.findOne({ $or: [{ email }, { username }] });
-    if (existing)
-      return res.status(400).json({ error: "Email or username already exists" });
+    const exists = await User.findOne({ $or: [{ email }, { username }] });
+    if (exists) return res.status(400).json({ error: "Email or username already exists" });
 
-    const hash = await bcrypt.hash(password, 10);
-    const user = await User.create({ email, username, password: hash });
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = new User({ email, username, password: hashedPassword });
+    await user.save();
 
     req.session.userId = user._id.toString();
     req.session.username = user.username;
+
     req.session.save((err) => {
       if (err) return res.status(500).json({ error: "Session save failed" });
       res.json({ ok: true, user: { id: user._id, email, username } });
     });
   } catch (err) {
-    console.error("❌ Register error:", err);
-    res.status(500).json({ error: "Internal server error" });
+    console.error("Register error:", err);
+    res.status(500).json({ error: err.message || "Server error" });
   }
 });
 
-// ✅ Login route
+// ✅ Login
 app.post("/api/login", async (req, res) => {
   try {
     await connectDB();
@@ -115,33 +107,25 @@ app.post("/api/login", async (req, res) => {
     const user = await User.findOne({
       $or: [{ username: userOrEmail }, { email: userOrEmail }],
     });
-
     if (!user) return res.status(401).json({ error: "Invalid credentials" });
 
-    const isValid = await bcrypt.compare(password, user.password);
-    if (!isValid) return res.status(401).json({ error: "Invalid credentials" });
+    const match = await bcrypt.compare(password, user.password);
+    if (!match) return res.status(401).json({ error: "Invalid credentials" });
 
     req.session.userId = user._id.toString();
     req.session.username = user.username;
 
     req.session.save((err) => {
-      if (err) {
-        console.error("Session save failed:", err);
-        return res.status(500).json({ error: "Session error" });
-      }
-      res.json({
-        ok: true,
-        user: { id: user._id, username: user.username, email: user.email },
-      });
+      if (err) return res.status(500).json({ error: "Session save failed" });
+      res.json({ ok: true, user: { id: user._id, username: user.username, email: user.email } });
     });
   } catch (err) {
-    console.error("❌ Login error:", err);
-    // ✅ Always return JSON — never plain text
-    res.status(500).json({ error: "Server error during login" });
+    console.error("Login error:", err);
+    res.status(500).json({ error: err.message || "Server error" });
   }
 });
 
-// ✅ Profile route
+// ✅ Profile (protected)
 app.get("/api/profile", needAuth, async (req, res) => {
   try {
     await connectDB();
@@ -161,12 +145,8 @@ app.get("/api/profile", needAuth, async (req, res) => {
     ]);
 
     const balance = {};
-    deposits.forEach((dep) => {
-      balance[dep._id] = (balance[dep._id] || 0) + dep.total;
-    });
-    withdrawals.forEach((wit) => {
-      balance[wit._id] = (balance[wit._id] || 0) - wit.total;
-    });
+    deposits.forEach((dep) => { balance[dep._id] = (balance[dep._id] || 0) + dep.total; });
+    withdrawals.forEach((wit) => { balance[wit._id] = (balance[wit._id] || 0) - wit.total; });
 
     res.json({
       ok: true,
@@ -180,18 +160,15 @@ app.get("/api/profile", needAuth, async (req, res) => {
       balance,
     });
   } catch (err) {
-    console.error("❌ Profile error:", err);
-    res.status(500).json({ error: "Server error loading profile" });
+    console.error("Profile error:", err);
+    res.status(500).json({ error: err.message || "Server error" });
   }
 });
 
 // ✅ Logout
 app.post("/api/logout", (req, res) => {
   req.session.destroy((err) => {
-    if (err) {
-      console.error("Logout error:", err);
-      return res.status(500).json({ error: "Logout failed" });
-    }
+    if (err) return res.status(500).json({ error: "Logout failed" });
     res.clearCookie("connect.sid", {
       path: "/",
       sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
@@ -201,21 +178,19 @@ app.post("/api/logout", (req, res) => {
   });
 });
 
-// ✅ Fallback for undefined routes
-app.use((req, res) => {
-  res.status(404).json({ error: "API route not found" });
-});
+// ✅ 404 fallback
+app.use((req, res) => res.status(404).json({ error: "Endpoint not found" }));
 
-// ✅ Global error handler (always return JSON)
+// ✅ Global error handler
 app.use((err, req, res, next) => {
-  console.error("⚠️ Uncaught error:", err);
-  res.status(500).json({ error: "Internal server error" });
+  console.error("Error:", err);
+  res.status(500).json({ error: err.message || "Internal server error" });
 });
 
-// ✅ Start server locally
+// ✅ Start server
 const PORT = process.env.PORT || 3000;
 if (process.env.NODE_ENV !== "production") {
-  app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
+  app.listen(PORT, () => console.log(`✓ Server running on http://localhost:${PORT}`));
 }
 
 export default app;
