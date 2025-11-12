@@ -1,11 +1,11 @@
 import express from "express";
 import session from "express-session";
 import bcrypt from "bcryptjs";
-import mongoose from "mongoose";
 import cors from "cors";
 import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
+import { connectDB, User, Transaction } from "./db.js";
 
 dotenv.config();
 
@@ -14,19 +14,18 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
-// CORS middleware
+// Middleware
 app.use(cors({
   origin: true,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
 }));
 
-// Body parsing
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 app.use(express.static(path.join(__dirname, "public")));
 
-// Session configuration for Vercel
+// Session configuration
 app.use(session({
   secret: process.env.SESSION_SECRET || "your-secret-key-change-this",
   resave: false,
@@ -40,56 +39,6 @@ app.use(session({
   }
 }));
 
-// MongoDB Connection with Vercel timeout
-let mongoConnected = false;
-
-async function connectMongo() {
-  if (mongoConnected) return;
-  
-  try {
-    await mongoose.connect(process.env.MONGO_URI, {
-      serverSelectionTimeoutMS: 10000,
-      socketTimeoutMS: 45000,
-      connectTimeoutMS: 10000,
-      retryWrites: true,
-      w: 'majority'
-    });
-    mongoConnected = true;
-    console.log('✓ Connected to MongoDB');
-  } catch (err) {
-    console.error('✗ MongoDB connection error:', err.message);
-    mongoConnected = false;
-    throw err;
-  }
-}
-
-// Call on startup
-connectMongo().catch(err => console.error('Initial connection failed:', err));
-
-// User Schema - FIX THE MISSING DEFAULT VALUE
-const userSchema = new mongoose.Schema({
-  email: { type: String, unique: true, required: true },
-  username: { type: String, unique: true, required: true },
-  password: { type: String, required: true },
-  vip: { type: Number, default: 0 },
-  createdAt: { type: Date, default: Date.now }
-});
-
-const User = mongoose.model('User', userSchema);
-
-// Transaction Schema
-const transactionSchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  type: { type: String, enum: ['DEPOSIT', 'WITHDRAW', 'TRANSFER'], required: true },
-  coin: { type: String, required: true },
-  amount: { type: Number, required: true },
-  status: { type: String, default: 'PENDING', enum: ['PENDING', 'CONFIRMED', 'FAILED'] },
-  meta: mongoose.Schema.Types.Mixed,
-  createdAt: { type: Date, default: Date.now }
-});
-
-const Transaction = mongoose.model('Transaction', transactionSchema);
-
 // Auth middleware
 const needAuth = (req, res, next) => {
   if (!req.session || !req.session.userId) {
@@ -98,15 +47,15 @@ const needAuth = (req, res, next) => {
   next();
 };
 
-// Health check endpoint
+// Health check
 app.get("/api/health", (req, res) => {
-  res.json({ ok: true, message: "Server is running", mongoConnected });
+  res.json({ ok: true, message: "Server is running" });
 });
 
-// Login endpoint
+// Login
 app.post("/api/login", async (req, res) => {
   try {
-    await connectMongo();
+    await connectDB();
     
     const { username, email, password } = req.body;
     const userOrEmail = username || email;
@@ -154,10 +103,10 @@ app.post("/api/login", async (req, res) => {
   }
 });
 
-// Register endpoint
+// Register
 app.post('/api/register', async (req, res) => {
   try {
-    await connectMongo();
+    await connectDB();
     
     const { email, username, password } = req.body;
 
@@ -198,10 +147,10 @@ app.post('/api/register', async (req, res) => {
   }
 });
 
-// Get user profile
+// Get profile
 app.get("/api/profile", needAuth, async (req, res) => {
   try {
-    await connectMongo();
+    await connectDB();
     
     const user = await User.findById(req.session.userId).select('-password');
     
@@ -268,10 +217,10 @@ app.get("/api/profile", needAuth, async (req, res) => {
   }
 });
 
-// Deposit endpoint
+// Deposit
 app.post("/api/deposit", needAuth, async (req, res) => {
   try {
-    await connectMongo();
+    await connectDB();
     
     const { coin, amount } = req.body;
 
@@ -305,10 +254,10 @@ app.post("/api/deposit", needAuth, async (req, res) => {
   }
 });
 
-// Withdraw endpoint
+// Withdraw
 app.post("/api/withdraw", needAuth, async (req, res) => {
   try {
-    await connectMongo();
+    await connectDB();
     
     const { coin, amount, wallet } = req.body;
 
@@ -346,7 +295,7 @@ app.post("/api/withdraw", needAuth, async (req, res) => {
 // Get transactions
 app.get("/api/transactions", needAuth, async (req, res) => {
   try {
-    await connectMongo();
+    await connectDB();
     
     const transactions = await Transaction.find({ userId: req.session.userId }).sort({ createdAt: -1 }).limit(100);
     res.json({ ok: true, transactions });
@@ -366,7 +315,7 @@ app.post("/api/logout", (req, res) => {
   });
 });
 
-// 404 handler
+// 404
 app.use((req, res) => {
   res.status(404).json({ error: 'Endpoint not found' });
 });
@@ -378,4 +327,12 @@ app.use((err, req, res, next) => {
 });
 
 // Export for Vercel
+const PORT = process.env.PORT || 3000;
+
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(PORT, () => {
+    console.log(`✓ Server running on port ${PORT}`);
+  });
+}
+
 export default app;
