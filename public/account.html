@@ -5,14 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>My Account - GodStake</title>
   <link rel="stylesheet" href="/style.css" />
-
   <style>
     :root {
       --accent: #a855f7;
       --gradient: linear-gradient(135deg, #a855f7, #7c3aed);
     }
 
-    /* === Background === */
     body {
       font-family: Arial, Helvetica, sans-serif;
       background: linear-gradient(-45deg, #000000, #0b0b0b, #121212, #1a1a1a);
@@ -20,7 +18,7 @@
       animation: gradientFlow 12s ease infinite;
       color: #fff;
       margin: 0;
-      padding-bottom: 80px; /* space for bottom nav */
+      padding-bottom: 80px;
       overflow-x: hidden;
     }
 
@@ -50,7 +48,6 @@
       to { transform: translateY(-30px) scale(1.1); }
     }
 
-    /* === Header === */
     header.header {
       display: flex;
       justify-content: space-between;
@@ -66,13 +63,7 @@
 
     header .logo img { height: 32px; }
 
-    .language {
-      position: relative;
-      cursor: pointer;
-      font-size: 0.9rem;
-      color: var(--accent);
-      font-weight: 500;
-    }
+    .language { position: relative; cursor: pointer; color: var(--accent); }
 
     .language-dropdown {
       display: none;
@@ -84,36 +75,18 @@
       border-radius: 8px;
       overflow: hidden;
       width: 160px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
     }
 
     .language-dropdown.show { display: block; }
-
-    .lang-option {
-      padding: 12px 16px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      color: #fff;
-      text-decoration: none;
-    }
+    .lang-option { padding: 12px 16px; color: #fff; text-decoration: none; display: flex; gap: 8px; }
     .lang-option:hover { background: #252525; }
     .lang-option.selected { background: #333; }
-    .lang-option img { width: 20px; height: 20px; border-radius: 50%; }
 
-    /* === Account Header === */
     .account-header {
       background: linear-gradient(to right, rgba(168,85,247,0.1), rgba(124,58,237,0.1));
       padding: 24px 16px;
       text-align: center;
       animation: fadeUpSmooth 0.8s forwards;
-    }
-
-    .user-info {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 8px;
     }
 
     .avatar {
@@ -128,148 +101,57 @@
       color: #fff;
       margin-bottom: 8px;
       box-shadow: 0 0 20px rgba(168,85,247,0.3);
-      animation: floatGlow 4s infinite alternate ease-in-out;
     }
 
-    .username {
-      font-size: 1.4rem;
-      font-weight: 700;
-      color: #fff;
-    }
-
+    .username { font-size: 1.4rem; font-weight: 700; }
     .vip-badge {
       background: linear-gradient(135deg, #ffd700, #daa520);
-      color: #000;
-      padding: 4px 12px;
-      border-radius: 12px;
-      font-size: 0.9rem;
-      font-weight: 600;
+      color: #000; padding: 4px 12px; border-radius: 12px; font-weight: 600;
     }
 
-    /* === Menu Items === */
-    .menu-list {
-      padding: 16px;
-    }
-
+    .menu-list { padding: 16px; }
     .menu-item {
-      display: flex;
-      align-items: center;
-      padding: 16px;
-      background: rgba(26,26,26,0.8);
-      margin-bottom: 12px;
-      border-radius: 12px;
-      color: #fff;
-      text-decoration: none;
-      transition: all 0.3s ease;
-      animation: fadeUpSmooth 0.8s forwards;
+      display: flex; align-items: center; padding: 16px;
+      background: rgba(26,26,26,0.8); margin-bottom: 12px; border-radius: 12px;
+      color: #fff; text-decoration: none; transition: all 0.3s ease;
     }
-
     .menu-item:hover {
       transform: translateY(-3px) scale(1.02);
-      box-shadow: 0 0 20px rgba(168, 85, 247, 0.3);
+      box-shadow: 0 0 20px rgba(168,85,247,0.3);
     }
 
-    .menu-item img {
-      width: 28px;
-      height: 28px;
-      margin-right: 12px;
-    }
-
-    .menu-item span { flex: 1; font-weight: 500; }
-
-    .menu-item::after {
-      content: '›';
-      color: #666;
-      font-size: 1.3rem;
-    }
-
-    /* Logout Button */
     .logout-btn {
       background: linear-gradient(135deg, #ff4444, #cc0000);
-      color: #fff;
-      border: none;
-      width: calc(100% - 32px);
-      margin: 16px;
-      padding: 16px;
-      border-radius: 12px;
-      font-size: 1rem;
-      cursor: pointer;
-      font-weight: 600;
-      transition: all 0.3s ease;
-    }
-    .logout-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 0 20px rgba(255,68,68,0.4);
+      border: none; width: calc(100% - 32px);
+      margin: 16px; padding: 16px; border-radius: 12px;
+      color: #fff; font-size: 1rem; font-weight: 600; cursor: pointer;
     }
 
-    /* Bottom Navigation */
     .bottom-nav {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      background: rgba(15,15,15,0.9);
-      border-top: 1px solid rgba(255,255,255,0.05);
-      display: flex;
-      justify-content: space-around;
-      align-items: center;
-      height: 60px;
-      z-index: 10;
-      backdrop-filter: blur(12px);
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: rgba(15,15,15,0.9); border-top: 1px solid rgba(255,255,255,0.05);
+      display: flex; justify-content: space-around; align-items: center; height: 60px;
+      z-index: 10; backdrop-filter: blur(12px);
     }
 
-    .bottom-nav a {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-decoration: none;
-      font-size: 12px;
-      color: #999;
-      transition: all 0.3s ease;
-    }
-    .bottom-nav a.active {
-      color: var(--accent);
-    }
-    .bottom-nav a:hover {
-      color: var(--accent);
-      transform: translateY(-2px);
-    }
-    .bottom-nav img {
-      width: 24px;
-      height: 24px;
-      margin-bottom: 2px;
-    }
-
-    /* Section Animation */
-    @keyframes fadeUpSmooth {
-      0% { opacity: 0; transform: translateY(20px); }
-      100% { opacity: 1; transform: translateY(0); }
-    }
+    .bottom-nav a { display: flex; flex-direction: column; align-items: center; text-decoration: none; color: #999; }
+    .bottom-nav a.active { color: var(--accent); }
   </style>
 </head>
+
 <body>
-  <!-- Header -->
   <header class="header">
-    <div class="logo">
-      <img src="/img/logo.png" alt="Logo">
-    </div>
+    <div class="logo"><img src="/img/logo.png" alt="Logo"></div>
     <div class="language" onclick="toggleLanguage(event)">
       <span id="currentLang">English 🌐</span>
       <div class="language-dropdown" id="langDropdown">
-        <a href="#" class="lang-option selected" onclick="selectLanguage('en', event)">
-          <img src="/img/flags/en.png" alt="English"> English
-        </a>
-        <a href="#" class="lang-option" onclick="selectLanguage('cn', event)">
-          <img src="/img/flags/cn.png" alt="Chinese"> 中文
-        </a>
-        <a href="#" class="lang-option" onclick="selectLanguage('kr', event)">
-          <img src="/img/flags/kr.png" alt="Korean"> 한국어
-        </a>
+        <a href="#" class="lang-option selected" onclick="selectLanguage('en', event)">English</a>
+        <a href="#" class="lang-option" onclick="selectLanguage('cn', event)">中文</a>
+        <a href="#" class="lang-option" onclick="selectLanguage('kr', event)">한국어</a>
       </div>
     </div>
   </header>
 
-  <!-- Account Info -->
   <section class="account-header">
     <div class="user-info">
       <div class="avatar" id="userAvatar">U</div>
@@ -278,217 +160,105 @@
     </div>
   </section>
 
-  <!-- Wallet Section -->
   <section id="walletSection" style="padding: 16px;">
-    <div style="background: rgba(26,26,26,0.8); border-radius: 12px; padding: 20px; margin-bottom: 16px; animation: fadeUpSmooth 0.8s forwards;">
-      <div style="font-size: 0.9rem; color: #999; margin-bottom: 8px;">Total Balance</div>
+    <div style="background: rgba(26,26,26,0.8); border-radius: 12px; padding: 20px; margin-bottom: 16px;">
+      <div style="font-size: 0.9rem; color: #999;">Total Balance</div>
       <div style="font-size: 1.8rem; color: var(--accent); font-weight: 700;" id="totalBalance">0.00</div>
     </div>
-
-    <!-- Add this container for balance cards: -->
-    <div id="balanceCards" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;">
-      <!-- Balances will load here -->
-    </div>
-
-    <div style="background: rgba(26,26,26,0.8); border-radius: 12px; padding: 16px;">
-      <div style="font-size: 1rem; color: #fff; font-weight: 600; margin-bottom: 12px;">Quick Actions</div>
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-        <a href="deposit.html" style="background: var(--gradient); color: #fff; padding: 12px; border-radius: 8px; text-align: center; text-decoration: none; font-weight: 600; transition: 0.3s;">
-          Deposit
-        </a>
-        <a href="withdraw.html" style="background: #333; color: #fff; padding: 12px; border-radius: 8px; text-align: center; text-decoration: none; font-weight: 600; transition: 0.3s;">
-          Withdraw
-        </a>
-      </div>
-    </div>
+    <div id="balanceCards" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;"></div>
   </section>
 
-  <!-- Menu Items -->
   <div class="menu-list">
-    <a href="profile.html" class="menu-item">
-      <img src="/img/profilesetting.png" alt=""><span>Profile Settings</span>
-    </a>
-    <a href="security.html" class="menu-item">
-      <img src="/img/securitysetting2.png" alt=""><span>Security Settings</span>
-    </a>
-    <a href="payment-methods.html" class="menu-item">
-      <img src="/img/paymentmethod.png" alt=""><span>Payment Methods</span>
-    </a>
-    <a href="transaction-history.html" class="menu-item">
-      <img src="/img/transectionhistory.png" alt=""><span>Transaction History</span>
-    </a>
-    <a href="verification.html" class="menu-item">
-      <img src="/img/idverification.png" alt=""><span>ID Verification</span>
-    </a>
-    <a href="help.html" class="menu-item">
-      <img src="/img/helpandsupport.png" alt=""><span>Help & Support</span>
-    </a>
+    <a href="profile.html" class="menu-item"><span>Profile Settings</span></a>
+    <a href="security.html" class="menu-item"><span>Security Settings</span></a>
+    <a href="payment-methods.html" class="menu-item"><span>Payment Methods</span></a>
+    <a href="transaction-history.html" class="menu-item"><span>Transaction History</span></a>
   </div>
 
-  <!-- Logout Button -->
   <button class="logout-btn" onclick="logout()">Logout</button>
 
-  <!-- Bottom Navigation -->
   <nav class="bottom-nav">
-    <a href="index.html">
-      <img src="/img/house.png" alt="Home"><span>Home</span>
-    </a>
-    <a href="trade.html">
-      <img src="/img/trade.png" alt="Trade"><span>Trade</span>
-    </a>
-    <a href="internal-transfer.html">
-      <img src="/img/transfer.png" alt="Transfer"><span>Transfer</span>
-    </a>
-    <a href="account.html" class="active">
-      <img src="/img/myaccount.png" alt="Account"><span>Account</span>
-    </a>
+    <a href="index.html"><span>Home</span></a>
+    <a href="trade.html"><span>Trade</span></a>
+    <a href="account.html" class="active"><span>Account</span></a>
   </nav>
 
   <script>
-  document.addEventListener('DOMContentLoaded', async () => {
-    try {
-      console.log('Loading profile...');
+    document.addEventListener('DOMContentLoaded', async () => {
+      try {
+        const res = await fetch('/api/profile', {
+          method: 'GET',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' }
+        });
 
-      const res = await fetch('https://stakecryptosack.vercel.app/api/profile', {
-        method: 'GET',
-        credentials: 'include', // 👈 include cookies/sessions
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
-
-      console.log('Profile response status:', res.status);
-
-      if (res.status === 401) {
-        console.log('Not authenticated, redirecting to login');
-        setTimeout(() => {
+        if (res.status === 401) {
           window.location.href = '/login.html';
-        }, 1000);
-        return;
-      }
+          return;
+        }
 
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || 'Failed to load profile');
-      }
+        if (!res.ok) throw new Error('Failed to load profile');
 
-      const data = await res.json();
-      console.log('Profile data:', data);
+        const data = await res.json();
+        const user = data.user || {};
+        const balance = data.balance || {};
 
-      const user = data.user || {};
-      const balance = data.balance || {};
+        const username = user.username || user.email?.split('@')[0] || 'User';
+        document.querySelector('[data-username]').textContent = username;
+        document.getElementById('userAvatar').textContent = username[0].toUpperCase();
 
-      // Display username
-      const username = user.username || user.email || 'User';
-      console.log('Setting username to:', username);
-
-      const userElements = document.querySelectorAll('[data-username]');
-      userElements.forEach(el => {
-        el.textContent = username;
-      });
-
-      // Display email
-      const emailElements = document.querySelectorAll('[data-email]');
-      emailElements.forEach(el => {
-        el.textContent = user.email;
-      });
-
-      // Display wallet balances
-      displayBalances(balance);
-
-    } catch (err) {
-      console.error('Failed to load profile:', err);
-      alert('Error: ' + err.message);
-      window.location.href = '/login.html';
-    }
-  });
-
-  function displayBalances(balance) {
-    console.log('Displaying balances:', balance);
-
-    const balanceContainer = document.getElementById('balanceCards');
-
-    if (!balanceContainer) {
-      console.warn('balanceCards container not found');
-      return;
-    }
-
-    balanceContainer.innerHTML = '';
-
-    const coins = Object.keys(balance || {});
-    let totalBalance = 0;
-
-    if (coins.length === 0) {
-      // Show 0 balance when no coins
-      document.getElementById('totalBalance').textContent = '0.00';
-      balanceContainer.innerHTML =
-        '<div style="grid-column: 1/-1; text-align: center; color: #999; padding: 20px;">No balance yet. Start depositing!</div>';
-      return;
-    }
-
-    coins.forEach(coin => {
-      const amount = balance[coin];
-      totalBalance += amount;
-      balanceContainer.innerHTML += `
-        <div style="background: rgba(26,26,26,0.8); border-radius: 10px; padding: 12px; text-align: center; border-left: 3px solid var(--accent);">
-          <div style="font-size: 0.8rem; color: #999; margin-bottom: 6px;">${coin}</div>
-          <div style="font-size: 1.3rem; color: var(--accent); font-weight: 700;">${amount.toFixed(4)}</div>
-          <div style="font-size: 0.75rem; color: #666; margin-top: 4px;">${coin}</div>
-        </div>
-      `;
-    });
-
-    // Update total balance
-    document.getElementById('totalBalance').textContent = totalBalance.toFixed(4);
-  }
-
-  async function logout() {
-    try {
-      const res = await fetch('https://stakecryptosack.vercel.app/api/logout', {
-        method: 'POST',
-        credentials: 'include'
-      });
-
-      if (res.ok) {
-        localStorage.clear();
+        displayBalances(balance);
+      } catch (err) {
+        console.error('Profile load failed:', err);
         window.location.href = '/login.html';
       }
-    } catch (err) {
-      console.error('Logout error:', err);
-      alert('Logout failed.');
-    }
-  }
-
-  function toggleLanguage(e) {
-    e.stopPropagation();
-    document.getElementById('langDropdown').classList.toggle('show');
-  }
-
-  function selectLanguage(lang, e) {
-    e.preventDefault();
-    e.stopPropagation();
-    const langMap = { en: 'English', cn: '中文', kr: '한국어' };
-    document.getElementById('currentLang').textContent = langMap[lang] + ' 🌐';
-    document.querySelectorAll('.lang-option').forEach(opt => opt.classList.remove('selected'));
-    e.currentTarget.classList.add('selected');
-    localStorage.setItem('preferredLanguage', lang);
-    document.getElementById('langDropdown').classList.remove('show');
-  }
-
-  document.addEventListener('click', () => {
-    document.getElementById('langDropdown').classList.remove('show');
-  });
-
-  const savedLang = localStorage.getItem('preferredLanguage');
-  if (savedLang) {
-    const langMap = { en: 'English', cn: '中文', kr: '한국어' };
-    document.getElementById('currentLang').textContent = langMap[savedLang] + ' 🌐';
-    document.querySelectorAll('.lang-option').forEach(opt => {
-      opt.classList.remove('selected');
-      if (opt.getAttribute('onclick').includes(savedLang)) opt.classList.add('selected');
     });
-  }
-</script>
 
+    function displayBalances(balance) {
+      const container = document.getElementById('balanceCards');
+      container.innerHTML = '';
+      const coins = Object.keys(balance || {});
+      let total = 0;
+      if (!coins.length) {
+        container.innerHTML = `<div style="color:#999;text-align:center;">No balance yet.</div>`;
+        return;
+      }
+      coins.forEach(coin => {
+        const amount = balance[coin];
+        total += amount;
+        container.innerHTML += `
+          <div style="background:rgba(26,26,26,0.8);padding:12px;border-radius:8px;text-align:center;">
+            <div style="color:#999;">${coin}</div>
+            <div style="color:var(--accent);font-weight:700;">${amount.toFixed(4)}</div>
+          </div>`;
+      });
+      document.getElementById('totalBalance').textContent = total.toFixed(4);
+    }
+
+    async function logout() {
+      await fetch('/api/logout', { method: 'POST', credentials: 'include' });
+      localStorage.clear();
+      window.location.href = '/login.html';
+    }
+
+    function toggleLanguage(e) {
+      e.stopPropagation();
+      document.getElementById('langDropdown').classList.toggle('show');
+    }
+
+    function selectLanguage(lang, e) {
+      e.preventDefault();
+      const map = { en: 'English', cn: '中文', kr: '한국어' };
+      document.getElementById('currentLang').textContent = map[lang] + ' 🌐';
+      document.querySelectorAll('.lang-option').forEach(opt => opt.classList.remove('selected'));
+      e.currentTarget.classList.add('selected');
+      localStorage.setItem('preferredLanguage', lang);
+      document.getElementById('langDropdown').classList.remove('show');
+    }
+
+    document.addEventListener('click', () => {
+      document.getElementById('langDropdown').classList.remove('show');
+    });
+  </script>
 </body>
 </html>
