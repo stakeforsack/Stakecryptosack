@@ -178,6 +178,143 @@ app.post("/api/logout", (req, res) => {
   });
 });
 
+// ✅ Deposit endpoint
+app.post("/api/deposit", needAuth, async (req, res) => {
+  try {
+    await connectDB();
+    const { coin, amount } = req.body;
+
+    if (!coin || !amount || amount <= 0) {
+      return res.status(400).json({ error: "Invalid deposit data" });
+    }
+
+    const deposit = new Transaction({
+      userId: req.session.userId,
+      coin,
+      amount,
+      type: "DEPOSIT",
+      status: "PENDING", // initially pending
+      createdAt: new Date(),
+    });
+
+    await deposit.save();
+
+    res.json({
+      ok: true,
+      txId: deposit._id.toString(),
+      coin,
+      amount,
+    });
+  } catch (err) {
+    console.error("Deposit error:", err);
+    res.status(500).json({ error: "Deposit failed" });
+  }
+});
+
+// ✅ Verify payment endpoint
+app.post("/api/verify-payment", needAuth, async (req, res) => {
+  try {
+    await connectDB();
+    const { txId } = req.body;
+    const tx = await Transaction.findById(txId);
+    if (!tx) return res.status(404).json({ status: "NOT_FOUND" });
+
+    // For testing, we can auto-confirm the payment
+    if (tx.status !== "CONFIRMED") {
+      tx.status = "CONFIRMED";
+      await tx.save();
+    }
+
+    res.json({ status: tx.status, coin: tx.coin, amount: tx.amount });
+  } catch (err) {
+    console.error("Verify payment error:", err);
+    res.status(500).json({ error: "Could not verify payment" });
+  }
+});
+
+// ✅ Withdraw endpoint (instant balance deduction)
+app.post("/api/withdraw", needAuth, async (req, res) => {
+  try {
+    await connectDB();
+    const { coin, amount } = req.body;
+
+    if (!coin || !amount || amount <= 0) {
+      return res.status(400).json({ error: "Invalid withdraw data" });
+    }
+
+    const userId = new mongoose.Types.ObjectId(req.session.userId);
+
+    // Fetch confirmed deposits and withdrawals
+    const deposits = await Transaction.aggregate([
+      { $match: { userId, type: "DEPOSIT", status: "CONFIRMED" } },
+      { $group: { _id: "$coin", total: { $sum: "$amount" } } },
+    ]);
+
+    const withdrawals = await Transaction.aggregate([
+      { $match: { userId, type: "WITHDRAW", status: "CONFIRMED" } },
+      { $group: { _id: "$coin", total: { $sum: "$amount" } } },
+    ]);
+
+    // Calculate balance
+    const balance = {};
+    deposits.forEach((dep) => { balance[dep._id] = (balance[dep._id] || 0) + dep.total; });
+    withdrawals.forEach((wit) => { balance[wit._id] = (balance[wit._id] || 0) - wit.total; });
+
+    const currentBalance = balance[coin] || 0;
+
+    if (amount > currentBalance) {
+      return res.status(400).json({ error: "Insufficient balance" });
+    }
+
+    // Record the withdrawal transaction and mark as CONFIRMED immediately
+    const withdrawal = new Transaction({
+      userId,
+      coin,
+      amount,
+      type: "WITHDRAW",
+      status: "CONFIRMED", // ✅ instantly confirm to deduct balance
+      createdAt: new Date(),
+    });
+
+    await withdrawal.save();
+
+    res.json({
+      ok: true,
+      message: `Withdrawal of ${amount} ${coin} successful.`,
+      txId: withdrawal._id.toString(),
+      coin,
+      amount,
+      newBalance: currentBalance - amount, // send updated balance
+    });
+  } catch (err) {
+    console.error("Withdraw error:", err);
+    res.status(500).json({ error: "Withdraw failed" });
+  }
+});
+
+
+// ✅ Verify withdrawal endpoint
+app.post("/api/verify-withdraw", needAuth, async (req, res) => {
+  try {
+    await connectDB();
+    const { txId } = req.body;
+    const tx = await Transaction.findById(txId);
+    if (!tx) return res.status(404).json({ status: "NOT_FOUND" });
+
+    if (tx.status !== "CONFIRMED") {
+      tx.status = "CONFIRMED";
+      await tx.save();
+    }
+
+    res.json({ status: tx.status, coin: tx.coin, amount: tx.amount });
+  } catch (err) {
+    console.error("Verify withdraw error:", err);
+    res.status(500).json({ error: "Could not verify withdrawal" });
+  }
+});
+
+
+
 // ✅ 404 fallback
 app.use((req, res) => res.status(404).json({ error: "Endpoint not found" }));
 
