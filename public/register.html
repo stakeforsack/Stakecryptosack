@@ -188,7 +188,7 @@
         if (res.ok) {
           const user = await res.json();
           if (user && user.username) {
-            window.location.href = "/index.html";
+            window.location.href = "/home.html";
           }
         }
       } catch (e) {
@@ -230,7 +230,7 @@
           }
 
           // Redirect to index after delay
-          setTimeout(() => window.location.href = "/index.html", 1200);
+          setTimeout(() => window.location.href = "/home.html", 1200);
         } else {
           throw new Error(data.error || "Registration failed");
         }
