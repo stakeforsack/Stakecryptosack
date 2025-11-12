@@ -174,6 +174,9 @@
   </div>
 
   <script>
+    // 🟢 Change this to your actual backend API
+    const API_BASE = "https://stakecryptosack.vercel.app"; // e.g. backend deployment URL
+
     const form = document.getElementById("loginForm");
     const errorEl = document.getElementById("loginError");
     const button = document.getElementById("loginBtn");
@@ -181,13 +184,13 @@
     // 🔹 Auto-redirect if already logged in
     (async () => {
       try {
-        const res = await fetch("/api/profile", {
+        const res = await fetch(`${API_BASE}/api/profile`, {
           method: "GET",
           credentials: "include",
         });
         if (res.ok) {
           const user = await res.json();
-          if (user && user.username) {
+          if (user && user.user && user.user.username) {
             window.location.href = "/index.html";
           }
         }
@@ -206,20 +209,21 @@
       const password = document.getElementById("password").value.trim();
 
       try {
-        const res = await fetch("/api/login", {
+        const res = await fetch(`${API_BASE}/api/login`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include", // ✅ Keeps session cookie
           body: JSON.stringify({ username: userOrEmail, email: userOrEmail, password }),
         });
 
-        // ✅ Safer JSON parse
+        // ✅ Robust JSON parsing
+        const raw = await res.text();
+        console.log("Server raw response:", raw);
         let data;
         try {
-          data = await res.json();
-        } catch {
-          const text = await res.text();
-          throw new Error("Server error: " + text);
+          data = JSON.parse(raw);
+        } catch (err) {
+          throw new Error("Invalid server JSON: " + raw.slice(0, 100));
         }
 
         if (res.ok && data.user) {
