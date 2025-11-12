@@ -59,6 +59,13 @@ app.use(
   })
 );
 
+// ✅ Allow session cookies for cross-site requests
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Credentials", "true");
+  next();
+});
+
+
 // ✅ Auth middleware
 const needAuth = (req, res, next) => {
   if (!req.session || !req.session.userId) {
