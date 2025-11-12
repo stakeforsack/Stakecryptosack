@@ -223,13 +223,13 @@
   </div>
 
   <div class="back-link">
-    <a href="home.html">← Back to Dashboard</a>
+    <a href="index.html">← Back to Dashboard</a>
   </div>
 
   <script>
-    const baseUrl = window.location.origin; // dynamically works on Vercel or localhost
+    const baseUrl = window.location.origin;
 
-    // 🔒 Check if user is logged in
+    // 🔒 Fixed Authentication Check
     window.addEventListener("DOMContentLoaded", async () => {
       try {
         const res = await fetch(`${baseUrl}/api/profile`, {
@@ -237,12 +237,22 @@
           credentials: "include"
         });
 
-        if (!res.ok) {
+        if (res.status === 401) {
           window.location.href = "login.html";
+          return;
         }
+
+        if (!res.ok) {
+          console.error("Failed to load profile:", res.status);
+          return;
+        }
+
+        const data = await res.json();
+        console.log("User profile loaded:", data.user);
       } catch (err) {
-        console.error("Auth check failed:", err);
-        window.location.href = "login.html";
+        console.error("Profile load failed:", err);
+        // Optional: only redirect if really unauthenticated
+        // window.location.href = "login.html";
       }
     });
 
