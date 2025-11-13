@@ -16,7 +16,9 @@ const __dirname = path.dirname(__filename);
 const app = express();
 
 // ✅ Frontend URL (replace with your Vercel domain)
-const FRONTEND_URL = process.env.https://stakecryptosack.vercel.app/ || "http://localhost:5173";
+// ✅ Frontend URL (replace with your Vercel domain)
+const FRONTEND_URL = process.env.FRONTEND_URL || "https://stakecryptosack.vercel.app";
+
 
 // ✅ CORS
 // ✅ CORS
