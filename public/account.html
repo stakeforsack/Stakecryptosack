@@ -143,6 +143,29 @@
       font-size: 0.85rem;
     }
 
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .nav-icon {
+      width: 22px;
+      height: 22px;
+      opacity: 0.8;
+    }
+    
+    .nav-item.active .nav-icon {
+      opacity: 1;
+      filter: drop-shadow(0 0 4px var(--accent));
+    }
+
+    .nav-item span {
+      font-size: 0.75rem;
+    }
+
+
     .bottom-nav a.active {
       color: var(--accent);
     }
@@ -178,12 +201,30 @@
 
 
   <!-- BOTTOM NAV -->
-  <div class="bottom-nav">
-    <a href="index.html">Home</a>
-    <a href="trade.html">Trade</a>
-    <a href="transfer.html">Transfer</a>
-    <a href="account.html" class="active">Account</a>
-  </div>
+<div class="bottom-nav">
+
+  <a href="index.html" class="nav-item">
+    <img src="/img/house.png" class="nav-icon">
+    <span>Home</span>
+  </a>
+
+  <a href="trade.html" class="nav-item">
+    <img src="/img/nav/trade.png" class="nav-icon">
+    <span>Trade</span>
+  </a>
+
+  <a href="transfer.html" class="nav-item">
+    <img src="/img/nav/transfer.png" class="nav-icon">
+    <span>Transfer</span>
+  </a>
+
+  <a href="account.html" class="nav-item active">
+    <img src="/img/nav/myaccount.png" class="nav-icon">
+    <span>Account</span>
+  </a>
+
+</div>
+
 
   <script>
     document.addEventListener("DOMContentLoaded", async () => {
