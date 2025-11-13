@@ -169,6 +169,24 @@
     .bottom-nav a.active {
       color: var(--accent);
     }
+
+    .logout-btn {
+      width: calc(100% - 40px);
+      margin: 20px;
+      padding: 15px;
+      font-size: 1rem;
+      background: linear-gradient(135deg, #ff4d4d, #cc0000);
+      border: none;
+      border-radius: 12px;
+      color: #fff;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .logout-btn:hover {
+      opacity: 0.85;
+    }
+
   </style>
 </head>
 
@@ -225,6 +243,9 @@
 
 </div>
 
+  <button class="logout-btn" onclick="logout()">Logout</button>
+
+
 
   <script>
     document.addEventListener("DOMContentLoaded", async () => {
@@ -243,6 +264,13 @@
         const username = user.username || "User";
         document.getElementById("username").textContent = username;
         document.getElementById("userAvatar").textContent = username[0].toUpperCase();
+
+        async function logout() {
+          await fetch("/api/logout", { method: "POST", credentials: "include" });
+          localStorage.clear();
+          window.location.href = "login.html";
+        }
+
 
         // Calculate total balance
         let total = 0;
