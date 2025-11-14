@@ -174,82 +174,79 @@
   </div>
 
   <script>
-    // 🟢 Change this to your actual backend API
-    // Auto-detect backend for localhost vs production
-    const API_BASE =
-      window.location.hostname === "localhost" ||
-      window.location.hostname === "127.0.0.1"
-        ? "http://localhost:3000"
-        : "";
-    // e.g. backend deployment URL
+  // Always use relative path for Vercel
+  const API_BASE = "";
 
-    const form = document.getElementById("loginForm");
-    const errorEl = document.getElementById("loginError");
-    const button = document.getElementById("loginBtn");
+  const form = document.getElementById("loginForm");
+  const errorEl = document.getElementById("loginError");
+  const button = document.getElementById("loginBtn");
 
-    // 🔹 Auto-redirect if already logged in
-    (async () => {
-      try {
-        const res = await fetch(`/api/profile`, {
-          method: "GET",
-          credentials: "include",
-        });
-        if (res.ok) {
-          const user = await res.json();
-          if (user && user.user && user.user.username) {
-            window.location.href = "/home.html";
-          }
-        }
-      } catch (e) {
-        console.log("Not logged in yet.");
-      }
-    })();
+  // Auto-redirect if already logged in
+  (async () => {
+    try {
+      const res = await fetch(`/api/profile`, {
+        method: "GET",
+        credentials: "include",
+      });
 
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      errorEl.style.display = "none";
-      button.disabled = true;
-      button.textContent = "Logging in...";
-
-      const userOrEmail = document.getElementById("userInput").value.trim();
-      const password = document.getElementById("password").value.trim();
-
-      try {
-        const res = await fetch(`/api/login`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include", // ✅ Keeps session cookie
-          body: JSON.stringify({ username: userOrEmail, email: userOrEmail, password }),
-        });
-
-        // ✅ Robust JSON parsing
-        const raw = await res.text();
-        console.log("Server raw response:", raw);
-        let data;
-        try {
-          data = JSON.parse(raw);
-        } catch (err) {
-          throw new Error("Invalid server JSON: " + raw.slice(0, 100));
-        }
-
-        if (res.ok && data.user) {
-          localStorage.setItem("userId", data.user.id);
-          localStorage.setItem("username", data.user.username);
-          localStorage.setItem("email", data.user.email);
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.user?.username) {
           window.location.href = "/home.html";
-        } else {
-          throw new Error(data.error || "Invalid credentials");
         }
-
-      } catch (err) {
-        errorEl.textContent = err.message || "Login failed. Please try again.";
-        errorEl.style.display = "block";
-        console.error(err);
-      } finally {
-        button.disabled = false;
-        button.textContent = "Login";
       }
-    });
-  </script>
+    } catch (e) {
+      console.log("Not logged in yet.");
+    }
+  })();
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    errorEl.style.display = "none";
+    button.disabled = true;
+    button.textContent = "Logging in...";
+
+    const userOrEmail = document.getElementById("userInput").value.trim();
+    const password = document.getElementById("password").value.trim();
+
+    try {
+      const res = await fetch(`/api/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          username: userOrEmail,
+          email: userOrEmail,
+          password,
+        }),
+      });
+
+      const raw = await res.text();
+      let data;
+
+      try {
+        data = JSON.parse(raw);
+      } catch {
+        throw new Error("Invalid server response");
+      }
+
+      if (res.ok && data.user) {
+        localStorage.setItem("userId", data.user.id);
+        localStorage.setItem("username", data.user.username);
+        localStorage.setItem("email", data.user.email);
+        window.location.href = "/home.html";
+      } else {
+        throw new Error(data.error || "Invalid credentials");
+      }
+    } catch (err) {
+      errorEl.textContent = err.message;
+      errorEl.style.display = "block";
+    } finally {
+      button.disabled = false;
+      button.textContent = "Login";
+    }
+  });
+</script>
+
 </body>
 </html>
