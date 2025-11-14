@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Transaction History - GodStake</title>
+  <link rel="stylesheet" href="/style.css" />
+
+  <style>
+    :root {
+      --accent: #a855f7;
+      --gradient: linear-gradient(135deg, #a855f7, #7c3aed);
+    }
+
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      background: linear-gradient(-45deg, #000000, #0b0b0b, #121212, #1a1a1a);
+      background-size: 400% 400%;
+      animation: gradientFlow 12s ease infinite;
+      color: #fff;
+      margin: 0;
+      padding-bottom: 80px;
+      overflow-x: hidden;
+    }
+
+    @keyframes gradientFlow {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    /* === Header === */
+    header.header {
+      display: flex;
+      align-items: center;
+      padding: 16px;
+      background: rgba(15,15,15,0.9);
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      backdrop-filter: blur(12px);
+      gap: 12px;
+    }
+
+    .back-btn {
+      background: none;
+      border: none;
+      color: var(--accent);
+      font-size: 1.5rem;
+      cursor: pointer;
+      padding: 0;
+      display: flex;
+      align-items: center;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 1.3rem;
+      flex: 1;
+    }
+
+    /* === Filter Section === */
+    .filter-section {
+      padding: 16px;
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+    }
+
+    .filter-btn {
+      padding: 8px 16px;
+      background: rgba(26,26,26,0.8);
+      border: 1px solid #333;
+      color: #999;
+      border-radius: 20px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.3s;
+      font-weight: 500;
+    }
+
+    .filter-btn.active {
+      background: var(--gradient);
+      color: #fff;
+      border-color: var(--accent);
+    }
+
+    .filter-btn:hover {
+      border-color: var(--accent);
+    }
+
+    /* === Transaction List === */
+    .tx-container {
+      padding: 16px;
+    }
+
+    .tx-item {
+      background: rgba(26,26,26,0.8);
+      padding: 16px;
+      margin-bottom: 12px;
+      border-radius: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-left: 4px solid var(--accent);
+      animation: slideIn 0.4s ease;
+      transition: all 0.3s;
+    }
+
+    .tx-item:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 20px rgba(168,85,247,0.2);
+    }
+
+    .tx-item.withdraw {
+      border-left-color: #ff6b6b;
+    }
+
+    .tx-item.transfer {
+      border-left-color: #5eead4;
+    }
+
+    .tx-item.confirmed {
+      border-left-color: #90ee90;
+    }
+
+    .tx-item.pending {
+      opacity: 0.7;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateX(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    .tx-left {
+      flex: 1;
+    }
+
+    .tx-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: rgba(168,85,247,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 12px;
+      font-size: 1.2rem;
+    }
+
+    .tx-item.withdraw .tx-icon {
+      background: rgba(255,107,107,0.2);
+    }
+
+    .tx-item.transfer .tx-icon {
+      background: rgba(94,234,212,0.2);
+    }
+
+    .tx-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .tx-details h4 {
+      margin: 0 0 4px 0;
+      font-size: 1rem;
+      color: #fff;
+      font-weight: 600;
+    }
+
+    .tx-details p {
+      margin: 0;
+      font-size: 0.85rem;
+      color: #999;
+    }
+
+    .tx-right {
+      text-align: right;
+    }
+
+    .tx-amount {
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: var(--accent);
+      margin-bottom: 4px;
+    }
+
+    .tx-item.withdraw .tx-amount {
+      color: #ff6b6b;
+    }
+
+    .tx-item.transfer .tx-amount {
+      color: #5eead4;
+    }
+
+    .tx-status {
+      font-size: 0.75rem;
+      background: rgba(168,85,247,0.2);
+      color: var(--accent);
+      padding: 4px 10px;
+      border-radius: 12px;
+      display: inline-block;
+      font-weight: 600;
+    }
+
+    .tx-status.confirmed {
+      background: rgba(144,238,144,0.2);
+      color: #90ee90;
+    }
+
+    .tx-status.pending {
+      background: rgba(251,191,36,0.2);
+      color: #fbbf24;
+    }
+
+    .tx-status.failed {
+      background: rgba(255,107,107,0.2);
+      color: #ff6b6b;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #999;
+    }
+
+    .empty-state svg {
+      width: 80px;
+      height: 80px;
+      margin-bottom: 20px;
+      opacity: 0.5;
+    }
+
+    .empty-state p {
+      margin: 0;
+      font-size: 1rem;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #999;
+    }
+
+    /* === Bottom Navigation === */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(15,15,15,0.9);
+      border-top: 1px solid rgba(255,255,255,0.05);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      height: 60px;
+      z-index: 10;
+      backdrop-filter: blur(12px);
+    }
+
+    .bottom-nav a {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-decoration: none;
+      font-size: 12px;
+      color: #999;
+      transition: all 0.3s ease;
+    }
+
+    .bottom-nav a.active {
+      color: var(--accent);
+    }
+
+    .bottom-nav a:hover {
+      color: var(--accent);
+      transform: translateY(-2px);
+    }
+
+    .bottom-nav img {
+      width: 24px;
+      height: 24px;
+      margin-bottom: 2px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <button class="back-btn" onclick="window.history.back()">←</button>
+    <h1>Transaction History</h1>
+  </header>
+
+  <!-- Filters -->
+  <div class="filter-section">
+    <button class="filter-btn active" onclick="filterTransactions('all')">All</button>
+    <button class="filter-btn" onclick="filterTransactions('DEPOSIT')">Deposits</button>
+    <button class="filter-btn" onclick="filterTransactions('WITHDRAW')">Withdrawals</button>
+    <button class="filter-btn" onclick="filterTransactions('TRANSFER')">Transfers</button>
+    <button class="filter-btn" onclick="filterTransactions('CONFIRMED')">Confirmed</button>
+    <button class="filter-btn" onclick="filterTransactions('PENDING')">Pending</button>
+  </div>
+
+  <!-- Transactions -->
+  <div class="tx-container" id="txContainer">
+    <div class="loading">Loading transactions...</div>
+  </div>
+
+  <!-- Bottom Navigation -->
+  <nav class="bottom-nav">
+    <a href="home.html">
+      <img src="/img/house.png" alt="Home"><span>Home</span>
+    </a>
+    <a href="trade.html">
+      <img src="/img/trade.png" alt="Trade"><span>Trade</span>
+    </a>
+    <a href="internal-transfer.html">
+      <img src="/img/transfer.png" alt="Transfer"><span>Transfer</span>
+    </a>
+    <a href="account.html">
+      <img src="/img/myaccount.png" alt="Account"><span>Account</span>
+    </a>
+  </nav>
+
+  <script>
+    let allTransactions = [];
+    let currentFilter = 'all';
+
+    async function loadTransactions() {
+      try {
+        const res = await fetch('/api/transactions', { credentials: 'include' });
+        if (res.status === 401) { window.location.href = '/login.html'; return; }
+        if (!res.ok) throw new Error('Failed to load');
+        
+        const data = await res.json();
+        allTransactions = data.transactions || [];
+        displayTransactions();
+      } catch (err) {
+        console.error('Error:', err);
+        document.getElementById('txContainer').innerHTML = '<div class="empty-state"><p>Error loading transactions</p></div>';
+      }
+    }
+
+    function getIcon(type) {
+      const icons = {
+        'DEPOSIT': '📥',
+        'WITHDRAW': '📤',
+        'TRANSFER': '↔️'
+      };
+      return icons[type] || '💸';
+    }
+
+    function displayTransactions() {
+      const container = document.getElementById('txContainer');
+      
+      let filtered = allTransactions;
+      
+      if (currentFilter !== 'all') {
+        filtered = allTransactions.filter(tx => {
+          if (currentFilter === 'CONFIRMED' || currentFilter === 'PENDING') {
+            return tx.status === currentFilter;
+          }
+          return tx.type === currentFilter;
+        });
+      }
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <p>No transactions found</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = filtered.map(tx => {
+        const date = new Date(tx.createdAt);
+        const dateStr = date.toLocaleDateString();
+        const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        
+        const typeClass = tx.type === 'WITHDRAW' ? 'withdraw' : tx.type === 'TRANSFER' ? 'transfer' : '';
+        const statusClass = tx.status.toLowerCase();
+        const icon = getIcon(tx.type);
+        const sign = tx.type === 'WITHDRAW' ? '-' : '+';
+
+        return `
+          <div class="tx-item ${typeClass} ${statusClass}">
+            <div class="tx-info">
+              <div class="tx-icon">${icon}</div>
+              <div class="tx-details">
+                <h4>${tx.type}</h4>
+                <p>${tx.coin} • ${dateStr} ${timeStr}</p>
+              </div>
+            </div>
+            <div class="tx-right">
+              <div class="tx-amount">${sign} ${tx.amount}</div>
+              <div class="tx-status ${statusClass}">${tx.status}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function filterTransactions(type) {
+      currentFilter = type;
+      
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      event.target.classList.add('active');
+      
+      displayTransactions();
+    }
+
+    window.addEventListener('load', loadTransactions);
+  </script>
+</body>
+</html>

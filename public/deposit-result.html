@@ -1,0 +1,86 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Deposit Result</title>
+  <style>
+    body{background:#0b0b0b;color:#fff;font-family:Arial,Helvetica,sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0}
+    .card{max-width:420px;width:100%;background:#121212;padding:18px;border-radius:12px;text-align:center}
+    .qr{max-width:260px;margin:12px auto;display:block}
+    .addr{word-break:break-all;background:#0b0b0b;padding:10px;border-radius:8px;margin-top:8px;border:1px solid #222}
+    .hint{color:#9aa0a6;font-size:0.9rem;margin-top:8px}
+    .btn{margin-top:12px;padding:10px 14px;background:#a855f7;border-radius:8px;border:0;color:#fff;cursor:pointer}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>Deposit Details</h2>
+    <img id="qrImg" class="qr" src="" alt="QR code" style="display:none" />
+    <div id="addrBox" class="addr">Loading address…</div>
+    <div id="hint" class="hint"></div>
+    <button id="copyBtn" class="btn">Copy Address</button>
+  </div>
+
+  <script>
+    const QR_MAP = {
+      USDTBINANCE: '/img/qr-usdt-binance.png',
+      BTC: '/img/qr-btc.png',
+      ETH: '/img/qr-eth.png',
+      TRX: '/img/qr-trx.png',
+      USDTETH: '/img/qr-usdt-eth.png',
+      USDTTRON: '/img/qr-usdt-tron.png'
+    };
+
+    function loadFromSessionOrQuery(){
+      let data = null;
+      try {
+        const raw = sessionStorage.getItem('lastDeposit');
+        if (raw) data = JSON.parse(raw);
+      } catch(e){ data = null; }
+
+      if (!data) {
+        // fallback to query params
+        const p = new URLSearchParams(location.search);
+        const coin = p.get('coin');
+        const address = p.get('address');
+        if (coin || address) data = { coin, address, ok: true };
+      }
+      return data;
+    }
+
+    const data = loadFromSessionOrQuery();
+    const addrBox = document.getElementById('addrBox');
+    const qrImg = document.getElementById('qrImg');
+    const hint = document.getElementById('hint');
+
+    if (!data || !data.ok || !data.address) {
+      addrBox.textContent = 'Deposit information not found. Return to the deposit page and try again.';
+      hint.textContent = '';
+      qrImg.style.display = 'none';
+    } else {
+      addrBox.textContent = data.address;
+      hint.textContent = data.coin ? `Coin: ${data.coin}` : '';
+      const qrPath = data.coin ? (QR_MAP[data.coin] || `/img/qr/${(data.coin||'').toLowerCase()}.png`) : null;
+      if (qrPath) {
+        qrImg.onerror = () => { qrImg.style.display = 'none'; };
+        qrImg.onload  = () => { qrImg.style.display = 'block'; };
+        qrImg.src = qrPath;
+      }
+    }
+
+    document.getElementById('copyBtn').addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(addrBox.textContent);
+        hint.textContent = 'Address copied to clipboard';
+      } catch(e) {
+        hint.textContent = 'Copy failed — select and copy manually';
+      }
+    });
+
+    // optional: clear sessionStorage so reload doesn't show stale data
+    // sessionStorage.removeItem('lastDeposit');
+  </script>
+</body>
+</html>
+

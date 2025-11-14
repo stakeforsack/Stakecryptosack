@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" 
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+
+  <title>Wallet Balance - GodStake</title>
+
+  <style>
+    :root {
+      --glass-bg: rgba(255, 255, 255, 0.05);
+      --glass-border: rgba(255, 255, 255, 0.12);
+      --accent: #a855f7;
+    }
+
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: "Inter", sans-serif;
+      background: #0b0b0b;
+      color: white;
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 25px;
+      font-size: 1.7rem;
+      color: var(--accent);
+    }
+
+    .wallet-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 18px;
+      padding-bottom: 60px;
+    }
+
+    .wallet-card {
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: 18px;
+      padding: 18px;
+      text-align: center;
+      backdrop-filter: blur(12px);
+      transition: 0.3s;
+    }
+
+    .wallet-card:hover {
+      transform: translateY(-5px);
+      border-color: var(--accent);
+      box-shadow: 0 0 20px rgba(168, 85, 247, 0.3);
+    }
+
+    .coin-icon {
+      width: 45px;
+      height: 45px;
+      margin: 0 auto 8px;
+      border-radius: 50%;
+      background: #111;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 22px;
+    }
+
+    .coin-name {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 5px;
+    }
+
+    .coin-balance {
+      font-size: 1.2rem;
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    .back-btn {
+      margin-top: 25px;
+      width: 100%;
+      padding: 12px;
+      border: none;
+      background: var(--accent);
+      border-radius: 10px;
+      color: white;
+      font-size: 1rem;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .back-btn:hover {
+      background: #9333ea;
+    }
+
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 65px;
+      background: #111;
+      border-top: 1px solid #222;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      z-index: 99;
+    }
+
+    .bottom-nav a {
+      color: #888;
+      text-decoration: none;
+      text-align: center;
+      font-size: 0.85rem;
+    }
+
+    .bottom-nav a.active {
+      color: var(--accent);
+    }
+  </style>
+</head>
+
+<body>
+
+  <h2>💼 Your Wallet</h2>
+
+  <div class="wallet-grid" id="walletGrid">
+    <!-- Dynamic Coins Inserted Here -->
+  </div>
+
+  <button class="back-btn" onclick="window.location.href='account.html'">
+    ← Back to Account
+  </button>
+
+  <div class="bottom-nav">
+    <a href="index.html">Home</a>
+    <a href="trade.html">Trade</a>
+    <a href="transfer.html">Transfer</a>
+    <a href="account.html" class="active">Account</a>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+      try {
+        const res = await fetch("/api/profile", { credentials: "include" });
+
+        if (res.status === 401) {
+          window.location.href = "login.html";
+          return;
+        }
+
+        const data = await res.json();
+        const balance = data.balance || {};
+
+        const icons = {
+          BTC: "🟧",
+          ETH: "🔷",
+          USDT: "🟩",
+          BNB: "🟨",
+          TRX: "🔺"
+        };
+
+        const grid = document.getElementById("walletGrid");
+        grid.innerHTML = "";
+
+        const coinList = ["BTC", "ETH", "USDT", "BNB", "TRX"];
+
+        coinList.forEach(coin => {
+          const amount = balance[coin] || 0;
+
+          grid.innerHTML += `
+            <div class="wallet-card">
+              <div class="coin-icon">${icons[coin]}</div>
+              <div class="coin-name">${coin}</div>
+              <div class="coin-balance">${amount.toFixed(4)}</div>
+            </div>
+          `;
+        });
+
+      } catch (err) {
+        console.error("Wallet load error:", err);
+      }
+    });
+  </script>
+
+</body>
+</html>

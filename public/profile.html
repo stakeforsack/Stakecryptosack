@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Profile Settings</title>
+
+  <style>
+    /* ===== Reset ===== */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: "Inter", "Segoe UI", Roboto, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* ===== Background ===== */
+    body {
+      background: radial-gradient(circle at top, #0c0c0f, #050507);
+      color: #e0e0e0;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      animation: fadeIn 0.6s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ===== Header ===== */
+    .header {
+      height: 60px;
+      background: linear-gradient(90deg, #111, #0a0a0a, #111);
+      background-size: 200%;
+      border-bottom: 1px solid #222;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #ccc;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      animation: gradientShift 6s ease infinite;
+    }
+
+    @keyframes gradientShift {
+      0% { background-position: 0%; }
+      50% { background-position: 100%; }
+      100% { background-position: 0%; }
+    }
+
+    /* ===== Container ===== */
+    .account-container {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px 80px;
+    }
+
+    /* ===== Card ===== */
+    .account-card {
+      background: rgba(20, 20, 24, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 14px;
+      padding: 30px;
+      max-width: 480px;
+      width: 100%;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(10px);
+      transform: translateY(10px);
+      opacity: 0;
+      animation: cardIn 0.8s ease forwards;
+    }
+
+    @keyframes cardIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .account-card:hover {
+      transform: translateY(-3px);
+      transition: 0.3s ease;
+      box-shadow: 0 10px 30px rgba(0, 188, 212, 0.2);
+    }
+
+    .account-card h2 {
+      color: #00bcd4;
+      font-size: 1.6rem;
+      margin-bottom: 25px;
+      text-align: center;
+      text-shadow: 0 0 8px rgba(0, 188, 212, 0.3);
+    }
+
+    /* ===== Form ===== */
+    .form-row {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .row-item label {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 0.9rem;
+      color: #bbb;
+    }
+
+    input,
+    textarea {
+      background: rgba(28, 28, 32, 0.9);
+      border: 1px solid #333;
+      color: #e0e0e0;
+      padding: 10px 12px;
+      border-radius: 6px;
+      transition: border-color 0.25s, box-shadow 0.25s, background 0.25s;
+    }
+
+    input:focus,
+    textarea:focus {
+      outline: none;
+      border-color: #00bcd4;
+      box-shadow: 0 0 6px #00bcd4;
+      background: rgba(30, 30, 36, 1);
+    }
+
+    /* ===== Save Button with Ripple ===== */
+    .controls {
+      text-align: center;
+      margin-top: 25px;
+      position: relative;
+    }
+
+    .save-btn {
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(90deg, #00bcd4, #007bff);
+      color: white;
+      border: none;
+      padding: 12px 25px;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.3s, transform 0.2s;
+      width: 100%;
+    }
+
+    .save-btn:hover {
+      background: linear-gradient(90deg, #00e0c0, #00bcd4);
+      transform: scale(1.03);
+      box-shadow: 0 4px 10px rgba(0, 188, 212, 0.3);
+    }
+
+    .save-btn:active {
+      transform: scale(0.97);
+    }
+
+    .save-btn::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      background: rgba(255,255,255,0.4);
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      opacity: 0;
+      transition: width 0.4s ease, height 0.4s ease, opacity 0.8s;
+    }
+
+    .save-btn:active::after {
+      width: 300%;
+      height: 300%;
+      opacity: 0;
+    }
+
+    /* ===== Message Box ===== */
+    .message {
+      margin-top: 15px;
+      font-size: 0.9rem;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+    }
+
+    .message.show {
+      opacity: 1;
+    }
+
+    .message.success {
+      color: #00e676;
+    }
+
+    .message.error {
+      color: #ff5252;
+    }
+
+    /* ===== Bottom Nav ===== */
+    .bottom-nav {
+      background: rgba(15, 15, 20, 0.9);
+      border-top: 1px solid #222;
+      backdrop-filter: blur(8px);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      padding: 8px 0;
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+    }
+
+    .nav-item {
+      color: #888;
+      text-decoration: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-size: 0.75rem;
+      transition: color 0.3s, transform 0.3s;
+    }
+
+    .nav-item img {
+      width: 22px;
+      height: 22px;
+      margin-bottom: 4px;
+      filter: brightness(0.7);
+      transition: filter 0.3s;
+    }
+
+    .nav-item:hover,
+    .nav-item.active {
+      color: #00bcd4;
+      transform: translateY(-2px);
+    }
+
+    .nav-item:hover img,
+    .nav-item.active img {
+      filter: brightness(1.2);
+    }
+
+    /* ===== Responsive ===== */
+    @media (max-width: 480px) {
+      .account-card {
+        padding: 22px;
+      }
+
+      .save-btn {
+        font-size: 0.95rem;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header class="header">My Profile</header>
+
+  <main class="account-container">
+    <div class="account-card">
+      <h2>Profile Settings</h2>
+
+      <div class="form-row">
+        <div class="row-item">
+          <label>Username
+            <input id="inpUsername" type="text" />
+          </label>
+        </div>
+        <div class="row-item">
+          <label>Email
+            <input id="inpEmail" type="email" />
+          </label>
+        </div>
+        <div class="row-item">
+          <label>Bio
+            <textarea id="inpBio" rows="4"></textarea>
+          </label>
+        </div>
+      </div>
+
+      <div class="controls">
+        <button class="save-btn" id="btnSave">Save Profile</button>
+        <div id="message" class="message"></div>
+      </div>
+    </div>
+  </main>
+
+  <nav class="bottom-nav">
+    <a class="nav-item" href="home.html"><img src="/img/house.png"><p>Home</p></a>
+    <a class="nav-item" href="trade.html"><img src="/img/trade.png"><p>Trade</p></a>
+    <a class="nav-item" href="internal-transfer.html"><img src="/img/transfer.png"><p>Transfer</p></a>
+    <a class="nav-item active" href="account.html"><img src="/img/myaccount.png"><p>Account</p></a>
+  </nav>
+
+  <script src="/js/language.js"></script>
+  <script>document.addEventListener('DOMContentLoaded', initLanguageSelector);</script>
+
+  <script>
+    async function loadProfile() {
+      try {
+        const res = await fetch('/api/user-profile', { credentials: 'same-origin' });
+        if (!res.ok) return;
+        const data = await res.json();
+        document.getElementById('inpUsername').value = data.username || '';
+        document.getElementById('inpEmail').value = data.email || '';
+        document.getElementById('inpBio').value = data.bio || '';
+      } catch (e) { console.error(e) }
+    }
+
+    function showMessage(text, type = "success") {
+      const msg = document.getElementById("message");
+      msg.textContent = text;
+      msg.className = "message show " + type;
+      setTimeout(() => msg.classList.remove("show"), 3000);
+    }
+
+    document.getElementById('btnSave').addEventListener('click', async () => {
+      const payload = {
+        username: document.getElementById('inpUsername').value.trim(),
+        email: document.getElementById('inpEmail').value.trim(),
+        bio: document.getElementById('inpBio').value.trim()
+      };
+
+      if (!payload.username || !payload.email) {
+        return showMessage("⚠️ Please fill in required fields.", "error");
+      }
+
+      try {
+        const res = await fetch('/api/update-profile', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify(payload)
+        });
+        const j = await res.json();
+        if (res.ok) showMessage("✅ Profile saved successfully!", "success");
+        else showMessage(j.error || "❌ Save failed", "error");
+      } catch (e) {
+        console.error(e);
+        showMessage("⚠️ Network error", "error");
+      }
+    });
+
+    loadProfile();
+  </script>
+</body>
+</html>
