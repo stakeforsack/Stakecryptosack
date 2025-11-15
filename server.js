@@ -318,6 +318,40 @@ app.post("/api/admin/approve-withdraw", requireAdmin, async (req, res) => {
   }
 });
 
+// ----------------------
+// Decline transaction (Deposit or Withdraw)
+// ----------------------
+app.post("/api/admin/decline-transaction", requireAdmin, async (req, res) => {
+  try {
+    const { txId } = req.body;
+    if (!txId) return res.status(400).json({ error: "txId required" });
+    const tx = await Transaction.findById(txId);
+    if (!tx) return res.status(404).json({ error: "Transaction not found" });
+    tx.status = "DECLINED";
+    await tx.save();
+    // NOTE: we don't credit/deduct balances when declining
+    return res.json({ ok: true, message: "Transaction declined" });
+  } catch (err) {
+    console.error("Decline transaction error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ----------------------
+// Get transaction history for a user (admin)
+// ----------------------
+app.get("/api/admin/user-transactions/:userId", requireAdmin, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const tx = await Transaction.find({ userId }).sort({ createdAt: -1 });
+    return res.json({ ok: true, tx });
+  } catch (err) {
+    console.error("User transactions error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
 // API NOT FOUND ======================
 app.use("/api/*", (req, res) =>
   res.status(404).json({ error: "API endpoint not found" })

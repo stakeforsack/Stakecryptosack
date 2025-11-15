@@ -1,148 +1,317 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<title>Admin Dashboard - GodStake</title>
-<link rel="stylesheet" href="/css/premium.css">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>CryptoYieldPro Admin Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
-    body { background:#0b0b0b; color:white; font-family:Inter; }
-    pre { background:#111; padding:12px; border-radius:6px; white-space:pre-wrap; border:1px solid #333; }
-    input { padding:8px; width:250px; border-radius:6px; border:1px solid #555; background:#111; color:white; }
-    button { padding:10px 16px; background:#a855f7; border:none; color:white; border-radius:6px; cursor:pointer; }
-    button:hover { background:#9333ea; }
+  :root{
+    --bg:#07070a; --card:#0f0f12; --muted:#9aa3b2; --accent:#a855f7; --accent2:#5eead4;
+    --glass: rgba(255,255,255,0.03);
+  }
+  html,body{height:100%;margin:0;background:linear-gradient(180deg,#050507 0%, #0b0b0b 100%);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,'Helvetica Neue',Arial;}
+  .wrap{max-width:1200px;margin:28px auto;padding:20px; color:#e6eef8}
+  .top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .logo{font-weight:700;font-size:20px;color:var(--accent)}
+  .keyBox{display:flex;gap:8px;align-items:center}
+  input.input{background:#0a0a0c;border:1px solid rgba(255,255,255,0.04);padding:10px 12px;border-radius:8px;color:#fff;outline:none}
+  button.btn{background:linear-gradient(90deg,var(--accent),var(--accent2));border:none;padding:10px 14px;border-radius:8px;color:#021;cursor:pointer;font-weight:600}
+  .grid{display:grid;grid-template-columns:1fr 420px;gap:18px;margin-top:18px}
+  .left{display:grid;gap:18px}
+  .card{background:linear-gradient(180deg,rgba(255,255,255,0.02), rgba(255,255,255,0.01));border:1px solid rgba(255,255,255,0.03);padding:14px;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,0.6)}
+  h3{margin:0 0 10px 0;color:#fff}
+  .list{max-height:300px;overflow:auto;padding:8px;display:block;gap:8px}
+  .item{display:flex;align-items:center;justify-content:space-between;padding:10px;border-radius:8px;background:var(--glass);border:1px solid rgba(255,255,255,0.02);margin-bottom:8px}
+  .small{font-size:13px;color:var(--muted)}
+  .muted{color:var(--muted)}
+  .actions{display:flex;gap:8px}
+  .btn-approve{background:linear-gradient(90deg,#22c55e,#16a34a);color:#021;border:none;padding:8px 10px;border-radius:8px;cursor:pointer;font-weight:600}
+  .btn-decline{background:#ff5c5c;color:#fff;border:none;padding:8px 10px;border-radius:8px;cursor:pointer}
+  .user-row{cursor:pointer}
+  .right .card{position:sticky;top:20px}
+  .tx-list{max-height:240px;overflow:auto;padding:8px}
+  pre { background:#06060a;color:#cfe8ff;padding:10px;border-radius:8px;white-space:pre-wrap;font-size:13px }
+  .signinOverlay{position:fixed;left:0;top:0;right:0;bottom:0;background:linear-gradient(180deg, rgba(0,0,0,0.6), rgba(0,0,0,0.7));display:flex;align-items:center;justify-content:center;z-index:999}
+  .signinCard{background:#07070b;padding:26px;border-radius:12px;border:1px solid rgba(255,255,255,0.04);width:420px;box-shadow:0 20px 60px rgba(0,0,0,0.7);text-align:center}
+  .logoLarge{font-size:18px;color:var(--accent);font-weight:700;margin-bottom:6px}
+  .hint{color:var(--muted);font-size:13px;margin-bottom:14px}
+  .footer{margin-top:18px;color:var(--muted);font-size:13px;text-align:center}
+  @media (max-width:980px){ .grid{grid-template-columns:1fr} .right{order:-1} }
 </style>
 </head>
-
 <body>
-
-<div class="container">
-
-  <div class="header">
-    <div class="logo">GodStake Admin</div>
-    <div><input id="adminKey" placeholder="Admin Key" /></div>
+<div class="wrap">
+  <div class="top">
+    <div class="logo">CryptoYieldPro • Admin Dashboard</div>
+    <div class="keyBox">
+      <input id="adminKeyShow" class="input" placeholder="Enter admin key (leave blank to use Sign-in)"/>
+      <button id="openSign" class="btn">Sign-in</button>
+    </div>
   </div>
 
-  <div style="height:20px"></div>
+  <div style="height:14px"></div>
 
-  <div class="admin-panel">
-
-    <div>
-
-      <!-- PENDING DEPOSITS -->
-      <div class="card neon-glow">
+  <div class="grid">
+    <div class="left">
+      <div class="card">
         <h3>Pending Deposits</h3>
-        <pre id="deposits"></pre>
+        <div id="pendingDeposits" class="list"></div>
       </div>
 
-      <div style="height:18px"></div>
-
-      <!-- PENDING WITHDRAWALS -->
-      <div class="card neon-glow">
+      <div class="card">
         <h3>Pending Withdrawals</h3>
-        <pre id="withdraws"></pre>
+        <div id="pendingWithdraws" class="list"></div>
       </div>
 
-    </div>
-
-    <!-- ACTION PANEL -->
-    <div class="card">
-      <h3>Actions</h3>
-
-      <button id="refresh" style="width:100%">Refresh Lists</button>
-
-      <div style="height:12px"></div>
-
-      <div>
-        <strong>Approve Deposit</strong><br/>
-        <input id="approveTx" placeholder="Deposit txId">
-        <button id="approveDep" style="width:100%; margin-top:8px">Approve Deposit</button>
-      </div>
-
-      <div style="height:12px"></div>
-
-      <div>
-        <strong>Approve Withdraw</strong><br/>
-        <input id="approveWTx" placeholder="Withdraw txId">
-        <button id="approveW" style="width:100%; margin-top:8px">Approve Withdraw</button>
+      <div class="card">
+        <h3>All Users</h3>
+        <div id="usersList" class="list"></div>
       </div>
     </div>
 
+    <div class="right">
+      <div class="card">
+        <h3>Actions & Transaction Viewer</h3>
+
+        <div style="display:flex;gap:8px;margin-bottom:10px">
+          <input id="txInspect" class="input" placeholder="Enter txId or userId to inspect" />
+          <button id="btnInspect" class="btn">Inspect</button>
+          <button id="btnRefresh" class="btn" style="background:linear-gradient(90deg,var(--accent2),var(--accent))">Refresh</button>
+        </div>
+
+        <div style="display:flex;gap:8px;margin-bottom:10px">
+          <div style="flex:1">
+            <input id="approveTxInput" class="input" placeholder="txId to approve" />
+            <button id="approveTxBtn" class="btn-approve" style="width:100%;margin-top:8px">Approve Deposit/Withdraw</button>
+          </div>
+          <div style="flex:1">
+            <input id="declineTxInput" class="input" placeholder="txId to decline" />
+            <button id="declineTxBtn" class="btn-decline" style="width:100%;margin-top:8px">Decline</button>
+          </div>
+        </div>
+
+        <h3 style="margin-top:10px">Recent Transactions</h3>
+        <div id="recentTx" class="tx-list small"></div>
+      </div>
+
+      <div class="card" style="margin-top:18px">
+        <h3>User Transaction History</h3>
+        <pre id="userTxHistory">Select a user to view transaction history.</pre>
+      </div>
+    </div>
   </div>
 
-  <div style="height:20px"></div>
+  <div class="footer">CryptoYieldPro • Admin • Signed in as <span id="adminLabel">—</span></div>
+</div>
 
-  <!-- ALL TRANSACTIONS -->
-  <div class="card">
-    <h3>All Transactions</h3>
-    <pre id="allTx" style="max-height:250px; overflow:auto"></pre>
+<!-- Sign-in overlay -->
+<div id="signin" class="signinOverlay" style="display:flex">
+  <div class="signinCard">
+    <div class="logoLarge">CryptoYieldPro Admin Sign-in</div>
+    <div class="hint">Enter your Admin Key to unlock the dashboard</div>
+    <input id="signinKey" class="input" placeholder="Admin Key" style="width:100%;margin-bottom:12px"/>
+    <div style="display:flex;gap:8px;justify-content:center">
+      <button id="signinBtn" class="btn">Sign in</button>
+      <button id="cancelBtn" class="btn" style="background:#2b2b2b;color:#fff">Cancel</button>
+    </div>
+    <div style="height:8px"></div>
+    <div class="small muted">Admin key not stored — used for this session only.</div>
   </div>
-
 </div>
 
 <script>
+/*
+  Admin Dashboard JS
+  - Uses admin key header "x-admin-key"
+  - Endpoints:
+    GET  /api/admin/pending-deposits
+    GET  /api/admin/pending-withdraws
+    GET  /api/admin/users
+    GET  /api/admin/all-transactions
+    POST /api/admin/approve-deposit   { txId }
+    POST /api/admin/approve-withdraw  { txId, tx_hash? }
+    POST /api/admin/decline-transaction { txId }
+    GET  /api/admin/user-transactions/:userId
+    POST /api/cron/payouts (admin) - not used here
+*/
 
-// ---- API WRAPPER ----
-async function adminAPI(endpoint, method="GET", body=null) {
-  const key = document.getElementById("adminKey").value.trim();
-  if (!key) return alert("Enter Admin Key");
+let ADMIN_KEY = "";          // stored in memory for this session
+const $ = id => document.getElementById(id);
 
-  const opts = {
-    method,
-    headers: {
-      "Content-Type": "application/json",
-      "x-admin-key": key
-    }
-  };
-
+// basic wrapper (adds header)
+async function callAdmin(path, method='GET', body=null) {
+  if (!ADMIN_KEY) return alert("Admin key not set. Sign in first.");
+  const opts = { method, headers: { 'Content-Type': 'application/json', 'x-admin-key': ADMIN_KEY } };
   if (body) opts.body = JSON.stringify(body);
-
-  const res = await fetch(endpoint, opts);
-  const text = await res.text();
-  try { return JSON.parse(text); } catch { return text; }
+  const res = await fetch(path, opts);
+  const txt = await res.text();
+  try { return JSON.parse(txt); } catch(e) { return txt; }
 }
 
-// ---- REFRESH LISTS ----
-async function refreshLists() {
-  const deps = await adminAPI("/api/admin/pending-deposits");
-  const wds = await adminAPI("/api/admin/pending-withdraws");
-  const txs = await adminAPI("/api/admin/all-transactions");
-
-  document.getElementById("deposits").innerText = JSON.stringify(deps, null, 2);
-  document.getElementById("withdraws").innerText = JSON.stringify(wds, null, 2);
-  document.getElementById("allTx").innerText = JSON.stringify(txs, null, 2);
+// render helpers
+function elItem(title, subtitle, rightHtml='') {
+  return `<div class="item"><div>
+            <div class="user-row"><strong>${title}</strong></div>
+            <div class="small muted">${subtitle}</div>
+          </div>
+          <div class="actions">${rightHtml}</div></div>`;
 }
 
-document.getElementById("refresh").onclick = refreshLists;
+async function loadPendingDeposits(){
+  const res = await callAdmin('/api/admin/pending-deposits');
+  const wrap = $('pendingDeposits');
+  wrap.innerHTML = '';
+  if (!res || !res.pending) { wrap.innerHTML = '<div class="small muted">No data or unauthorized</div>'; return; }
+  res.pending.forEach(tx=>{
+    const right = `<div style="text-align:right">
+                    <div style="font-weight:700">${tx.amount} ${tx.coin}</div>
+                    <div style="height:8px"></div>
+                    <button class="btn-approve" onclick="approve('${tx._id}')">Approve</button>
+                    <button class="btn-decline" onclick="decline('${tx._id}')">Decline</button>
+                    <div class="small muted" style="margin-top:6px">User: ${tx.userId?.username || tx.userId}</div>
+                   </div>`;
+    wrap.insertAdjacentHTML('beforeend', elItem('Deposit: '+tx._id, `User: ${tx.userId?.username || 'N/A'} • ${new Date(tx.createdAt).toLocaleString()}`, right));
+  });
+}
 
-// ---- APPROVE DEPOSIT ----
-document.getElementById("approveDep").onclick = async () => {
-  const txId = document.getElementById("approveTx").value.trim();
-  if (!txId) return alert("Enter a deposit txId");
+async function loadPendingWithdraws(){
+  const res = await callAdmin('/api/admin/pending-withdraws');
+  const wrap = $('pendingWithdraws');
+  wrap.innerHTML = '';
+  if (!res || !res.pending) { wrap.innerHTML = '<div class="small muted">No data or unauthorized</div>'; return; }
+  res.pending.forEach(tx=>{
+    const right = `<div style="text-align:right">
+                    <div style="font-weight:700">${tx.amount} ${tx.coin}</div>
+                    <div style="height:8px"></div>
+                    <button class="btn-approve" onclick="approve('${tx._id}')">Approve</button>
+                    <button class="btn-decline" onclick="decline('${tx._id}')">Decline</button>
+                    <div class="small muted" style="margin-top:6px">User: ${tx.userId?.username || tx.userId}</div>
+                   </div>`;
+    wrap.insertAdjacentHTML('beforeend', elItem('Withdraw: '+tx._id, `User: ${tx.userId?.username || 'N/A'} • ${new Date(tx.createdAt).toLocaleString()}`, right));
+  });
+}
 
-  const result = await adminAPI("/api/admin/approve-deposit", "POST", { txId });
-  alert("Deposit approved");
+async function loadUsers(){
+  const res = await callAdmin('/api/admin/users');
+  const wrap = $('usersList');
+  wrap.innerHTML = '';
+  if (!res || !res.users) { wrap.innerHTML = '<div class="small muted">No data or unauthorized</div>'; return; }
+  res.users.forEach(u=>{
+    const right = `<div style="text-align:right">
+                    <div style="font-weight:700">${(u.balance||0).toFixed(2)} USD</div>
+                    <div style="height:8px"></div>
+                    <button class="btn" onclick="inspectUser('${u._id}')">View TX</button>
+                  </div>`;
+    wrap.insertAdjacentHTML('beforeend', elItem(u.username+' • '+ (u.email || ''), `Created: ${new Date(u.createdAt).toLocaleString()}`, right));
+  });
+}
 
-  refreshLists();
+async function loadRecentTx(){
+  const res = await callAdmin('/api/admin/all-transactions');
+  const wrap = $('recentTx');
+  wrap.innerHTML = '';
+  if (!res || !res.tx) { wrap.innerHTML = '<div class="small muted">No transactions or unauthorized</div>'; return; }
+  res.tx.slice(0,50).forEach(t=>{
+    const status = t.status || 'PENDING';
+    const row = `<div style="padding:8px;border-bottom:1px dashed rgba(255,255,255,0.03);">
+                  <div style="display:flex;justify-content:space-between">
+                    <div><strong>${t.type}</strong> • ${t.coin} • ${t.amount}</div>
+                    <div class="small muted">${status}</div>
+                  </div>
+                  <div class="small muted">User: ${t.userId?.username || t.userId} • ${new Date(t.createdAt).toLocaleString()}</div>
+                 </div>`;
+    wrap.insertAdjacentHTML('beforeend', row);
+  });
+}
+
+// Approve and decline actions
+async function approve(txId){
+  // try to detect tx type before asking for hash
+  // We'll call approve-deposit and approve-withdraw endpoints (server will validate type)
+  // For withdraws we can ask for tx hash
+  const isWithdraw = confirm("Is this a withdraw transaction? Click OK for withdraw, Cancel for deposit.");
+  if (isWithdraw){
+    const tx_hash = prompt("Enter blockchain tx hash (optional)","");
+    await callAdmin('/api/admin/approve-withdraw','POST',{ txId, tx_hash });
+    alert('Withdraw approved');
+  } else {
+    await callAdmin('/api/admin/approve-deposit','POST',{ txId });
+    alert('Deposit approved');
+  }
+  refreshAll();
+}
+
+async function decline(txId){
+  if (!confirm("Decline this transaction?")) return;
+  // call decline endpoint (server snippet required)
+  const res = await callAdmin('/api/admin/decline-transaction','POST',{ txId });
+  alert('Transaction declined');
+  refreshAll();
+}
+
+// Inspect user tx history
+async function inspectUser(userId){
+  const res = await callAdmin('/api/admin/user-transactions/'+userId);
+  $('userTxHistory').innerText = JSON.stringify(res, null, 2);
+}
+
+// manual inspect generic
+document.getElementById('btnInspect').onclick = async ()=>{
+  const v = $('txInspect').value.trim();
+  if (!v) return alert('Enter txId or userId');
+  // try as txId first (search on all transactions)
+  const resAll = await callAdmin('/api/admin/all-transactions');
+  if (resAll && resAll.tx){
+    const found = resAll.tx.find(t => t._id === v || t._id == v);
+    if (found) { $('userTxHistory').innerText = JSON.stringify(found, null, 2); return; }
+  }
+  // otherwise show user's transactions if user id given
+  const resUser = await callAdmin('/api/admin/user-transactions/'+v);
+  $('userTxHistory').innerText = JSON.stringify(resUser, null, 2);
+}
+
+async function refreshAll(){
+  await Promise.all([loadPendingDeposits(), loadPendingWithdraws(), loadUsers(), loadRecentTx()]);
+}
+
+document.getElementById('btnRefresh').onclick = refreshAll;
+document.getElementById('approveTxBtn').onclick = async ()=>{
+  const txId = $('approveTxInput').value.trim();
+  if (!txId) return alert('Enter txId');
+  await approve(txId);
+};
+document.getElementById('declineTxBtn').onclick = async ()=>{
+  const txId = $('declineTxInput').value.trim();
+  if (!txId) return alert('Enter txId');
+  await decline(txId);
 };
 
-// ---- APPROVE WITHDRAW ----
-document.getElementById("approveW").onclick = async () => {
-  const txId = document.getElementById("approveWTx").value.trim();
-  if (!txId) return alert("Enter withdraw txId");
-
-  const tx_hash = prompt("Enter blockchain tx hash:");
-  if (!tx_hash) return alert("Approval cancelled.");
-
-  const result = await adminAPI("/api/admin/approve-withdraw", "POST", { txId, tx_hash });
-  alert("Withdraw approved");
-
-  refreshLists();
+// SIGN IN flow
+document.getElementById('signinBtn').onclick = ()=>{
+  const k = $('signinKey').value.trim();
+  if (!k) return alert('Enter admin key');
+  ADMIN_KEY = k;
+  $('adminLabel').innerText = 'Signed in';
+  $('adminKeyShow').value = '(session key)';
+  document.getElementById('signin').style.display = 'none';
+  refreshAll();
+};
+document.getElementById('cancelBtn').onclick = ()=>{
+  document.getElementById('signin').style.display = 'none';
 };
 
-// Auto-load on open
-refreshLists();
+// Quick: allow entering key in top input and clicking Sign-in
+document.getElementById('openSign').onclick = ()=>{
+  const k = $('adminKeyShow').value.trim();
+  if (k) { $('signinKey').value = k; }
+  document.getElementById('signin').style.display = 'flex';
+};
 
+// Auto-run if adminKeyShow prefilled
+if ($('adminKeyShow').value.trim()) {
+  document.getElementById('openSign').click();
+}
 </script>
-
 </body>
 </html>
