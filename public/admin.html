@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Admin - GodStake</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>body{background:#0b0b0b;color:#fff;font-family:Inter;padding:20px} pre{white-space:pre-wrap;background:#111;padding:12px;border-radius:8px}</style>
+</head>
+<body>
+<h1>Admin Panel</h1>
+<label>Admin Key: <input id="adminKey" style="width:360px"></label>
+<button id="loadUsers">Load Users</button>
+<button id="loadTx">Load Transactions</button>
+<div id="out"><pre></pre></div>
+<script>
+async function api(path, opts={}){
+  const key = document.getElementById('adminKey').value.trim();
+  if(!key){ alert('Enter admin key'); return; }
+  opts.headers = opts.headers || {};
+  opts.headers['x-admin-key'] = key;
+  const r = await fetch(path, opts);
+  const t = await r.text();
+  try{ const j = JSON.parse(t); return j; }catch(e){ return t; }
+}
+document.getElementById('loadUsers').onclick = async ()=>{
+  const data = await api('/api/admin/users');
+  document.querySelector('#out pre').innerText = JSON.stringify(data,null,2);
+}
+document.getElementById('loadTx').onclick = async ()=>{
+  const data = await api('/api/admin/transactions');
+  document.querySelector('#out pre').innerText = JSON.stringify(data,null,2);
+}
+</script>
+</body></html>

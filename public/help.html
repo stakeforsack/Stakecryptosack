@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Help & Support</title>
+
+  <style>
+    /* ===== Global Dark Theme ===== */
+    :root {
+      --bg-color: #0f1117;
+      --card-bg: #1a1d27;
+      --accent: #4e9eff;
+      --accent-hover: #66b2ff;
+      --text-color: #e8ecf2;
+      --text-muted: #9ba3b5;
+      --success: #00e676;
+      --danger: #ff5252;
+      --radius: 10px;
+      --transition: 0.25s ease;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      margin: 0;
+      font-family: 'Inter', system-ui, sans-serif;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    .header {
+      height: 56px;
+      background: linear-gradient(90deg, #171a22, #10121a);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+    }
+
+    .account-container {
+      flex: 1;
+      padding: 16px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+    }
+
+    .account-card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      padding: 20px;
+      width: 100%;
+      max-width: 500px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+      transition: transform var(--transition), box-shadow var(--transition);
+      animation: fadeIn 0.5s ease;
+    }
+
+    .account-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 18px rgba(0,0,0,0.6);
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    h2 {
+      color: var(--accent);
+      text-align: center;
+      margin-bottom: 6px;
+    }
+
+    .helper {
+      text-align: center;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+    }
+
+    .form-row {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    label {
+      display: flex;
+      flex-direction: column;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: color var(--transition);
+    }
+
+    label:hover {
+      color: var(--accent);
+    }
+
+    input, textarea {
+      margin-top: 6px;
+      padding: 10px;
+      border-radius: var(--radius);
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: var(--text-color);
+      transition: border var(--transition), background var(--transition);
+      font-family: 'Inter', sans-serif;
+      font-size: 0.9rem;
+    }
+
+    input:focus, textarea:focus {
+      border-color: var(--accent);
+      outline: none;
+      background: rgba(78,158,255,0.1);
+    }
+
+    .char-count {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-align: right;
+      margin-top: 2px;
+    }
+
+    .controls {
+      display: flex;
+      justify-content: center;
+      margin-top: 12px;
+    }
+
+    .btn {
+      background: var(--accent);
+      border: none;
+      color: #fff;
+      padding: 10px 18px;
+      border-radius: var(--radius);
+      cursor: pointer;
+      font-weight: 600;
+      transition: background var(--transition), transform var(--transition), box-shadow var(--transition);
+    }
+
+    .btn:hover {
+      background: var(--accent-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(78,158,255,0.3);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+      box-shadow: none;
+    }
+
+    .contact-email {
+      text-align: center;
+      margin-top: 12px;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .contact-email a {
+      color: var(--accent);
+      text-decoration: none;
+      transition: color var(--transition);
+    }
+
+    .contact-email a:hover {
+      color: var(--accent-hover);
+    }
+
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background: #14161e;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      padding: 8px 0;
+      border-top: 1px solid #252837;
+      z-index: 10;
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      text-decoration: none;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      transition: color var(--transition), transform var(--transition);
+    }
+
+    .nav-item img {
+      width: 22px;
+      filter: brightness(0.8);
+      transition: filter var(--transition);
+    }
+
+    .nav-item:hover {
+      color: var(--accent);
+      transform: translateY(-2px);
+    }
+
+    .nav-item.active {
+      color: var(--accent);
+    }
+
+    .nav-item.active img {
+      filter: brightness(1.2);
+    }
+
+    @media (max-width: 600px) {
+      .account-card { padding: 14px; }
+      h2 { font-size: 1.2rem; }
+      .btn { padding: 8px 12px; font-size: 0.85rem; }
+      .nav-item img { width: 20px; }
+    }
+  </style>
+</head>
+
+<body>
+  <header class="header"></header>
+
+  <main class="account-container">
+    <div class="account-card">
+      <h2>Help & Support</h2>
+      <p class="helper">Need assistance? Fill out the form below or contact us directly via email.</p>
+
+      <div class="form-row">
+        <div class="row-item">
+          <label>Subject
+            <input id="subj" placeholder="Enter ticket subject..." />
+          </label>
+        </div>
+        <div class="row-item">
+          <label>Message
+            <textarea id="msg" rows="6" placeholder="Describe your issue..."></textarea>
+            <div class="char-count" id="charCount">0 / 500</div>
+          </label>
+        </div>
+      </div>
+
+      <div class="controls">
+        <button class="btn" id="btnSend">Send Ticket</button>
+      </div>
+
+      <div class="contact-email">
+        Or email us directly at <a href="mailto:stakeforsacksuport@example.com">stakeforsacksuport@example.com</a>
+      </div>
+    </div>
+  </main>
+
+  <nav class="bottom-nav">
+    <a class="nav-item" href="index.html"><img src="/img/house.png"><p>Home</p></a>
+    <a class="nav-item" href="trade.html"><img src="/img/trade.png"><p>Trade</p></a>
+    <a class="nav-item" href="internal-transfer.html"><img src="/img/transfer.png"><p>Transfer</p></a>
+    <a class="nav-item active" href="account.html"><img src="/img/myaccount.png"><p>Account</p></a>
+  </nav>
+
+  <script src="/js/language.js"></script>
+  <script>document.addEventListener('DOMContentLoaded', initLanguageSelector);</script>
+
+  <script>
+    const msgInput = document.getElementById('msg');
+    const charCount = document.getElementById('charCount');
+
+    msgInput.addEventListener('input', () => {
+      charCount.textContent = `${msgInput.value.length} / 500`;
+      if(msgInput.value.length > 500) charCount.style.color = 'var(--danger)';
+      else charCount.style.color = 'var(--text-muted)';
+    });
+
+    document.getElementById('btnSend').addEventListener('click', async () => {
+      const subject = document.getElementById('subj').value.trim();
+      const message = msgInput.value.trim();
+      if(!subject || !message) return alert('Please fill out both fields');
+
+      const payload = { subject, message };
+      try {
+        const res = await fetch('/api/support', {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          credentials:'same-origin',
+          body: JSON.stringify(payload)
+        });
+        if(res.ok) alert('Ticket sent successfully'); 
+        else alert('Failed to send ticket');
+      } catch(e){
+        console.error(e); 
+        alert('Network error');
+      }
+    });
+  </script>
+</body>
+</html>

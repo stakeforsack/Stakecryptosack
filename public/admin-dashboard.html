@@ -1,0 +1,70 @@
+
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Admin Dashboard - GodStake</title>
+<link rel="stylesheet" href="/css/premium.css">
+</head><body>
+<div class="container">
+  <div class="header">
+    <div class="logo">CryptoYieldPro Admin</div>
+    <div><input id="adminKey" placeholder="Admin Key" class="input" style="width:260px"/></div>
+  </div>
+  <div style="height:18px"></div>
+  <div class="admin-panel">
+    <div>
+      <div class="card neon-glow">
+        <h3>Pending Deposits</h3>
+        <div id="deposits" class="admin-list small"></div>
+      </div>
+      <div style="height:18px"></div>
+      <div class="card neon-glow">
+        <h3>Pending Withdrawals</h3>
+        <div id="withdraws" class="admin-list small"></div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Actions</h3>
+      <button id="refresh" class="btn" style="width:100%">Refresh Lists</button>
+      <div style="height:12px"></div>
+      <div><strong>Approve Deposit</strong><br/><input id="approveTx" class="input" placeholder="txId"/><button id="approveDep" class="btn" style="width:100%;margin-top:8px">Approve Deposit</button></div>
+      <div style="height:12px"></div>
+      <div><strong>Approve Withdraw</strong><br/><input id="approveWTx" class="input" placeholder="txId"/><button id="approveW" class="btn" style="width:100%;margin-top:8px">Approve Withdraw</button></div>
+    </div>
+  </div>
+  <div style="height:18px"></div>
+  <div class="card">
+    <h3>All Transactions</h3>
+    <pre id="allTx" class="small" style="max-height:220px;overflow:auto"></pre>
+  </div>
+  <div class="footer">CryptoYieldPro • Admin Panel</div>
+</div>
+<script>
+const api = (path, opts={})=>{
+  const key = document.getElementById('adminKey').value.trim();
+  opts.headers = opts.headers || {};
+  if(key) opts.headers['x-admin-key'] = key;
+  return fetch(path, opts).then(r=>r.text()).then(t=>{ try{return JSON.parse(t)}catch(e){return t}});
+};
+async function refresh(){
+  const d = await api('/api/admin/deposits');
+  document.getElementById('deposits').innerText = JSON.stringify(d, null, 2);
+  const w = await api('/api/admin/withdraws');
+  document.getElementById('withdraws').innerText = JSON.stringify(w, null, 2);
+  const tx = await api('/api/admin/transactions');
+  document.getElementById('allTx').innerText = JSON.stringify(tx, null, 2);
+}
+document.getElementById('refresh').onclick = refresh;
+document.getElementById('approveDep').onclick = async ()=>{
+  const txId = document.getElementById('approveTx').value.trim();
+  const res = await api('/api/admin/approve-deposit',{method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({txId})});
+  alert(JSON.stringify(res));
+  refresh();
+};
+document.getElementById('approveW').onclick = async ()=>{
+  const txId = document.getElementById('approveWTx').value.trim();
+  const res = await api('/api/admin/approve-withdraw',{method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({txId})});
+  alert(JSON.stringify(res));
+  refresh();
+};
+</script>
+</body></html>

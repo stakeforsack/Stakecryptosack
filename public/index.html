@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StakeCryptoSack</title>
+  <style>
+    /* --- RESET --- */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+      background: radial-gradient(circle at center, #0a0a0a, #000);
+      font-family: "Poppins", sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: #fff;
+    }
+
+    /* --- BACKGROUND ANIMATION --- */
+    .bg {
+      position: absolute;
+      width: 200%;
+      height: 200%;
+      background: repeating-linear-gradient(
+        45deg,
+        rgba(255,255,255,0.02) 0px,
+        rgba(255,255,255,0.02) 2px,
+        transparent 2px,
+        transparent 4px
+      );
+      animation: moveBg 8s linear infinite;
+      z-index: 0;
+      opacity: 0.4;
+    }
+    @keyframes moveBg {
+      from { transform: translate(0, 0); }
+      to { transform: translate(-20%, -20%); }
+    }
+
+    /* --- TITLE --- */
+    .title {
+      z-index: 1;
+      text-align: center;
+      font-size: 3rem;
+      letter-spacing: 3px;
+      background: linear-gradient(90deg, #00c6ff, #0072ff);
+      background-clip: text; /* ✅ Standard property for compatibility */
+      -webkit-background-clip: text; /* ✅ Vendor-prefixed version for WebKit browsers */
+      color: transparent;
+      -webkit-text-fill-color: transparent;
+
+    }
+
+    @keyframes glow {
+      from { text-shadow: 0 0 10px #0072ff; }
+      to { text-shadow: 0 0 30px #00c6ff; }
+    }
+
+    /* --- SUBTEXT --- */
+    .subtitle {
+      z-index: 1;
+      margin-top: 10px;
+      font-size: 1.2rem;
+      color: rgba(255,255,255,0.7);
+      letter-spacing: 1px;
+      animation: fadeIn 2s ease 1.5s forwards;
+      opacity: 0;
+    }
+
+    @keyframes fadeIn {
+      to { opacity: 1; }
+    }
+  </style>
+<link rel="stylesheet" href="/css/premium.css">
+</head>
+<body>
+  <div class="bg"></div>
+  <div class="content">
+    <div class="title">StakeCryptoSack</div>
+    <div class="subtitle">Secure. Decentralized. Profitable.</div>
+  </div>
+
+  <script>
+    // Redirect after 5 seconds
+    setTimeout(() => {
+      window.location.href = "home.html"; // change to your main page
+    }, 5000);
+  </script>
+</body>
+</html>
