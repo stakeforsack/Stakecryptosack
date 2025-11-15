@@ -1,71 +1,148 @@
-
 <!doctype html>
 <html lang="en">
-<head><meta charset="utf-8"><title>Admin Dashboard - GodStake</title>
+<head>
+<meta charset="utf-8">
+<title>Admin Dashboard - GodStake</title>
 <link rel="stylesheet" href="/css/premium.css">
-</head><body>
+<style>
+    body { background:#0b0b0b; color:white; font-family:Inter; }
+    pre { background:#111; padding:12px; border-radius:6px; white-space:pre-wrap; border:1px solid #333; }
+    input { padding:8px; width:250px; border-radius:6px; border:1px solid #555; background:#111; color:white; }
+    button { padding:10px 16px; background:#a855f7; border:none; color:white; border-radius:6px; cursor:pointer; }
+    button:hover { background:#9333ea; }
+</style>
+</head>
+
+<body>
+
 <div class="container">
+
   <div class="header">
-    <div class="logo">CryptoYieldPro Admin</div>
-    <div><input id="adminKey" placeholder="Admin Key" class="input" style="width:260px"/></div>
+    <div class="logo">GodStake Admin</div>
+    <div><input id="adminKey" placeholder="Admin Key" /></div>
   </div>
-  <div style="height:18px"></div>
+
+  <div style="height:20px"></div>
+
   <div class="admin-panel">
+
     <div>
+
+      <!-- PENDING DEPOSITS -->
       <div class="card neon-glow">
         <h3>Pending Deposits</h3>
-        <div id="deposits" class="admin-list small"></div>
+        <pre id="deposits"></pre>
       </div>
+
       <div style="height:18px"></div>
+
+      <!-- PENDING WITHDRAWALS -->
       <div class="card neon-glow">
         <h3>Pending Withdrawals</h3>
-        <div id="withdraws" class="admin-list small"></div>
+        <pre id="withdraws"></pre>
       </div>
+
     </div>
+
+    <!-- ACTION PANEL -->
     <div class="card">
       <h3>Actions</h3>
-      <button id="refresh" class="btn" style="width:100%">Refresh Lists</button>
+
+      <button id="refresh" style="width:100%">Refresh Lists</button>
+
       <div style="height:12px"></div>
-      <div><strong>Approve Deposit</strong><br/><input id="approveTx" class="input" placeholder="txId"/><button id="approveDep" class="btn" style="width:100%;margin-top:8px">Approve Deposit</button></div>
+
+      <div>
+        <strong>Approve Deposit</strong><br/>
+        <input id="approveTx" placeholder="Deposit txId">
+        <button id="approveDep" style="width:100%; margin-top:8px">Approve Deposit</button>
+      </div>
+
       <div style="height:12px"></div>
-      <div><strong>Approve Withdraw</strong><br/><input id="approveWTx" class="input" placeholder="txId"/><button id="approveW" class="btn" style="width:100%;margin-top:8px">Approve Withdraw</button></div>
+
+      <div>
+        <strong>Approve Withdraw</strong><br/>
+        <input id="approveWTx" placeholder="Withdraw txId">
+        <button id="approveW" style="width:100%; margin-top:8px">Approve Withdraw</button>
+      </div>
     </div>
+
   </div>
-  <div style="height:18px"></div>
+
+  <div style="height:20px"></div>
+
+  <!-- ALL TRANSACTIONS -->
   <div class="card">
     <h3>All Transactions</h3>
-    <pre id="allTx" class="small" style="max-height:220px;overflow:auto"></pre>
+    <pre id="allTx" style="max-height:250px; overflow:auto"></pre>
   </div>
-  <div class="footer">CryptoYieldPro • Admin Panel</div>
+
 </div>
+
 <script>
-async function fetchAdmin(endpoint, opts = {}) {
-  const key = document.getElementById('adminKey')?.value || '';
-  opts.headers = opts.headers || {};
-  if (key) opts.headers['x-admin-key'] = key;
+
+// ---- API WRAPPER ----
+async function adminAPI(endpoint, method="GET", body=null) {
+  const key = document.getElementById("adminKey").value.trim();
+  if (!key) return alert("Enter Admin Key");
+
+  const opts = {
+    method,
+    headers: {
+      "Content-Type": "application/json",
+      "x-admin-key": key
+    }
+  };
+
+  if (body) opts.body = JSON.stringify(body);
+
   const res = await fetch(endpoint, opts);
   const text = await res.text();
-  try { return JSON.parse(text); } catch(e) { return text; }
+  try { return JSON.parse(text); } catch { return text; }
 }
 
-async function refreshAdmin() {
-  const deps = await fetchAdmin('/api/admin/pending-deposits');
-  const wds = await fetchAdmin('/api/admin/pending-withdraws');
-  const txs = await fetchAdmin('/api/admin/all-transactions');
-  document.getElementById('depositsList').innerText = JSON.stringify(deps, null, 2);
-  document.getElementById('withdrawList').innerText = JSON.stringify(wds, null, 2);
-  document.getElementById('txList').innerText = JSON.stringify(txs, null, 2);
+// ---- REFRESH LISTS ----
+async function refreshLists() {
+  const deps = await adminAPI("/api/admin/pending-deposits");
+  const wds = await adminAPI("/api/admin/pending-withdraws");
+  const txs = await adminAPI("/api/admin/all-transactions");
+
+  document.getElementById("deposits").innerText = JSON.stringify(deps, null, 2);
+  document.getElementById("withdraws").innerText = JSON.stringify(wds, null, 2);
+  document.getElementById("allTx").innerText = JSON.stringify(txs, null, 2);
 }
 
-document.getElementById('refreshBtn').addEventListener('click', refreshAdmin);
+document.getElementById("refresh").onclick = refreshLists;
 
-// approve sample
-async function approveDeposit(txId) {
-  const key = document.getElementById('adminKey').value;
-  const res = await fetch('/api/admin/approve-deposit', { method:'POST', headers:{'Content-Type':'application/json','x-admin-key':key}, body: JSON.stringify({ txId }) });
-  alert(await res.text());
-  refreshAdmin();
-}
+// ---- APPROVE DEPOSIT ----
+document.getElementById("approveDep").onclick = async () => {
+  const txId = document.getElementById("approveTx").value.trim();
+  if (!txId) return alert("Enter a deposit txId");
+
+  const result = await adminAPI("/api/admin/approve-deposit", "POST", { txId });
+  alert("Deposit approved");
+
+  refreshLists();
+};
+
+// ---- APPROVE WITHDRAW ----
+document.getElementById("approveW").onclick = async () => {
+  const txId = document.getElementById("approveWTx").value.trim();
+  if (!txId) return alert("Enter withdraw txId");
+
+  const tx_hash = prompt("Enter blockchain tx hash:");
+  if (!tx_hash) return alert("Approval cancelled.");
+
+  const result = await adminAPI("/api/admin/approve-withdraw", "POST", { txId, tx_hash });
+  alert("Withdraw approved");
+
+  refreshLists();
+};
+
+// Auto-load on open
+refreshLists();
+
 </script>
 
-</body></html>
+</body>
+</html>

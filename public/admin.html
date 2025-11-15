@@ -1,32 +1,94 @@
 <!doctype html>
 <html lang="en">
-<head><meta charset="utf-8"><title>Admin - GodStake</title>
+<head>
+<meta charset="utf-8">
+<title>Admin - GodStake</title>
 <link rel="stylesheet" href="/css/style.css">
-<style>body{background:#0b0b0b;color:#fff;font-family:Inter;padding:20px} pre{white-space:pre-wrap;background:#111;padding:12px;border-radius:8px}</style>
+<style>
+  body {
+    background:#0b0b0b;
+    color:#fff;
+    font-family:Inter, sans-serif;
+    padding:20px;
+  }
+  pre {
+    white-space:pre-wrap;
+    background:#111;
+    padding:15px;
+    border-radius:8px;
+    border:1px solid #333;
+  }
+  input {
+    padding:8px;
+    border-radius:6px;
+    border:1px solid #555;
+    background:#111;
+    color:white;
+  }
+  button {
+    padding:8px 16px;
+    border:none;
+    border-radius:6px;
+    background:#a855f7;
+    color:#fff;
+    cursor:pointer;
+  }
+  button:hover {
+    background:#9333ea;
+  }
+</style>
 </head>
+
 <body>
-<h1>Admin Panel</h1>
-<label>Admin Key: <input id="adminKey" style="width:360px"></label>
+
+<h1>Admin Panel (Simple)</h1>
+
+<label>
+  Admin Key:
+  <input id="adminKey" placeholder="Enter Admin Key" style="width:300px">
+</label>
+
+<br><br>
+
 <button id="loadUsers">Load Users</button>
-<button id="loadTx">Load Transactions</button>
+<button id="loadTx">Load All Transactions</button>
+
 <div id="out"><pre></pre></div>
+
 <script>
-async function api(path, opts={}){
+async function api(path, opts={}) {
   const key = document.getElementById('adminKey').value.trim();
-  if(!key){ alert('Enter admin key'); return; }
+  if (!key) {
+    alert("Enter admin key");
+    return;
+  }
+
   opts.headers = opts.headers || {};
   opts.headers['x-admin-key'] = key;
-  const r = await fetch(path, opts);
-  const t = await r.text();
-  try{ const j = JSON.parse(t); return j; }catch(e){ return t; }
+  opts.headers['Content-Type'] = 'application/json';
+
+  const response = await fetch(path, opts);
+  const text = await response.text();
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    return text;
+  }
 }
-document.getElementById('loadUsers').onclick = async ()=>{
+
+// Load users
+document.getElementById('loadUsers').onclick = async () => {
   const data = await api('/api/admin/users');
-  document.querySelector('#out pre').innerText = JSON.stringify(data,null,2);
-}
-document.getElementById('loadTx').onclick = async ()=>{
-  const data = await api('/api/admin/transactions');
-  document.querySelector('#out pre').innerText = JSON.stringify(data,null,2);
-}
+  document.querySelector('#out pre').innerText = JSON.stringify(data, null, 2);
+};
+
+// Load ALL transactions
+document.getElementById('loadTx').onclick = async () => {
+  const data = await api('/api/admin/all-transactions');
+  document.querySelector('#out pre').innerText = JSON.stringify(data, null, 2);
+};
 </script>
-</body></html>
+
+</body>
+</html>
