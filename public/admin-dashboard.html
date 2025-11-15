@@ -39,32 +39,33 @@
   <div class="footer">CryptoYieldPro • Admin Panel</div>
 </div>
 <script>
-const api = (path, opts={})=>{
-  const key = document.getElementById('adminKey').value.trim();
+async function fetchAdmin(endpoint, opts = {}) {
+  const key = document.getElementById('adminKey')?.value || '';
   opts.headers = opts.headers || {};
-  if(key) opts.headers['x-admin-key'] = key;
-  return fetch(path, opts).then(r=>r.text()).then(t=>{ try{return JSON.parse(t)}catch(e){return t}});
-};
-async function refresh(){
-  const d = await api('/api/admin/deposits');
-  document.getElementById('deposits').innerText = JSON.stringify(d, null, 2);
-  const w = await api('/api/admin/withdraws');
-  document.getElementById('withdraws').innerText = JSON.stringify(w, null, 2);
-  const tx = await api('/api/admin/transactions');
-  document.getElementById('allTx').innerText = JSON.stringify(tx, null, 2);
+  if (key) opts.headers['x-admin-key'] = key;
+  const res = await fetch(endpoint, opts);
+  const text = await res.text();
+  try { return JSON.parse(text); } catch(e) { return text; }
 }
-document.getElementById('refresh').onclick = refresh;
-document.getElementById('approveDep').onclick = async ()=>{
-  const txId = document.getElementById('approveTx').value.trim();
-  const res = await api('/api/admin/approve-deposit',{method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({txId})});
-  alert(JSON.stringify(res));
-  refresh();
-};
-document.getElementById('approveW').onclick = async ()=>{
-  const txId = document.getElementById('approveWTx').value.trim();
-  const res = await api('/api/admin/approve-withdraw',{method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({txId})});
-  alert(JSON.stringify(res));
-  refresh();
-};
+
+async function refreshAdmin() {
+  const deps = await fetchAdmin('/api/admin/pending-deposits');
+  const wds = await fetchAdmin('/api/admin/pending-withdraws');
+  const txs = await fetchAdmin('/api/admin/all-transactions');
+  document.getElementById('depositsList').innerText = JSON.stringify(deps, null, 2);
+  document.getElementById('withdrawList').innerText = JSON.stringify(wds, null, 2);
+  document.getElementById('txList').innerText = JSON.stringify(txs, null, 2);
+}
+
+document.getElementById('refreshBtn').addEventListener('click', refreshAdmin);
+
+// approve sample
+async function approveDeposit(txId) {
+  const key = document.getElementById('adminKey').value;
+  const res = await fetch('/api/admin/approve-deposit', { method:'POST', headers:{'Content-Type':'application/json','x-admin-key':key}, body: JSON.stringify({ txId }) });
+  alert(await res.text());
+  refreshAdmin();
+}
 </script>
+
 </body></html>

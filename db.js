@@ -1,6 +1,8 @@
+// db.js
 import mongoose from "mongoose";
-export async function connectDB(){
-  if(process.env.MONGO_URI){
+
+export async function connectDB() {
+  if (process.env.MONGO_URI) {
     await mongoose.connect(process.env.MONGO_URI, { dbName: "godstake" });
     console.log("MongoDB connected");
   } else {
@@ -14,10 +16,10 @@ const userSchema = new mongoose.Schema({
   username: { type: String, unique: true, required: true },
   password: { type: String, required: true },
   vip: { type: Boolean, default: false },
-  bio: { type: String, default: "" },
+  balance: { type: Number, default: 0 },
   membership: { type: String, default: "NONE" },
   membershipActivatedAt: { type: Date, default: null }
-},{ timestamps: true });
+}, { timestamps: true });
 export const User = mongoose.models.User || mongoose.model("User", userSchema);
 
 // Transaction schema
@@ -28,10 +30,10 @@ const transactionSchema = new mongoose.Schema({
   amount: { type: Number, required: true },
   status: { type: String, default: "PENDING" },
   meta: { type: Object, default: {} }
-},{ timestamps: true });
+}, { timestamps: true });
 export const Transaction = mongoose.models.Transaction || mongoose.model("Transaction", transactionSchema);
 
-// Deposit schema (optional)
+// Deposit (optional)
 const depositSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
   coin: String,
@@ -41,7 +43,7 @@ const depositSchema = new mongoose.Schema({
   tx_hash: String,
   status: { type: String, default: "PENDING" },
   confirmations: { type: Number, default: 0 }
-},{ timestamps: true });
+}, { timestamps: true });
 export const Deposit = mongoose.models.Deposit || mongoose.model("Deposit", depositSchema);
 
 // Membership schema
@@ -55,5 +57,5 @@ const membershipSchema = new mongoose.Schema({
   dailyAmount: { type: Number, required: true },
   bonusAtMonthEnd: { type: Number, default: 0 },
   lastPayout: { type: Date, default: null }
-},{ timestamps: true });
+}, { timestamps: true });
 export const Membership = mongoose.models.Membership || mongoose.model("Membership", membershipSchema);
