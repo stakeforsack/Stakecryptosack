@@ -3,159 +3,346 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Membership Upgrade</title>
+<title>Membership Upgrade - CryptoYieldPro</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
-  body { font-family: Arial, sans-serif; margin:0; min-height:100vh; background:#0b0b0b; color:#fff; }
-  h1 { text-align:center; font-size:clamp(1.5rem,5vw,2rem); margin:1rem 0 2rem; background: linear-gradient(90deg,#ff00ff,#00ffff,#ff00ff);background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: gradientShift 5s ease infinite; }
-  @keyframes gradientShift {0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
-  .container { width:90%; max-width:1200px; margin:0 auto; }
-  .vip-cards { display:grid; grid-template-columns:repeat(auto-fit, minmax(280px,1fr)); gap:16px; }
-  .vip-card { border-radius:20px; padding:24px; display:flex; flex-direction:column; gap:12px; min-height:300px; backdrop-filter:blur(8px); box-shadow:0 0 30px rgba(255,255,255,0.05); cursor:pointer; transition: transform 0.3s, box-shadow 0.3s; position:relative; }
-  .vip-card:hover { transform:translateY(-6px) scale(1.02); box-shadow:0 20px 40px rgba(255,255,255,0.15); }
-  .vip-card.v1{background:linear-gradient(135deg,#1a237e,#0d47a1); border:1px solid rgba(33,150,243,0.6);}
-  .vip-card.v2{background:linear-gradient(135deg,#1b5e20,#2e7d32); border:1px solid rgba(76,175,80,0.6);}
-  .vip-card.v3{background:linear-gradient(135deg,#b71c1c,#c62828); border:1px solid rgba(244,67,54,0.6);}
-  .vip-card.v4{background:linear-gradient(135deg,#ffd700,#daa520); border:1px solid rgba(255,215,0,0.6);}
-  .vip-title { font-size:clamp(2rem,6vw,2.5rem); font-weight:700; display:flex; justify-content:space-between; align-items:center; }
-  .deposit { font-size:clamp(1.1rem,4vw,1.25rem); color:rgba(255,255,255,0.9);}
-  .limit { font-size:clamp(0.85rem,3vw,0.9rem); color:rgba(255,255,255,0.7);}
-  .limit strong { display:block; font-size:clamp(1rem,3.5vw,1.1rem); color:#fff; margin-top:4px; }
-  .purchase-btn { background:linear-gradient(to bottom,rgba(255,255,255,0.2),rgba(255,255,255,0.1)); color:#fff; border:1px solid rgba(255,255,255,0.1); padding:12px; border-radius:12px; font-size:clamp(0.9rem,3vw,1rem); cursor:pointer; margin-top:auto; transition:all 0.3s ease; }
-  .purchase-btn:hover { background:linear-gradient(to bottom,rgba(255,255,255,0.35),rgba(255,255,255,0.2)); transform:translateY(-3px) scale(1.03); }
-  .exclusive { position:absolute; top:16px; right:16px; padding:6px 12px; font-size:0.85rem; font-weight:600; border-radius:12px; background: linear-gradient(45deg,#ff0080,#7928ca); color:#fff; }
-  .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:100; opacity:0; transition: opacity 0.3s ease; }
-  .modal.show { display:block; opacity:1; }
-  .modal-content { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%) scale(0.95); background:#111; padding:28px; border-radius:16px; width:90%; max-width:480px; border:1px solid #333; transition:transform 0.3s ease; text-align:center;}
-  .modal.show .modal-content { transform:translate(-50%,-50%) scale(1); }
-  .payment-btn, .submit-btn { margin:10px; padding:10px 20px; border:none; border-radius:12px; cursor:pointer; font-size:1rem; transition:0.2s; background:linear-gradient(45deg,#ff0080,#7928ca); color:#fff; }
-  .payment-btn:hover, .submit-btn:hover { transform:scale(1.05); }
-  .crypto-info { margin-top:20px; }
-  .crypto-qr { width:150px; height:150px; margin:10px auto; }
-  .countdown { font-size:1.2rem; margin-top:10px; color:#ff0; }
-  @media(max-width:768px){.vip-cards{grid-template-columns:1fr;}}
+  :root{--bg:#05050a;--card:#0f1116;--muted:#9aa3b2;--accent:#a855f7;--accent2:#5eead4}
+  body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;background:linear-gradient(180deg,#04040a,#0b0b0b);color:#eaf3ff}
+  .wrap{max-width:1100px;margin:28px auto;padding:18px}
+  h1{font-size:24px;color:var(--accent);margin-bottom:12px}
+  .grid{display:grid;grid-template-columns:1fr 420px;gap:18px}
+  .cards{display:grid;gap:14px}
+  .vip-card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border:1px solid rgba(255,255,255,0.03);padding:18px;border-radius:12px;cursor:pointer;display:flex;flex-direction:column;gap:10px}
+  .vip-title{display:flex;align-items:center;justify-content:space-between;font-weight:700}
+  .muted{color:var(--muted);font-size:13px}
+  .btn{background:linear-gradient(90deg,var(--accent),var(--accent2));border:none;color:#021;padding:10px 12px;border-radius:10px;cursor:pointer;font-weight:700}
+  .btn-ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);padding:10px;border-radius:10px;color:var(--muted);cursor:pointer}
+  .card-right{background:linear-gradient(180deg,#0b0b0b,#0f0f12);padding:16px;border-radius:12px;border:1px solid rgba(255,255,255,0.03)}
+  .small{font-size:13px}
+  .qr{width:160px;height:160px;background:#fff;margin:8px auto;border-radius:8px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+  .field{margin-top:10px}
+  .status { padding:10px;border-radius:8px;margin-top:12px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.03) }
+  .success { color:#7ef6b8 }
+  .danger { color:#ff8b8b }
+  pre{background:#0a0a0c;padding:10px;border-radius:8px;color:#cfe8ff;white-space:pre-wrap;font-size:13px}
+  @media(max-width:980px){ .grid{grid-template-columns:1fr} .card-right{position:sticky;top:12px} .qr{width:120px;height:120px} }
 </style>
 </head>
 <body>
-<div class="container">
-<h1>Membership Upgrade</h1>
-<div class="vip-cards">
-  <div class="vip-card v1" onclick="upgradeTo('V1')">
-    <div class="vip-title">V1 <span class="exclusive">Exclusive</span></div>
-    <div class="deposit">Deposit 51.00 USDT</div>
-    <div class="limit">
-      Collection limit for money transfer service
-      <strong>Daily Limit: 10.00 USDT</strong>
-      <strong>Monthly Limit: 50.00 USDT</strong>
-    </div>
-    <button class="purchase-btn">Purchase</button>
-  </div>
-  <div class="vip-card v2" onclick="upgradeTo('V2')">
-    <div class="vip-title">V2 <span class="exclusive">Exclusive</span></div>
-    <div class="deposit">Deposit 1,498.5 USDT</div>
-    <div class="limit">
-      Collection limit for money transfer service
-      <strong>Daily Limit: 100.00 USDT</strong>
-      <strong>Monthly Limit: 3,000.00 USDT</strong>
-    </div>
-    <button class="purchase-btn">Purchase</button>
-  </div>
-  <div class="vip-card v3" onclick="upgradeTo('V3')">
-    <div class="vip-title">V3 <span class="exclusive">HOT</span></div>
-    <div class="deposit">Deposit 3,001 USDT</div>
-    <div class="limit">
-      Collection limit for money transfer service
-      <strong>Daily Limit: 30,000.00 USDT</strong>
-      <strong>Monthly Limit: 900,000.00 USDT</strong>
-    </div>
-    <button class="purchase-btn">Purchase</button>
-  </div>
-  <div class="vip-card v4" onclick="upgradeTo('V4')">
-    <div class="vip-title">V4 <span class="exclusive">Exclusive</span></div>
-    <div class="deposit">Deposit 29,998.5 USDT</div>
-    <div class="limit">
-      Collection limit for money transfer service
-      <strong>Daily Limit: 100,000.00 USDT</strong>
-      <strong>Monthly Limit: 3,000,000.00 USDT</strong>
-    </div>
-    <button class="purchase-btn">Purchase</button>
-  </div>
-</div>
-</div>
+<div class="wrap">
+  <h1>Membership Upgrade</h1>
+  <div class="grid">
+    <div class="cards">
 
-<div id="paymentModal" class="modal">
-  <div class="modal-content" id="modalContent"></div>
+      <!-- V1 -->
+      <div class="vip-card" onclick="startPurchase('V1')">
+        <div class="vip-title"><div>V1</div><div class="muted">Deposit 51 USDT</div></div>
+        <div class="small">Daily: <strong>10 USDT</strong> · Duration: <strong>5 days</strong> · Bonus: <strong>50 USDT</strong></div>
+        <div class="muted">Minimum withdraw after earnings: 20 USDT</div>
+        <div style="margin-top:auto;display:flex;gap:8px">
+          <button class="btn" onclick="startPurchase('V1')">Buy V1</button>
+          <button class="btn-ghost" onclick="showInfo('V1')">Details</button>
+        </div>
+      </div>
+
+      <!-- V2 -->
+      <div class="vip-card" onclick="startPurchase('V2')">
+        <div class="vip-title"><div>V2</div><div class="muted">Deposit 1498.5 USDT</div></div>
+        <div class="small">Daily: <strong>100 USDT</strong> · Duration: <strong>7 days</strong> · Bonus: <strong>3000 USDT</strong></div>
+        <div style="margin-top:auto;display:flex;gap:8px">
+          <button class="btn" onclick="startPurchase('V2')">Buy V2</button>
+          <button class="btn-ghost" onclick="showInfo('V2')">Details</button>
+        </div>
+      </div>
+
+      <!-- V3 -->
+      <div class="vip-card" onclick="startPurchase('V3')">
+        <div class="vip-title"><div>V3</div><div class="muted">Deposit 3001 USDT</div></div>
+        <div class="small">Daily: <strong>10,000 USDT</strong> · Duration: <strong>10 days</strong> · Bonus: <strong>90,000 USDT</strong></div>
+        <div style="margin-top:auto;display:flex;gap:8px">
+          <button class="btn" onclick="startPurchase('V3')">Buy V3</button>
+          <button class="btn-ghost" onclick="showInfo('V3')">Details</button>
+        </div>
+      </div>
+
+      <!-- V4 -->
+      <div class="vip-card" onclick="startPurchase('V4')">
+        <div class="vip-title"><div>V4</div><div class="muted">Deposit 29,998.5 USDT</div></div>
+        <div class="small">Daily: <strong>50,000 USDT</strong> · Duration: <strong>15 days</strong> · Bonus: <strong>300,000 USDT</strong></div>
+        <div style="margin-top:auto;display:flex;gap:8px">
+          <button class="btn" onclick="startPurchase('V4')">Buy V4</button>
+          <button class="btn-ghost" onclick="showInfo('V4')">Details</button>
+        </div>
+      </div>
+
+      <!-- V5 -->
+      <div class="vip-card" onclick="startPurchase('V5')">
+        <div class="vip-title"><div>V5</div><div class="muted">Deposit 50,001 USDT</div></div>
+        <div class="small">Daily: <strong>75,000 USDT</strong> · Duration: <strong>30 days</strong> · Bonus: <strong>500,000 USDT</strong></div>
+        <div style="margin-top:auto;display:flex;gap:8px">
+          <button class="btn" onclick="startPurchase('V5')">Buy V5</button>
+          <button class="btn-ghost" onclick="showInfo('V5')">Details</button>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="card-right">
+
+      <h3>Payment</h3>
+      <div id="paymentState" class="status small">Select a membership to begin purchase.</div>
+
+      <div id="paymentBox" style="display:none">
+        <div class="muted small" id="selectedTier"></div>
+
+        <div class="field">
+          <label class="small muted">Choose coin:</label><br/>
+          <select id="coinSelect" style="width:100%;padding:10px;border-radius:8px;background:#0a0a0c;border:1px solid rgba(255,255,255,0.04);color:#fff">
+            <option value="USDT">USDT</option>
+            <option value="BTC">BTC</option>
+            <option value="ETH">ETH</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <div id="qrWrap" style="text-align:center">
+            <div class="qr" id="qrBox">QR</div>
+            <div class="small muted" id="addrText"></div>
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="small">Transaction ID:</div>
+          <pre id="txIdBox">—</pre>
+        </div>
+
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <button class="btn" id="createBtn">Create Deposit</button>
+          <button class="btn-ghost" id="checkBtn">Check Status</button>
+        </div>
+
+        <div id="pollNotice" class="muted small" style="margin-top:10px"></div>
+      </div>
+
+      <div style="height:16px"></div>
+
+      <h3>Your Membership</h3>
+      <div id="membershipInfo" class="status small">Loading membership info...</div>
+
+      <div style="height:12px"></div>
+
+      <h3>Your Wallet</h3>
+      <div id="walletInfo" class="status small">Loading wallet...</div>
+
+    </div>
+  </div>
 </div>
 
 <script>
-  const modal = document.getElementById('paymentModal');
-  const modalContent = document.getElementById('modalContent');
+/*
+  membership.html
+  - Replace WALLET_ADDRESSES values with your real Trust Wallet addresses
+  - Works with your backend:
+    POST /api/deposit  { coin, amount, membershipTier }
+    POST /api/verify-payment { txId }  (returns status)
+    GET  /api/profile (returns user + membership + balance + transactions)
+  - Admin must approve deposit (approve-deposit) to activate membership
+*/
 
-  const cryptoAddresses = {
-    USDT: "TetherWalletAddressHere",
-    BTC: "BitcoinWalletAddressHere",
-    ETH: "EthereumWalletAddressHere"
-  };
+const API_BASE = window.location.origin; // works for both local and production when deployed together
 
-  function upgradeTo(level) {
-    modal.classList.add('show');
-    modalContent.innerHTML = `
-      <h2>Select Payment Method for ${level}</h2>
-      <button class="payment-btn" onclick="chooseCrypto('USDT')">USDT</button>
-      <button class="payment-btn" onclick="chooseCrypto('BTC')">BTC</button>
-      <button class="payment-btn" onclick="chooseCrypto('ETH')">ETH</button>
-      <div class="crypto-info" id="cryptoInfo"></div>
-    `;
+// >>>>> REPLACE THESE WITH YOUR REAL ADDRESSES <<<<<
+const WALLET_ADDRESSES = {
+  USDT: "your_usdt_trustwallet_address_here",
+  BTC:  "your_btc_trustwallet_address_here",
+  ETH:  "your_eth_trustwallet_address_here"
+};
+
+// Tier config must match server TIERS
+const TIER_CONFIG = {
+  V1:  { deposit: 51,  coin: "USDT" },
+  V2:  { deposit: 1498.5, coin: "USDT" },
+  V3:  { deposit: 3001, coin: "USDT" },
+  V4:  { deposit: 29998.5, coin: "USDT" },
+  V5:  { deposit: 50001, coin: "USDT" }
+};
+
+let currentTier = null;
+let currentTxId = null;
+let pollInterval = null;
+
+// DOM
+const paymentState = document.getElementById('paymentState');
+const paymentBox = document.getElementById('paymentBox');
+const selectedTierEl = document.getElementById('selectedTier');
+const coinSelect = document.getElementById('coinSelect');
+const qrBox = document.getElementById('qrBox');
+const addrText = document.getElementById('addrText');
+const txIdBox = document.getElementById('txIdBox');
+const createBtn = document.getElementById('createBtn');
+const checkBtn = document.getElementById('checkBtn');
+const pollNotice = document.getElementById('pollNotice');
+const membershipInfo = document.getElementById('membershipInfo');
+const walletInfo = document.getElementById('walletInfo');
+
+// show details modal (simple alert for now)
+function showInfo(tier){
+  const cfg = TIER_CONFIG[tier];
+  alert(`${tier}\nDeposit: ${cfg.deposit} USDT\nDaily & bonus set on server.\nAdmin approval required to activate membership.`);
+}
+
+// start purchase flow
+function startPurchase(tier){
+  currentTier = tier;
+  paymentState.innerText = `Preparing purchase for ${tier}...`;
+  selectedTierEl.innerText = `${tier} — Pay ${TIER_CONFIG[tier].deposit} ${TIER_CONFIG[tier].coin}`;
+  paymentBox.style.display = 'block';
+  coinSelect.value = TIER_CONFIG[tier].coin || "USDT";
+  updateAddressAndQR();
+  txIdBox.textContent = '—';
+  currentTxId = null;
+  pollNotice.innerText = '';
+}
+
+// update QR/address when coin changes
+coinSelect.addEventListener('change', updateAddressAndQR);
+function updateAddressAndQR(){
+  const coin = coinSelect.value;
+  const addr = WALLET_ADDRESSES[coin] || 'address_not_set';
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(coin+':'+addr)}`;
+  qrBox.innerHTML = `<img src="${qrUrl}" style="width:100%;height:100%;object-fit:contain" alt="qr">`;
+  addrText.innerText = `Address (${coin}): ${addr}`;
+}
+
+// create deposit (saves pending tx in DB)
+createBtn.addEventListener('click', async () => {
+  if (!currentTier) return alert('Select a tier');
+  const coin = coinSelect.value || 'USDT';
+  const cfg = TIER_CONFIG[currentTier];
+  const amount = cfg.deposit;
+
+  createBtn.disabled = true;
+  createBtn.innerText = 'Creating...';
+
+  try {
+    const res = await fetch(`${API_BASE}/api/deposit`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ coin, amount, membershipTier: currentTier })
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || JSON.stringify(data));
+    currentTxId = data.txId;
+    txIdBox.textContent = currentTxId;
+    paymentState.innerHTML = `Deposit created — <strong>TxID:</strong> ${currentTxId}<br/>Please send exactly <strong>${amount} ${coin}</strong> to the address below. After payment, admin must approve the deposit to activate membership.`;
+    pollNotice.innerText = 'You can click "Check Status" to refresh. We will also poll automatically.';
+    startPolling();
+  } catch (err) {
+    alert('Could not create deposit: ' + err.message);
+  } finally {
+    createBtn.disabled = false;
+    createBtn.innerText = 'Create Deposit';
   }
+});
 
-  let selectedCrypto = '';
+// manual check button
+checkBtn.addEventListener('click', () => {
+  if (!currentTxId) return alert('No TxID to check.');
+  checkStatus();
+});
 
-  function chooseCrypto(coin) {
-    selectedCrypto = coin;
-    const info = document.getElementById('cryptoInfo');
-    info.innerHTML = `
-      <h3>${coin} Selected</h3>
-      <button class="submit-btn" onclick="showQRCode()">Submit Payment</button>
-    `;
+// poll every 10s for status (for up to 20 checks)
+function startPolling(){
+  stopPolling();
+  let tries = 0;
+  pollInterval = setInterval(async () => {
+    tries++;
+    await checkStatus();
+    if (tries >= 60) { // 10 min timeout
+      stopPolling();
+      pollNotice.innerText = 'Polling stopped. Please check status later.';
+    }
+  }, 10000);
+}
+function stopPolling(){ if (pollInterval) clearInterval(pollInterval); pollInterval = null; }
+
+// check status from server
+async function checkStatus(){
+  if (!currentTxId) return;
+  try {
+    const res = await fetch(`${API_BASE}/api/verify-payment`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ txId: currentTxId })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || JSON.stringify(data));
+
+    if (data.status === 'CONFIRMED') {
+      stopPolling();
+      pollNotice.innerText = 'Payment confirmed by admin. Membership will be activated and daily payouts will start.';
+      paymentState.innerHTML = `<span class="success">✓ Deposit confirmed</span>`;
+      // refresh profile to get membership status & updated balance
+      await updateProfile();
+    } else if (data.status === 'PENDING') {
+      pollNotice.innerText = 'Payment still PENDING (waiting for admin).';
+    } else if (data.status === 'DECLINED') {
+      pollNotice.innerText = 'Payment was DECLINED by admin.';
+    } else {
+      pollNotice.innerText = `Status: ${data.status}`;
+    }
+  } catch (err) {
+    console.error('checkStatus error', err);
+    pollNotice.innerText = 'Could not check status: ' + (err.message || err);
   }
+}
 
-  function showQRCode() {
-    const info = document.getElementById('cryptoInfo');
-    let timeLeft = 120; // 2 minutes
+// load profile (balance, membership, txs)
+async function updateProfile(){
+  try {
+    const res = await fetch(`${API_BASE}/api/profile`, { method: 'GET', credentials: 'include' });
+    if (res.status === 401) {
+      membershipInfo.innerText = 'Not logged in. Please log in to purchase membership.';
+      walletInfo.innerText = 'Not logged in';
+      return;
+    }
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || JSON.stringify(data));
 
-    info.innerHTML = `
-      <h3>Scan QR to Pay ${selectedCrypto}</h3>
-      <img src="https://api.qrserver.com/v1/create-qr-code/?data=${cryptoAddresses[selectedCrypto]}&size=150x150" class="crypto-qr" />
-      <p>Address: ${cryptoAddresses[selectedCrypto]}</p>
-      <div class="countdown" id="countdown">${formatTime(timeLeft)}</div>
-    `;
+    const user = data.user;
+    walletInfo.innerHTML = `Balance: <strong>${(user.balance||0).toFixed(2)} USD</strong><br/><div class="muted small">Email: ${user.email || '—'}</div>`;
 
-    const countdownEl = document.getElementById('countdown');
+    if (user.membership && user.membership.status) {
+      const m = user.membership;
+      let daysPaid = m.daysPaid || 0;
+      let duration = m.durationDays || 0;
+      membershipInfo.innerHTML = `<strong>${m.tier || 'Member'}</strong> — ${m.status}<br/>
+        Days paid: ${daysPaid} / ${duration}<br/>
+        Daily: ${m.dailyAmount || '—'} USD<br/>
+        BonusPaid: ${m.bonusPaid ? 'Yes' : 'No'}<br/>
+        Started: ${m.startDate ? new Date(m.startDate).toLocaleString() : '—'}`;
+    } else {
+      membershipInfo.innerHTML = `No active membership. Purchase a plan on the left.`;
+    }
 
-    const timer = setInterval(() => {
-      timeLeft--;
-      countdownEl.textContent = formatTime(timeLeft);
-      if(timeLeft <= 0){
-        clearInterval(timer);
-        info.innerHTML = `
-          <h3>Your payment is processing...</h3>
-          <button class="submit-btn" onclick="goBack()">Go Back</button>
-        `;
-      }
-    }, 1000);
+    // keep transactions if you want to show them (data.transactions)
+    return data;
+  } catch (err) {
+    console.error('updateProfile error', err);
+    membershipInfo.innerText = 'Could not load profile';
   }
+}
 
-  function formatTime(sec){
-    const m = Math.floor(sec/60).toString().padStart(2,'0');
-    const s = (sec%60).toString().padStart(2,'0');
-    return `${m}:${s}`;
-  }
+// init
+updateProfile();
 
-  function goBack(){
-    window.location.href = "home.html"; // change to your main page URL
-  }
+// navigation niceties
+window.addEventListener('beforeunload', stopPolling);
 
-  modal.addEventListener('click', e => { if(e.target===modal) modal.classList.remove('show'); });
+// convenience: if user clicks a card's "Buy" which calls startPurchase, the create button will create the tx
 </script>
-
 </body>
 </html>
