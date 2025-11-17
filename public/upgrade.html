@@ -45,6 +45,12 @@
   .ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted);padding:8px 10px;border-radius:10px;cursor:pointer}
   .badgelabel{position:absolute;right:12px;top:12px;padding:6px 10px;border-radius:10px;background:linear-gradient(90deg,#ff6fb3,#7c3aed);font-weight:700;color:#fff;font-size:12px}
 
+  .disabledBtn {
+    opacity: 0.55;
+    pointer-events: none;
+    filter: grayscale(0.2);
+  }
+
   /* Modal */
   .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.7);z-index:9999}
   .modal.show{display:flex}
@@ -120,7 +126,7 @@
     </div>
 
     <div style="display:flex;gap:8px;margin-top:16px;justify-content:center">
-      <button id="createDeposit" class="btn">Create Membership Deposit</button>
+      <button id="createDeposit" class="btn">Purchase Membership</button>
       <button id="checkStatus" class="ghost">Check Status</button>
     </div>
 
@@ -133,7 +139,7 @@
    - Redirects to login if not logged in
    - Renders cards and handles purchase flow
    - Uses POST /api/deposit and POST /api/verify-payment
-   - Expects server to accept { coin, amount, membershipTier, isMembership: true } on /api/deposit
+   - Implements Option B: one pending membership *per tier*
 */
 
 // ---------- config ----------
@@ -148,10 +154,11 @@ const TIERS = {
   V5: { deposit: 50001, daily:75000, days:30, bonus:500000, label:'V5' }
 };
 
-// local state
+// ---------- state ----------
 let selectedTier = null;
-let currentTxId = null;
+let pendingTxByTier = {}; // { V1: txId, V2: txId, ... }
 let pollTimer = null;
+let pollingTier = null;    // which tier's tx we are currently polling
 
 // ---------- DOM ----------
 const tierGrid = document.getElementById('tierGrid');
@@ -175,7 +182,6 @@ const walletEl = document.getElementById('wallet');
   try {
     const res = await fetch(`${API_BASE}/api/profile`, { method:'GET', credentials:'include' });
     if (res.status === 401) {
-      // not logged in -> redirect silently
       window.location.href = "login.html";
       return;
     }
@@ -186,8 +192,29 @@ const walletEl = document.getElementById('wallet');
     }
     // load profile info into UI
     renderProfile(j.user);
+
+    // scan user's transactions (client-side detection): if server returns user.transactions (optional) we can mark pending
+    // If your backend offers an endpoint to list user txs, replace this fetch with that endpoint to populate pendingTxByTier on page load.
+    // Attempt to fetch /api/user-transactions or /api/transactions if exists (best-effort)
+    try {
+      const detect = await fetch(`${API_BASE}/api/user-transactions`, { method: 'GET', credentials:'include' });
+      if (detect.ok) {
+        const d = await detect.json();
+        if (d && d.tx) {
+          d.tx.forEach(t => {
+            if (t.isMembership && t.status === 'PENDING' && t.meta && t.meta.membershipTier) {
+              pendingTxByTier[t.meta.membershipTier] = t._id;
+            }
+          });
+        }
+      }
+    } catch(e){
+      // ignore: endpoint probably doesn't exist
+    }
+
+    renderCards(); // after populating pending map, render cards so buttons reflect pending state
+
   } catch (err) {
-    // on network error, still redirect so user logs in
     window.location.href = "login.html";
   }
 })();
@@ -200,6 +227,10 @@ function renderCards(){
     const t = TIERS[k];
     const div = document.createElement('div');
     div.className = 'card neon';
+    // disable purchase button if this tier already has a pending tx
+    const hasPending = !!pendingTxByTier[k];
+    const disabledClass = hasPending ? 'disabledBtn' : '';
+    const pendingNotice = hasPending ? `<div class="small" style="margin-top:8px;color:#facc15">You have a pending payment for ${k}</div>` : '';
     div.innerHTML = `
       <div class="badgelabel">${t.label}</div>
       <div class="titleRow">
@@ -209,14 +240,18 @@ function renderCards(){
       <div class="desc">Daily <strong style="color:#fff">${t.daily.toLocaleString()}</strong> · For <strong>${t.days}</strong> days · Bonus: <strong>${t.bonus.toLocaleString()}</strong></div>
       <div class="desc">Premium membership package with daily payouts. Admin approval required after payment.</div>
       <div class="purchase">
-        <button class="btn" data-tier="${k}" onclick="onPurchaseClick('${k}', event)">Purchase</button>
+        <button id="buy_${k}" class="btn ${disabledClass}" data-tier="${k}" ${hasPending ? 'disabled' : ''}>Purchase</button>
         <button class="ghost" onclick="showTierInfo('${k}', event)">Details</button>
       </div>
+      ${pendingNotice}
     `;
     tierGrid.appendChild(div);
+
+    // attach event
+    const buyBtn = div.querySelector(`#buy_${k}`);
+    if (buyBtn) buyBtn.addEventListener('click', (ev)=> onPurchaseClick(k, ev));
   });
 }
-renderCards();
 
 // ---------- Purchase flow ----------
 function onPurchaseClick(tier, ev){
@@ -228,7 +263,19 @@ function onPurchaseClick(tier, ev){
   updateQRandAddr();
   amountBox.innerText = `Amount: ${cfg.deposit} USDT`;
   txInfo.innerText = '';
-  currentTxId = null;
+
+  // If this tier already has pending tx, inform user and disable create
+  if (pendingTxByTier[selectedTier]) {
+    currentPendingNotice(`You already have a pending payment for ${selectedTier}. Wait for admin confirmation or decline to make another purchase.`);
+    createDepositBtn.classList.add('disabledBtn');
+    createDepositBtn.disabled = true;
+    modal.classList.add('show');
+    return;
+  }
+
+  createDepositBtn.classList.remove('disabledBtn');
+  createDepositBtn.disabled = false;
+  currentPendingNotice('');
   modal.classList.add('show');
 }
 
@@ -236,6 +283,10 @@ function showTierInfo(tier, ev){
   ev.stopPropagation();
   const t = TIERS[tier];
   alert(`${tier}\nDeposit: ${t.deposit} USDT\nDaily: ${t.daily} · Days: ${t.days} · Bonus: ${t.bonus}\nAfter payment admin approval required.`);
+}
+
+function currentPendingNotice(msg){
+  txInfo.innerText = msg || '';
 }
 
 // update QR + address display
@@ -248,7 +299,6 @@ function updateQRandAddr(){
     qrBox.innerHTML = `<img src="${qr}" alt="qr" style="width:100%;height:100%;object-fit:contain">`;
     addrBox.innerText = WALLET_ADDR_TRON;
   } else {
-    // show simple placeholder address (you can change)
     const addr = coin === 'BTC' ? 'Your_BTC_Address' : 'Your_ETH_Address';
     const qr = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(coin+':'+addr)}`;
     qrBox.innerHTML = `<img src="${qr}" alt="qr" style="width:100%;height:100%;object-fit:contain">`;
@@ -261,12 +311,24 @@ coinSel.addEventListener('change', updateQRandAddr);
 closeModal.addEventListener('click', ()=>{ modal.classList.remove('show'); stopPolling(); });
 
 // Create deposit (sends pending tx to server with isMembership flag)
+// === Prevent multiple requests per tier ===
 createDepositBtn.addEventListener('click', async ()=>{
   if (!selectedTier) return alert('Select tier');
+  // If already has pending for this tier (race-protection), stop
+  if (pendingTxByTier[selectedTier]) {
+    currentPendingNotice(`You already have a pending payment for ${selectedTier}.`);
+    createDepositBtn.disabled = true;
+    createDepositBtn.classList.add('disabledBtn');
+    return;
+  }
+
   createDepositBtn.disabled = true;
-  createDepositBtn.innerText = 'Creating...';
+  createDepositBtn.innerText = 'Purchasing...';
+  createDepositBtn.classList.add('disabledBtn');
+
   const coin = coinSel.value || 'USDT';
   const amount = TIERS[selectedTier].deposit;
+
   try {
     const res = await fetch(`${API_BASE}/api/deposit`, {
       method: 'POST',
@@ -276,52 +338,94 @@ createDepositBtn.addEventListener('click', async ()=>{
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || JSON.stringify(data));
-    currentTxId = data.txId || data.txId?.toString?.() || data.txId;
-    txInfo.innerHTML = `Deposit created. <strong>TxID:</strong> ${currentTxId}. Send exactly <strong>${amount} ${coin}</strong> to the shown address. Admin must approve to activate membership.`;
-    startPolling();
+
+    const txId = data.txId || data.txId?.toString?.() || data.txId;
+    // Mark this tier as pending
+    pendingTxByTier[selectedTier] = txId;
+
+    // Disable the purchase button for this tier in UI
+    const btn = document.querySelector(`#buy_${selectedTier}`);
+    if (btn) { btn.disabled = true; btn.classList.add('disabledBtn'); }
+
+    // remember which tier we're polling
+    pollingTier = selectedTier;
+
+    txInfo.innerHTML = `Membership purchase started.<br><strong>TxID:</strong> ${txId}.<br>Send exactly <strong>${amount} ${coin}</strong> to the shown address. Wait for admin approval.`;
+    // start polling status for this tx
+    startPollingFor(txId, selectedTier);
+
+    // re-render cards to show pending status
+    renderCards();
+
   } catch (err) {
     txInfo.innerText = 'Could not create deposit: ' + (err.message || err);
   } finally {
     createDepositBtn.disabled = false;
-    createDepositBtn.innerText = 'Create Membership Deposit';
+    createDepositBtn.innerText = 'Purchase Membership';
+    // keep button disabled if pending created above
+    if (pendingTxByTier[selectedTier]) {
+      createDepositBtn.disabled = true;
+      createDepositBtn.classList.add('disabledBtn');
+    } else {
+      createDepositBtn.classList.remove('disabledBtn');
+    }
   }
 });
 
 // Manual check status button
 checkStatusBtn.addEventListener('click', checkStatus);
 
-// Polling for verify-payment
-function startPolling(){
+// Polling for verify-payment (per-tier)
+function startPollingFor(txId, tier){
   stopPolling();
-  pollTimer = setInterval(checkStatus, 8000);
+  pollingTier = tier;
+  pollTimer = setInterval(()=> checkStatus(txId, tier), 8000);
+  // run an immediate check too
+  checkStatus(txId, tier);
 }
-function stopPolling(){ if (pollTimer) { clearInterval(pollTimer); pollTimer = null; } }
+function stopPolling(){ if (pollTimer) { clearInterval(pollTimer); pollTimer = null; pollingTier = null; } }
 
-async function checkStatus(){
-  if (!currentTxId) return;
+async function checkStatus(txId = null, tier = null){
+  // If no txId passed, try to use pollingTier
+  if (!txId) {
+    if (!pollingTier) return;
+    txId = pendingTxByTier[pollingTier];
+    tier = pollingTier;
+  }
+  if (!txId) return;
+
   try {
     const res = await fetch(`${API_BASE}/api/verify-payment`, {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ txId: currentTxId })
+      body: JSON.stringify({ txId })
     });
     const data = await res.json();
-    if (!res.ok) { txInfo.innerText = 'Status check error: ' + (data.error || JSON.stringify(data)); return; }
+    if (!res.ok) {
+      txInfo.innerText = 'Status check error: ' + (data.error || JSON.stringify(data));
+      return;
+    }
+
     if (data.status === 'CONFIRMED') {
-      txInfo.innerHTML = `<span style="color:#7ef6b8;font-weight:800">✓ Payment confirmed by admin</span>`;
+      txInfo.innerHTML = `<span style="color:#7ef6b8;font-weight:800">✓ Payment confirmed by admin for ${tier}</span>`;
+      // clear pending lock for this tier
+      delete pendingTxByTier[tier];
       stopPolling();
-      // refresh profile to show membership active & updated balance
+      // re-enable UI and refresh profile to show membership/balance
+      renderCards();
       await refreshProfile();
-      // optionally close modal after short delay
-      setTimeout(()=> modal.classList.remove('show'), 1500);
+      // close modal after small delay
+      setTimeout(()=> modal.classList.remove('show'), 1200);
     } else if (data.status === 'PENDING') {
-      txInfo.innerText = 'Status: PENDING (waiting for admin)';
+      txInfo.innerText = `Status: PENDING for ${tier} (waiting for admin)`;
     } else if (data.status === 'DECLINED') {
-      txInfo.innerText = 'Status: DECLINED by admin';
+      txInfo.innerText = `Status: DECLINED by admin for ${tier}`;
+      delete pendingTxByTier[tier];
       stopPolling();
+      renderCards();
     } else {
-      txInfo.innerText = 'Status: ' + data.status;
+      txInfo.innerText = `Status: ${data.status} for ${tier}`;
     }
   } catch (err) {
     txInfo.innerText = 'Could not check status: ' + (err.message || err);
@@ -333,7 +437,6 @@ async function refreshProfile(){
   try {
     const res = await fetch(`${API_BASE}/api/profile`, { method:'GET', credentials:'include' });
     if (res.status === 401) {
-      // not logged in? redirect
       window.location.href = "login.html";
       return;
     }
@@ -353,6 +456,16 @@ async function refreshProfile(){
 function renderProfile(user){
   // wallet
   walletEl.innerText = (user.balance || 0).toFixed(2) + ' USD';
+
+  // optionally mark pending from server-provided membership info:
+  // If server returns user.membership or transactions with isMembership flags, we would sync those into pendingTxByTier
+  if (user.pendingMemberships) {
+    // server may return shape: { V1: txId, V2: txId }
+    Object.keys(user.pendingMemberships).forEach(k => {
+      if (user.pendingMemberships[k]) pendingTxByTier[k] = user.pendingMemberships[k];
+    });
+    renderCards();
+  }
 
   // membership may be returned in user.membership (server should include)
   const m = user.membership || user.currentMembership || null;
@@ -379,6 +492,9 @@ function renderProfile(user){
 
 // refresh profile on load
 refreshProfile();
+
+// re-render cards in case pendingTxByTier changed
+renderCards();
 
 // close modal when clicking outside content
 modal.addEventListener('click', (e)=>{ if (e.target === modal) { modal.classList.remove('show'); stopPolling(); } });
