@@ -1,125 +1,146 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>CryptoYieldPro — Dashboard</title>
 
-  <!-- Inter font (keeps premium look) -->
+  <!-- Inter (keeps premium look) -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
 
   <style>
     :root{
-      --bg-1: #06060a;
-      --bg-2: #0b0b12;
-      --glass: rgba(255,255,255,0.03);
-      --glass-2: rgba(255,255,255,0.02);
+      --black-1: #000000;
+      --black-2: #050507;
+      --panel: rgba(255,255,255,0.02);
+      --panel-2: rgba(255,255,255,0.01);
       --accent: #a855f7;
       --accent-2: #5eead4;
       --muted: #9aa3b2;
-      --success: #7ef6b8;
-      --danger: #ff6b6b;
-      --card-radius: 16px;
-      --max-width: 1200px;
+      --white-90: rgba(255,255,255,0.92);
+      --card-radius: 14px;
+      --max-width: 1140px;
     }
 
-    /* ---------- Page background & layout ---------- */
-    html,body{height:100%;margin:0;background:radial-gradient(1200px 800px at 10% 10%, rgba(168,85,247,0.06), transparent 10%),
-                              radial-gradient(900px 700px at 90% 90%, rgba(94,234,212,0.04), transparent 8%),
-                              linear-gradient(180deg,var(--bg-1), var(--bg-2));color:#e8f6ff;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial; -webkit-font-smoothing:antialiased;}
-    .container{max-width:var(--max-width);margin:28px auto;padding:20px;}
+    /* ---------- Reset & base ---------- */
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;background:linear-gradient(180deg,var(--black-1) 0%, var(--black-2) 100%);color:var(--white-90);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial; -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;}
+    a{color:inherit;text-decoration:none}
+    img{display:block;max-width:100%;height:auto}
 
-    /* ---------- Top nav/header ---------- */
-    .topbar{display:flex;align-items:center;justify-content:space-between;gap:12px}
-    .brand{display:flex; align-items:center; gap:12px}
-    .brand img{width:46px;height:46px;border-radius:10px;filter:drop-shadow(0 6px 18px rgba(168,85,247,0.12))}
-    .brand h1{font-size:1.15rem;margin:0;font-weight:800;letter-spacing:0.6px;color:transparent;background:linear-gradient(90deg,var(--accent),var(--accent-2));-webkit-background-clip:text;background-clip:text}
-    .nav-actions{display:flex; gap:10px; align-items:center}
-    .chip{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); border:1px solid rgba(255,255,255,0.03); padding:8px 12px;border-radius:12px;font-weight:600;color:var(--muted); font-size:0.95rem}
-    .chip.cta{background:linear-gradient(90deg,var(--accent),var(--accent-2)); color:#041; border: none; box-shadow: 0 8px 28px rgba(168,85,247,0.12); cursor:pointer}
+    .wrap{max-width:var(--max-width);margin:20px auto;padding:16px;}
 
-    /* ---------- Hero / balance ---------- */
-    .hero{display:grid;grid-template-columns: 1fr 380px; gap:18px; margin-top:18px; align-items:start}
+    /* subtle grain overlay to make depth (uses data URL lightweight pattern) */
+    body::after{
+      content:"";
+      pointer-events:none;
+      position:fixed; inset:0;
+      background-image: radial-gradient(rgba(255,255,255,0.01) 0.5px, transparent 0.5px);
+      background-size: 6px 6px;
+      opacity:0.06;
+      mix-blend-mode: overlay;
+      z-index:0;
+    }
+
+    /* ---------- Topbar ---------- */
+    .topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;position:relative;z-index:2}
+    .brand{display:flex;align-items:center;gap:12px}
+    .brand .logo-wrap{width:48px;height:48px;border-radius:10px;overflow:hidden;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg, rgba(168,85,247,0.06), rgba(94,234,212,0.03));box-shadow:0 6px 22px rgba(10,6,12,0.6)}
+    .brand h1{font-size:1.05rem;margin:0;font-weight:700;letter-spacing:0.6px;background:linear-gradient(90deg,var(--accent),var(--accent-2)); -webkit-background-clip:text; background-clip:text; color:transparent}
+    .brand small{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+
+    .nav-actions{display:flex;gap:10px;align-items:center}
+    .chip{padding:8px 12px;border-radius:10px;background:linear-gradient(180deg, rgba(255,255,255,0.016), rgba(255,255,255,0.01));border:1px solid rgba(255,255,255,0.03);color:var(--muted);font-weight:600;font-size:13px}
+    .chip.cta{background:linear-gradient(90deg,var(--accent),var(--accent-2));color:#051;box-shadow:0 8px 30px rgba(168,85,247,0.08);border:none;cursor:pointer}
+
+    /* ---------- Layout: hero ---------- */
+    .hero{display:grid;grid-template-columns: 1fr 360px;gap:18px;margin-top:18px;align-items:start}
     @media(max-width:980px){ .hero{grid-template-columns:1fr} }
 
     .card{
+      position:relative;
       border-radius:var(--card-radius);
-      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      background: linear-gradient(180deg,var(--panel),var(--panel-2));
       border:1px solid rgba(255,255,255,0.04);
-      padding:18px;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.6);
-      transition: transform .28s, box-shadow .28s;
+      padding:16px;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.7);
+      transition: transform .22s cubic-bezier(.2,.9,.3,1), box-shadow .22s;
+      overflow:visible;
     }
-    .card:hover{ transform: translateY(-8px); box-shadow: 0 30px 70px rgba(0,0,0,0.7) }
+    .card:hover{ transform: translateY(-6px); box-shadow: 0 24px 68px rgba(0,0,0,0.75) }
 
-    .balance-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+    /* Balance block */
+    .balance-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
     .balance-left{display:flex;flex-direction:column;gap:6px}
-    .balance-label{color:var(--muted);font-weight:600;font-size:0.9rem}
-    .balance-value{font-weight:800;font-size:1.9rem; letter-spacing:0.8px; color: #fff}
-    .small-muted{color:var(--muted);font-size:0.95rem}
+    .balance-label{color:var(--muted);font-weight:700;font-size:13px}
+    .balance-value{font-weight:800;font-size:1.85rem; letter-spacing:0.6px; color:#fff}
+    .small-muted{color:var(--muted);font-size:13px}
 
-    .hero-right .status-card{display:flex;flex-direction:column;gap:8px;align-items:center; justify-content:center; height:100%}
-    .status-pill{padding:8px 12px;border-radius:999px;font-weight:700;background:linear-gradient(90deg,#1f2937,rgba(255,255,255,0.02)); border:1px solid rgba(255,255,255,0.02); color:var(--muted)}
+    .hero-right .status-card{display:flex;flex-direction:column;gap:10px;align-items:center;justify-content:center;height:100%}
+    .status-pill{padding:8px 12px;border-radius:999px;font-weight:700;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border:1px solid rgba(255,255,255,0.02);color:var(--muted)}
 
-    /* quick-actions */
-    .quick-actions{display:flex;gap:12px;margin-top:12px}
-    .action-item{display:flex;flex-direction:column;align-items:center;gap:8px;padding:12px;border-radius:12px;background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.00));border:1px solid rgba(255,255,255,0.02);width:110px; text-align:center; cursor:pointer}
-    .action-item img{width:36px;height:36px}
-    .action-item p{margin:0;font-weight:700;color:#fff;font-size:0.9rem}
+    /* quick actions (mobile first friendly) */
+    .quick-actions{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
+    .action-item{display:flex;flex-direction:column;align-items:center;gap:8px;padding:10px;border-radius:10px;background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.00));border:1px solid rgba(255,255,255,0.02);min-width:84px;text-align:center;cursor:pointer}
+    .action-item svg, .action-item img{width:28px;height:28px;filter:drop-shadow(0 8px 18px rgba(0,0,0,0.6))}
+    .action-item p{margin:0;font-weight:700;color:#fff;font-size:13px}
 
-    /* ---------- Market / stats ---------- */
-    .market{margin-top:18px;display:grid;grid-template-columns:1fr 360px;gap:18px}
+    /* ---------- Market / insights ---------- */
+    .market{margin-top:18px;display:grid;grid-template-columns:1fr 340px;gap:18px}
     @media(max-width:980px){ .market{grid-template-columns:1fr} }
 
     .market-cards{display:flex;gap:12px;flex-wrap:wrap}
-    .market-card{
-      min-width:160px;flex:1;padding:14px;border-radius:12px;background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.00));border:1px solid rgba(255,255,255,0.03);transition:transform .24s, box-shadow .24s;
-    }
-    .market-card h3{margin:0;font-size:0.95rem}
-    .market-price{font-weight:800;font-size:1.15rem;margin-top:8px}
-    .market-change.positive{color:var(--success);font-weight:700}
+    .market-card{min-width:140px;flex:1;padding:12px;border-radius:12px;background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.00));border:1px solid rgba(255,255,255,0.03)}
+    .market-card h3{margin:0;font-size:0.95rem;color:var(--muted)}
+    .market-price{font-weight:800;font-size:1.05rem;margin-top:8px;color:#fff}
+    .market-change.positive{color:var(--accent-2);font-weight:700}
     .market-change.negative{color:var(--danger);font-weight:700}
 
     .market-list{margin-top:12px;border-radius:12px;overflow:hidden}
-    .market-row{display:flex;justify-content:space-between;padding:12px;border-bottom:1px solid rgba(255,255,255,0.02);align-items:center}
-    .market-row:last-child{border-bottom:none}
+    .market-row{display:flex;justify-content:space-between;padding:10px;border-bottom:1px solid rgba(255,255,255,0.02);align-items:center}
     .coin{font-weight:700;color:#fff}
     .price{font-weight:700}
 
-    /* ---------- Footer nav (bottom) ---------- */
-    .bottom-nav{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border:1px solid rgba(255,255,255,0.03);padding:10px 16px;border-radius:999px;display:flex;gap:14px;box-shadow:0 10px 40px rgba(0,0,0,0.6)}
-    .nav-item{display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--muted);text-decoration:none;font-weight:700;font-size:0.85rem;padding:4px 8px}
-    .nav-item img{width:20px;height:20px;filter:grayscale(0.2)}
-    .nav-item.active{color:var(--accent); transform:translateY(-6px) scale(1.02)}
+    /* ---------- Announcements & recent ---------- */
+    .notice{padding:10px;border-radius:10px;background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.00));border:1px solid rgba(255,255,255,0.02);margin-bottom:10px}
+    .notice h4{margin:0 0 6px 0}
 
-    /* ---------- badges & tiny UI ---------- */
-    .badge { padding:6px 8px;border-radius:8px;background:linear-gradient(90deg,var(--accent),var(--accent-2));color:#03111a;font-weight:800 }
-    .muted-small{color:var(--muted);font-size:0.9rem}
+    /* ---------- Bottom nav ---------- */
+    .bottom-nav{position:fixed;left:50%;transform:translateX(-50%);bottom:14px;background:linear-gradient(180deg, rgba(255,255,255,0.012), rgba(255,255,255,0.006));border:1px solid rgba(255,255,255,0.03);padding:10px 14px;border-radius:999px;display:flex;gap:12px;box-shadow:0 10px 40px rgba(0,0,0,0.6);z-index:3}
+    .nav-item{display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--muted);text-decoration:none;font-weight:700;font-size:12px;padding:6px 8px}
+    .nav-item img{width:18px;height:18px;opacity:0.95;filter:grayscale(0.1)}
+    .nav-item.active{color:var(--accent);transform:translateY(-4px)}
 
-    /* ---------- subtle animated backgrounds for cards ---------- */
-    .market-card::after, .card::after {
-      content: ""; position:absolute; pointer-events:none; border-radius:50%;
-      width:320px;height:320px; opacity:0.05; transform:translateY(-20px); z-index:0;
-    }
+    /* ---------- small helpers ---------- */
+    .muted-small{color:var(--muted);font-size:13px}
+    .badge{padding:6px 10px;border-radius:999px;background:linear-gradient(90deg,var(--accent),var(--accent-2));color:#051;font-weight:800}
+    .tx-list{max-height:220px;overflow:auto;padding:6px}
 
-    /* ---------- responsive tweaks ---------- */
+    /* ---------- responsiveness ---------- */
     @media(max-width:640px){
-      .chip{display:none}
-      .hero-right{order:2}
-      .bottom-nav{left:50%; padding:12px 16px}
+      .wrap{padding:12px;margin:12px}
+      .brand h1{font-size:1rem}
+      .hero{grid-template-columns:1fr}
+      .market{grid-template-columns:1fr}
+      .bottom-nav{left:50%;right:auto; padding:8px 12px}
+      .card{padding:12px}
+      .balance-value{font-size:1.4rem}
     }
   </style>
 </head>
 
 <body>
-  <div class="container">
+  <div class="wrap">
     <!-- Top bar -->
     <div class="topbar">
       <div class="brand">
-        <img src="/img/logo.png" alt="logo" onerror="this.style.visibility='hidden'">
+        <div class="logo-wrap">
+          <!-- using uploaded logo local path (replace with your hosted logo path as needed) -->
+          <img src="/img/logo.png" alt="CryptoYieldPro logo" style="width:38px;height:38px;object-fit:cover" onerror="this.onerror=null;this.src='/img/logo.png'">
+        </div>
         <div>
           <h1>CryptoYieldPro</h1>
-          <div class="muted-small">Premium crypto bonuses & membership</div>
+          <small>Premium crypto bonuses & membership</small>
         </div>
       </div>
 
@@ -132,13 +153,14 @@
     <!-- Hero -->
     <div class="hero" aria-label="overview">
       <!-- left: balance + quick actions -->
-      <div class="card" style="position:relative; overflow:visible;">
+      <div class="card" style="position:relative;overflow:visible;">
         <div class="balance-row">
           <div class="balance-left">
             <div class="balance-label">Account Balance</div>
             <div class="balance-value" id="balanceValue">$0.00</div>
             <div class="small-muted">Available balance reflects confirmed deposits & payouts</div>
           </div>
+
           <div style="text-align:right">
             <div class="small-muted">Membership</div>
             <div class="badge" id="membershipBadge">None</div>
@@ -148,35 +170,31 @@
           </div>
         </div>
 
-        <div class="quick-actions" role="navigation" aria-label="quick actions">
+        <div class="quick-actions" role="navigation" aria-label="quick-actions">
           <div class="action-item" onclick="location.href='deposit.html'">
-            <img src="/img/deposit.png" alt="deposit">
-            <p>Deposit</p>
+            <img src="/img/deposit.png" alt="deposit"><p>Deposit</p>
           </div>
           <div class="action-item" onclick="location.href='withdraw.html'">
-            <img src="/img/withdraw.png" alt="withdraw">
-            <p>Withdraw</p>
+            <img src="/img/withdraw.png" alt="withdraw"><p>Withdraw</p>
           </div>
           <div class="action-item" onclick="location.href='upgrade.html'">
-            <img src="/img/vip-card.png" alt="vip">
-            <p>Membership</p>
+            <img src="/img/vip-card.png" alt="vip"><p>Membership</p>
           </div>
           <div class="action-item" onclick="location.href='internal-transfer.html'">
-            <img src="/img/money.png" alt="transfer">
-            <p>Transfer</p>
+            <img src="/img/money.png" alt="transfer"><p>Transfer</p>
           </div>
         </div>
       </div>
 
       <!-- right: small status / summary -->
       <div class="card hero-right">
-        <div class="status-card" style="gap:12px;">
-          <div style="display:flex;justify-content:space-between;align-items:center">
+        <div class="status-card">
+          <div style="display:flex;justify-content:space-between;align-items:center;width:100%">
             <div style="font-weight:800">Platform Status</div>
             <div class="status-pill">Online</div>
           </div>
 
-          <div style="display:flex;gap:8px;flex-direction:column;margin-top:8px">
+          <div style="display:flex;gap:8px;flex-direction:column;margin-top:8px;width:100%">
             <div class="small-muted">Pending Deposits</div>
             <div id="pendingCount" style="font-weight:800">0</div>
 
@@ -192,14 +210,13 @@
 
     <!-- Market Section -->
     <div class="market" aria-label="market">
-      <div class="card" style="min-height:220px">
+      <div class="card" style="min-height:220px;position:relative;">
         <div style="display:flex;justify-content:space-between;align-items:center">
           <h2 style="margin:0;font-size:1.05rem">Market Snapshot</h2>
           <div class="muted-small">Live prices • Updated every 10s</div>
         </div>
 
         <div class="market-cards" id="marketCards" style="margin-top:14px">
-          <!-- JS will populate / update innerText of .market-price elements -->
           <div class="market-card" data-coin="bitcoin">
             <h3>BTC / USDT</h3>
             <div class="market-price" data-price-id="bitcoin">—</div>
@@ -253,15 +270,16 @@
       <div class="card" style="min-height:220px">
         <h3 style="margin:0 0 10px 0">Announcements</h3>
         <div class="small-muted">Latest updates & status</div>
+
         <div style="margin-top:12px">
-          <div style="padding:10px;border-radius:10px;background:rgba(255,255,255,0.01);border:1px solid rgba(255,255,255,0.02);margin-bottom:10px">
+          <div class="notice">
             <div style="font-weight:700">New Memberships</div>
             <div class="muted-small">V3, V4 & V5 packages added — check upgrade page.</div>
           </div>
 
-          <div style="padding:10px;border-radius:10px;background:rgba(255,255,255,0.01);border:1px solid rgba(255,255,255,0.02);">
+          <div class="notice">
             <div style="font-weight:700">Manual Withdrawals</div>
-            <div class="muted-small">All withdraw requests are manual and require admin approval.</div>
+            <div class="muted-small">Withdraw requests are manual and require admin approval.</div>
           </div>
         </div>
 
@@ -270,6 +288,7 @@
         <div id="recentActivity" class="muted-small">No recent activity</div>
       </div>
     </div>
+
   </div>
 
   <!-- bottom nav -->
@@ -288,54 +307,50 @@
   <script src="/js/market-prices.js"></script>
 
   <script>
-    // keep MarketPrices usage — update to match your lib
+    // MarketPrices usage + profile fetch to update UI
     document.addEventListener('DOMContentLoaded', () => {
       try {
-        MarketPrices.start(['bitcoin','ethereum','dogecoin','eos','tether','cardano','binancecoin','solana'], 10000);
+        if (typeof MarketPrices !== 'undefined' && MarketPrices.start) {
+          MarketPrices.start(['bitcoin','ethereum','dogecoin','eos','tether','cardano','binancecoin','solana'], 10000);
+        }
+      } catch(e){ console.warn('MarketPrices not available', e); }
 
-        // small UI updater: listens to price updates if your MarketPrices emits events
-        // If MarketPrices provides callbacks or events, integrate that here.
-        // Fallback: poll DOM updates after MarketPrices updates the data attributes.
-        const observeInterval = setInterval(() => {
-          // update balance placeholder (you should fetch from /api/profile)
-          // attempt to fetch profile to update balance & membership
-          fetch('/api/profile', { credentials: 'include' })
-            .then(r => {
-              if (!r.ok) return null;
-              return r.json();
-            })
-            .then(j => {
-              if (!j || !j.user) return;
-              const u = j.user;
-              document.getElementById('balanceValue').innerText = (Number(u.balance || 0)).toLocaleString(undefined, { style: 'currency', currency: 'USD', maximumFractionDigits: 2 });
-              document.getElementById('membershipBadge').innerText = (u.membership && u.membership.tier) ? u.membership.tier : (u.currentMembership?.tier || 'None');
-              document.getElementById('pendingCount').innerText = u.pendingDeposits || 0;
-              document.getElementById('pendingWithdraw').innerText = u.pendingWithdrawals || 0;
-              // recent activity (light)
-              const recent = u.recentActivity || [];
-              document.getElementById('recentActivity').innerText = recent.length ? recent.slice(0,5).map(r=>`${r.type} • ${r.amount}`).join('\n') : 'No recent activity';
-            })
-            .catch(()=>{/* silent */});
-        }, 4000);
-      } catch(e){
-        console.warn('MarketPrices not available or error', e);
-      }
+      // Update profile UI
+      (function profileUpdater(){
+        fetch('/api/profile', { credentials: 'include' })
+          .then(r => {
+            if (!r.ok) return null;
+            return r.json();
+          })
+          .then(j => {
+            if (!j || !j.user) return;
+            const u = j.user;
+            const val = Number(u.balance || 0);
+            document.getElementById('balanceValue').innerText = new Intl.NumberFormat(undefined, { style:'currency', currency:'USD', maximumFractionDigits:2 }).format(val);
+            document.getElementById('membershipBadge').innerText = (u.membership && u.membership.tier) ? u.membership.tier : (u.currentMembership?.tier || 'None');
+            // Show pending counts if server provides them
+            document.getElementById('pendingCount').innerText = u.pendingDeposits ?? 0;
+            document.getElementById('pendingWithdraw').innerText = u.pendingWithdrawals ?? 0;
+            // recent activity
+            const recent = u.recentActivity || [];
+            document.getElementById('recentActivity').innerText = recent.length ? recent.slice(0,5).map(r=>`${r.type} • ${r.amount}`).join('\\n') : 'No recent activity';
+          })
+          .catch(()=>{/* silent */});
+        // refresh periodically
+        setInterval(profileUpdater, 8000);
+      })();
 
-      // add smooth fade-out behavior for internal links (keeps your behavior)
+      // Smooth internal link fade
       const overlay = document.createElement('div');
-      overlay.className = 'fade-overlay';
-      document.body.appendChild(overlay);
+      overlay.style.position='fixed'; overlay.style.inset=0; overlay.style.background='radial-gradient(circle, rgba(168,85,247,0.06), rgba(0,0,0,0.95))'; overlay.style.opacity=0; overlay.style.transition='opacity .35s'; overlay.style.pointerEvents='none'; document.body.appendChild(overlay);
 
-      requestAnimationFrame(()=> document.body.classList.add('fade-in'));
-
-      document.querySelectorAll('a').forEach(link => {
+      document.querySelectorAll('a').forEach(link=>{
         const href = link.getAttribute('href');
-        if (!href || href.startsWith('#') || href.startsWith('javascript:') || link.target === '_blank') return;
-        link.addEventListener('click', e => {
+        if (!href || href.startsWith('#') || href.startsWith('http') || link.target === '_blank') return;
+        link.addEventListener('click', e=>{
           e.preventDefault();
-          overlay.classList.add('active');
-          document.body.classList.add('fade-out');
-          setTimeout(()=> window.location.href = href, 360);
+          overlay.style.opacity=1;
+          setTimeout(()=> window.location.href = href, 320);
         });
       });
     });
