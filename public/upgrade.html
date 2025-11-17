@@ -193,6 +193,14 @@ function showInfo(tier){
 
 // start purchase flow
 function startPurchase(tier){
+  // Check if user is logged in
+  const token = localStorage.getItem('token');
+  if (!token) {
+    alert('Please log in first to purchase membership.');
+    window.location.href = './login.html';
+    return;
+  }
+
   currentTier = tier;
   paymentState.innerText = `Preparing purchase for ${tier}...`;
   selectedTierEl.innerText = `${tier} — Pay ${TIER_CONFIG[tier].deposit} ${TIER_CONFIG[tier].coin}`;
