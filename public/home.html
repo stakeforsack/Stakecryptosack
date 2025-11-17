@@ -3,290 +3,342 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>GodStake - Crypto Staking Platform</title>
-  <link rel="stylesheet" href="/style.css" />
+  <title>CryptoYieldPro — Dashboard</title>
+
+  <!-- Inter font (keeps premium look) -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
 
   <style>
-    :root {
+    :root{
+      --bg-1: #06060a;
+      --bg-2: #0b0b12;
+      --glass: rgba(255,255,255,0.03);
+      --glass-2: rgba(255,255,255,0.02);
       --accent: #a855f7;
-      --gradient: linear-gradient(135deg, #a855f7, #7c3aed);
+      --accent-2: #5eead4;
+      --muted: #9aa3b2;
+      --success: #7ef6b8;
+      --danger: #ff6b6b;
+      --card-radius: 16px;
+      --max-width: 1200px;
     }
 
-    /* === Background Enhancements === */
-    body {
-      position: relative;
-      overflow-x: hidden;
-      background: linear-gradient(-45deg, #000000, #0b0b0b, #121212, #1a1a1a);
-      background-size: 400% 400%;
-      animation: gradientFlow 12s ease infinite;
+    /* ---------- Page background & layout ---------- */
+    html,body{height:100%;margin:0;background:radial-gradient(1200px 800px at 10% 10%, rgba(168,85,247,0.06), transparent 10%),
+                              radial-gradient(900px 700px at 90% 90%, rgba(94,234,212,0.04), transparent 8%),
+                              linear-gradient(180deg,var(--bg-1), var(--bg-2));color:#e8f6ff;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial; -webkit-font-smoothing:antialiased;}
+    .container{max-width:var(--max-width);margin:28px auto;padding:20px;}
+
+    /* ---------- Top nav/header ---------- */
+    .topbar{display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .brand{display:flex; align-items:center; gap:12px}
+    .brand img{width:46px;height:46px;border-radius:10px;filter:drop-shadow(0 6px 18px rgba(168,85,247,0.12))}
+    .brand h1{font-size:1.15rem;margin:0;font-weight:800;letter-spacing:0.6px;color:transparent;background:linear-gradient(90deg,var(--accent),var(--accent-2));-webkit-background-clip:text;background-clip:text}
+    .nav-actions{display:flex; gap:10px; align-items:center}
+    .chip{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); border:1px solid rgba(255,255,255,0.03); padding:8px 12px;border-radius:12px;font-weight:600;color:var(--muted); font-size:0.95rem}
+    .chip.cta{background:linear-gradient(90deg,var(--accent),var(--accent-2)); color:#041; border: none; box-shadow: 0 8px 28px rgba(168,85,247,0.12); cursor:pointer}
+
+    /* ---------- Hero / balance ---------- */
+    .hero{display:grid;grid-template-columns: 1fr 380px; gap:18px; margin-top:18px; align-items:start}
+    @media(max-width:980px){ .hero{grid-template-columns:1fr} }
+
+    .card{
+      border-radius:var(--card-radius);
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border:1px solid rgba(255,255,255,0.04);
+      padding:18px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+      transition: transform .28s, box-shadow .28s;
+    }
+    .card:hover{ transform: translateY(-8px); box-shadow: 0 30px 70px rgba(0,0,0,0.7) }
+
+    .balance-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .balance-left{display:flex;flex-direction:column;gap:6px}
+    .balance-label{color:var(--muted);font-weight:600;font-size:0.9rem}
+    .balance-value{font-weight:800;font-size:1.9rem; letter-spacing:0.8px; color: #fff}
+    .small-muted{color:var(--muted);font-size:0.95rem}
+
+    .hero-right .status-card{display:flex;flex-direction:column;gap:8px;align-items:center; justify-content:center; height:100%}
+    .status-pill{padding:8px 12px;border-radius:999px;font-weight:700;background:linear-gradient(90deg,#1f2937,rgba(255,255,255,0.02)); border:1px solid rgba(255,255,255,0.02); color:var(--muted)}
+
+    /* quick-actions */
+    .quick-actions{display:flex;gap:12px;margin-top:12px}
+    .action-item{display:flex;flex-direction:column;align-items:center;gap:8px;padding:12px;border-radius:12px;background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.00));border:1px solid rgba(255,255,255,0.02);width:110px; text-align:center; cursor:pointer}
+    .action-item img{width:36px;height:36px}
+    .action-item p{margin:0;font-weight:700;color:#fff;font-size:0.9rem}
+
+    /* ---------- Market / stats ---------- */
+    .market{margin-top:18px;display:grid;grid-template-columns:1fr 360px;gap:18px}
+    @media(max-width:980px){ .market{grid-template-columns:1fr} }
+
+    .market-cards{display:flex;gap:12px;flex-wrap:wrap}
+    .market-card{
+      min-width:160px;flex:1;padding:14px;border-radius:12px;background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.00));border:1px solid rgba(255,255,255,0.03);transition:transform .24s, box-shadow .24s;
+    }
+    .market-card h3{margin:0;font-size:0.95rem}
+    .market-price{font-weight:800;font-size:1.15rem;margin-top:8px}
+    .market-change.positive{color:var(--success);font-weight:700}
+    .market-change.negative{color:var(--danger);font-weight:700}
+
+    .market-list{margin-top:12px;border-radius:12px;overflow:hidden}
+    .market-row{display:flex;justify-content:space-between;padding:12px;border-bottom:1px solid rgba(255,255,255,0.02);align-items:center}
+    .market-row:last-child{border-bottom:none}
+    .coin{font-weight:700;color:#fff}
+    .price{font-weight:700}
+
+    /* ---------- Footer nav (bottom) ---------- */
+    .bottom-nav{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border:1px solid rgba(255,255,255,0.03);padding:10px 16px;border-radius:999px;display:flex;gap:14px;box-shadow:0 10px 40px rgba(0,0,0,0.6)}
+    .nav-item{display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--muted);text-decoration:none;font-weight:700;font-size:0.85rem;padding:4px 8px}
+    .nav-item img{width:20px;height:20px;filter:grayscale(0.2)}
+    .nav-item.active{color:var(--accent); transform:translateY(-6px) scale(1.02)}
+
+    /* ---------- badges & tiny UI ---------- */
+    .badge { padding:6px 8px;border-radius:8px;background:linear-gradient(90deg,var(--accent),var(--accent-2));color:#03111a;font-weight:800 }
+    .muted-small{color:var(--muted);font-size:0.9rem}
+
+    /* ---------- subtle animated backgrounds for cards ---------- */
+    .market-card::after, .card::after {
+      content: ""; position:absolute; pointer-events:none; border-radius:50%;
+      width:320px;height:320px; opacity:0.05; transform:translateY(-20px); z-index:0;
     }
 
-    @keyframes gradientFlow {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
-    }
-
-    /* === Floating Glow Elements === */
-    body::before,
-    body::after {
-      content: "";
-      position: absolute;
-      border-radius: 50%;
-      width: 320px;
-      height: 320px;
-      background: radial-gradient(circle, rgba(168,85,247,0.25), transparent 70%);
-      filter: blur(140px);
-      animation: floatGlow 20s infinite alternate ease-in-out;
-      z-index: -1;
-    }
-
-    body::before { top: 10%; left: 70%; animation-delay: 4s; }
-    body::after { bottom: 10%; right: 60%; }
-
-    @keyframes floatGlow {
-      from { transform: translateY(0) scale(1); }
-      to { transform: translateY(-30px) scale(1.1); }
-    }
-
-    /* === Banner Neon Animation === */
-    .banner-text {
-      font-size: 2rem;
-      font-weight: 700;
-      background: linear-gradient(90deg, #a855f7, #7c3aed, #a855f7);
-      background-clip: text;              /* Add standard property */
-      -webkit-background-clip: text;      /* Keep vendor prefix for Safari */
-      -webkit-text-fill-color: transparent;
-      animation: shimmer 4s infinite linear;
-      letter-spacing: 3px;
-      text-transform: uppercase;
-    }
-
-    @keyframes shimmer {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
-    }
-
-    /* === Page Fade Transition === */
-    .fade-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: radial-gradient(circle at center, rgba(168, 85, 247, 0.2), rgba(0, 0, 0, 0.95));
-      pointer-events: none;
-      opacity: 0;
-      transition: opacity 0.6s ease;
-      z-index: 9999;
-    }
-
-    .fade-overlay.active { opacity: 1; }
-
-    body.fade-out {
-      opacity: 0;
-      transform: scale(0.98);
-      transition: opacity 0.5s ease, transform 0.5s ease;
-    }
-
-    body.fade-in {
-      opacity: 1;
-      transform: scale(1);
-      transition: opacity 0.5s ease, transform 0.5s ease;
-    }
-
-    /* === Smooth Section Appear === */
-    section {
-      opacity: 0;
-      transform: translateY(20px);
-      animation: fadeUpSmooth 0.8s forwards;
-    }
-
-    @keyframes fadeUpSmooth {
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    section:nth-of-type(1) { animation-delay: 0.2s; }
-    section:nth-of-type(2) { animation-delay: 0.4s; }
-    section:nth-of-type(3) { animation-delay: 0.6s; }
-
-    /* === Enhanced Hover Effects === */
-    .action-item:hover, .market-card:hover {
-      transform: translateY(-4px) scale(1.02);
-      box-shadow: 0 0 20px rgba(168, 85, 247, 0.3);
-      border-color: rgba(168, 85, 247, 0.4);
-    }
-
-    .bottom-nav {
-      background: rgba(0,0,0,0.9);
-      backdrop-filter: blur(12px);
-      border-top: 1px solid rgba(255,255,255,0.05);
-    }
-
-    .nav-item:hover {
-      color: var(--accent);
-      transform: translateY(-2px);
-      transition: all 0.3s ease;
+    /* ---------- responsive tweaks ---------- */
+    @media(max-width:640px){
+      .chip{display:none}
+      .hero-right{order:2}
+      .bottom-nav{left:50%; padding:12px 16px}
     }
   </style>
 </head>
 
 <body>
-  <header class="header">
-    <div class="logo">
-      <img src="/img/logo.png" alt="Logo">
-    </div>
-  </header>
-
-  <section class="banner">
-    <div class="banner-text">
-      StakCryptoSack
-    </div>
-  </section>
-
-  <section class="actions">
-    <a class="action-item" href="deposit.html">
-      <img src="/img/deposit.png" alt="Deposit">
-      <p>Deposit</p>
-    </a>
-
-    <a class="action-item" href="withdraw.html">
-      <img src="/img/withdraw.png" alt="Withdraw">
-      <p>Withdraw</p>
-    </a>
-
-    <a class="action-item" href="internal-transfer.html">
-      <img src="/img/money.png" alt="Transfer">
-      <p>Internal Transfer</p>
-    </a>
-
-    <a class="action-item" href="upgrade.html">
-      <img src="/img/vip-card.png" alt="Upgrade">
-      <p>Membership<br>Upgrade</p>
-    </a>
-  </section>
-
-  <section class="market">
-    <h2>USDT Market</h2>
-
-    <div class="market-cards">
-      <div class="market-card" data-coin="bitcoin">
-        <h3>BTC/USDT</h3>
-        <p class="price" data-price-id="bitcoin">—</p>
-        <p class="change" data-change-id="bitcoin"></p>
+  <div class="container">
+    <!-- Top bar -->
+    <div class="topbar">
+      <div class="brand">
+        <img src="/img/logo.png" alt="logo" onerror="this.style.visibility='hidden'">
+        <div>
+          <h1>CryptoYieldPro</h1>
+          <div class="muted-small">Premium crypto bonuses & membership</div>
+        </div>
       </div>
-      <div class="market-card" data-coin="ethereum">
-        <h3>ETH/USDT</h3>
-        <p class="price" data-price-id="ethereum">—</p>
-        <p class="change" data-change-id="ethereum"></p>
-      </div>
-      <div class="market-card" data-coin="dogecoin">
-        <h3>DOGE/USDT</h3>
-        <p class="price" data-price-id="dogecoin">—</p>
-        <p class="change" data-change-id="dogecoin"></p>
+
+      <div class="nav-actions">
+        <div class="chip">Welcome back</div>
+        <button class="chip cta" onclick="location.href='account.html'">My Account</button>
       </div>
     </div>
 
-    <div class="market-list">
-      <div class="market-row" data-coin="bitcoin">
-        <span class="coin">BTC/USDT</span>
-        <span class="price" data-price-id="bitcoin">—</span>
-        <span class="change" data-change-id="bitcoin"></span>
+    <!-- Hero -->
+    <div class="hero" aria-label="overview">
+      <!-- left: balance + quick actions -->
+      <div class="card" style="position:relative; overflow:visible;">
+        <div class="balance-row">
+          <div class="balance-left">
+            <div class="balance-label">Account Balance</div>
+            <div class="balance-value" id="balanceValue">$0.00</div>
+            <div class="small-muted">Available balance reflects confirmed deposits & payouts</div>
+          </div>
+          <div style="text-align:right">
+            <div class="small-muted">Membership</div>
+            <div class="badge" id="membershipBadge">None</div>
+            <div style="height:8px"></div>
+            <div class="small-muted">Next Payout</div>
+            <div id="nextPayout" class="muted-small">—</div>
+          </div>
+        </div>
+
+        <div class="quick-actions" role="navigation" aria-label="quick actions">
+          <div class="action-item" onclick="location.href='deposit.html'">
+            <img src="/img/deposit.png" alt="deposit">
+            <p>Deposit</p>
+          </div>
+          <div class="action-item" onclick="location.href='withdraw.html'">
+            <img src="/img/withdraw.png" alt="withdraw">
+            <p>Withdraw</p>
+          </div>
+          <div class="action-item" onclick="location.href='upgrade.html'">
+            <img src="/img/vip-card.png" alt="vip">
+            <p>Membership</p>
+          </div>
+          <div class="action-item" onclick="location.href='internal-transfer.html'">
+            <img src="/img/money.png" alt="transfer">
+            <p>Transfer</p>
+          </div>
+        </div>
       </div>
-      <div class="market-row" data-coin="ethereum">
-        <span class="coin">ETH/USDT</span>
-        <span class="price" data-price-id="ethereum">—</span>
-        <span class="change" data-change-id="ethereum"></span>
-      </div>
-      <div class="market-row" data-coin="dogecoin">
-        <span class="coin">DOGE/USDT</span>
-        <span class="price" data-price-id="dogecoin">—</span>
-        <span class="change" data-change-id="dogecoin"></span>
-      </div>
-      <div class="market-row" data-coin="eos">
-        <span class="coin">EOS/USDT</span>
-        <span class="price" data-price-id="eos">—</span>
-        <span class="change" data-change-id="eos"></span>
+
+      <!-- right: small status / summary -->
+      <div class="card hero-right">
+        <div class="status-card" style="gap:12px;">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div style="font-weight:800">Platform Status</div>
+            <div class="status-pill">Online</div>
+          </div>
+
+          <div style="display:flex;gap:8px;flex-direction:column;margin-top:8px">
+            <div class="small-muted">Pending Deposits</div>
+            <div id="pendingCount" style="font-weight:800">0</div>
+
+            <div class="small-muted" style="margin-top:8px">Pending Withdrawals</div>
+            <div id="pendingWithdraw" style="font-weight:800">0</div>
+          </div>
+
+          <div style="height:8px"></div>
+          <button class="chip cta" onclick="location.href='admin.html'">Admin Panel</button>
+        </div>
       </div>
     </div>
-  </section>
 
-  <nav class="bottom-nav">
-    <a class="nav-item active" href="home.html">
-      <img src="/img/house.png" alt="Home">
-      <p>Home</p>
-    </a>
-    <a class="nav-item" href="trade.html">
-      <img src="/img/trade.png" alt="Trade">
-      <p>Trade</p>
-    </a>
-    <a class="nav-item" href="internal-transfer.html">
-      <img src="/img/transfer.png" alt="Transfer">
-      <p>Transfer</p>
-    </a>
-    <a class="nav-item" href="account.html">
-      <img src="/img/myaccount.png" alt="Account">
-      <p>My Account</p>
-    </a>
+    <!-- Market Section -->
+    <div class="market" aria-label="market">
+      <div class="card" style="min-height:220px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <h2 style="margin:0;font-size:1.05rem">Market Snapshot</h2>
+          <div class="muted-small">Live prices • Updated every 10s</div>
+        </div>
+
+        <div class="market-cards" id="marketCards" style="margin-top:14px">
+          <!-- JS will populate / update innerText of .market-price elements -->
+          <div class="market-card" data-coin="bitcoin">
+            <h3>BTC / USDT</h3>
+            <div class="market-price" data-price-id="bitcoin">—</div>
+            <div class="market-change" data-change-id="bitcoin"></div>
+          </div>
+          <div class="market-card" data-coin="ethereum">
+            <h3>ETH / USDT</h3>
+            <div class="market-price" data-price-id="ethereum">—</div>
+            <div class="market-change" data-change-id="ethereum"></div>
+          </div>
+          <div class="market-card" data-coin="tether">
+            <h3>USDT</h3>
+            <div class="market-price" data-price-id="tether">—</div>
+            <div class="market-change" data-change-id="tether"></div>
+          </div>
+        </div>
+
+        <div class="market-list" style="margin-top:14px">
+          <div class="market-row" data-coin="bitcoin">
+            <div class="coin">BTC/USDT</div>
+            <div style="display:flex;gap:12px;align-items:center">
+              <div class="price" data-price-id="bitcoin">—</div>
+              <div class="change" data-change-id="bitcoin"></div>
+            </div>
+          </div>
+          <div class="market-row" data-coin="ethereum">
+            <div class="coin">ETH/USDT</div>
+            <div style="display:flex;gap:12px;align-items:center">
+              <div class="price" data-price-id="ethereum">—</div>
+              <div class="change" data-change-id="ethereum"></div>
+            </div>
+          </div>
+          <div class="market-row" data-coin="dogecoin">
+            <div class="coin">DOGE/USDT</div>
+            <div style="display:flex;gap:12px;align-items:center">
+              <div class="price" data-price-id="dogecoin">—</div>
+              <div class="change" data-change-id="dogecoin"></div>
+            </div>
+          </div>
+          <div class="market-row" data-coin="eos">
+            <div class="coin">EOS/USDT</div>
+            <div style="display:flex;gap:12px;align-items:center">
+              <div class="price" data-price-id="eos">—</div>
+              <div class="change" data-change-id="eos"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- right column: activity / announcements -->
+      <div class="card" style="min-height:220px">
+        <h3 style="margin:0 0 10px 0">Announcements</h3>
+        <div class="small-muted">Latest updates & status</div>
+        <div style="margin-top:12px">
+          <div style="padding:10px;border-radius:10px;background:rgba(255,255,255,0.01);border:1px solid rgba(255,255,255,0.02);margin-bottom:10px">
+            <div style="font-weight:700">New Memberships</div>
+            <div class="muted-small">V3, V4 & V5 packages added — check upgrade page.</div>
+          </div>
+
+          <div style="padding:10px;border-radius:10px;background:rgba(255,255,255,0.01);border:1px solid rgba(255,255,255,0.02);">
+            <div style="font-weight:700">Manual Withdrawals</div>
+            <div class="muted-small">All withdraw requests are manual and require admin approval.</div>
+          </div>
+        </div>
+
+        <div style="height:14px"></div>
+        <h4 style="margin-bottom:8px">Recent activity</h4>
+        <div id="recentActivity" class="muted-small">No recent activity</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- bottom nav -->
+  <nav class="bottom-nav" role="navigation" aria-label="bottom">
+    <a class="nav-item active" href="home.html"><img src="/img/house.png" alt=""><span>Home</span></a>
+    <a class="nav-item" href="trade.html"><img src="/img/trade.png" alt=""><span>Trade</span></a>
+    <a class="nav-item" href="internal-transfer.html"><img src="/img/transfer.png" alt=""><span>Transfer</span></a>
+    <a class="nav-item" href="account.html"><img src="/img/myaccount.png" alt=""><span>Account</span></a>
   </nav>
 
-  <!-- Scripts -->
+  <!-- Keep your existing scripts (market-prices and main script) -->
   <script src="/js/language.js"></script>
   <script>document.addEventListener('DOMContentLoaded', initLanguageSelector);</script>
-  <script src="script.js"></script>
-  <script src="/js/market-prices.js"></script>
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      MarketPrices.start(['bitcoin','ethereum','dogecoin','eos','tether','cardano','binancecoin','solana'], 10000);
-    });
 
-    
+  <script src="/script.js"></script>
+  <script src="/js/market-prices.js"></script>
+
+  <script>
+    // keep MarketPrices usage — update to match your lib
     document.addEventListener('DOMContentLoaded', () => {
-      // Create overlay once
-      let overlay = document.querySelector('.fade-overlay');
-      if (!overlay) {
-        overlay = document.createElement('div');
-        overlay.classList.add('fade-overlay');
-        document.body.appendChild(overlay);
+      try {
+        MarketPrices.start(['bitcoin','ethereum','dogecoin','eos','tether','cardano','binancecoin','solana'], 10000);
+
+        // small UI updater: listens to price updates if your MarketPrices emits events
+        // If MarketPrices provides callbacks or events, integrate that here.
+        // Fallback: poll DOM updates after MarketPrices updates the data attributes.
+        const observeInterval = setInterval(() => {
+          // update balance placeholder (you should fetch from /api/profile)
+          // attempt to fetch profile to update balance & membership
+          fetch('/api/profile', { credentials: 'include' })
+            .then(r => {
+              if (!r.ok) return null;
+              return r.json();
+            })
+            .then(j => {
+              if (!j || !j.user) return;
+              const u = j.user;
+              document.getElementById('balanceValue').innerText = (Number(u.balance || 0)).toLocaleString(undefined, { style: 'currency', currency: 'USD', maximumFractionDigits: 2 });
+              document.getElementById('membershipBadge').innerText = (u.membership && u.membership.tier) ? u.membership.tier : (u.currentMembership?.tier || 'None');
+              document.getElementById('pendingCount').innerText = u.pendingDeposits || 0;
+              document.getElementById('pendingWithdraw').innerText = u.pendingWithdrawals || 0;
+              // recent activity (light)
+              const recent = u.recentActivity || [];
+              document.getElementById('recentActivity').innerText = recent.length ? recent.slice(0,5).map(r=>`${r.type} • ${r.amount}`).join('\n') : 'No recent activity';
+            })
+            .catch(()=>{/* silent */});
+        }, 4000);
+      } catch(e){
+        console.warn('MarketPrices not available or error', e);
       }
 
-      // Always ensure body is visible when loaded/back from cache
-      window.addEventListener('pageshow', (event) => {
-        // Some browsers keep page state cached, so reset fades here
-        if (event.persisted || document.body.classList.contains('fade-out')) {
-          document.body.classList.remove('fade-out');
-          document.body.classList.add('fade-in');
-          overlay.classList.remove('active');
-        }
-      });
+      // add smooth fade-out behavior for internal links (keeps your behavior)
+      const overlay = document.createElement('div');
+      overlay.className = 'fade-overlay';
+      document.body.appendChild(overlay);
 
-      // Fade in on normal load
-      requestAnimationFrame(() => {
-        document.body.classList.add('fade-in');
-      });
+      requestAnimationFrame(()=> document.body.classList.add('fade-in'));
 
-      // Smooth fade-out navigation
       document.querySelectorAll('a').forEach(link => {
         const href = link.getAttribute('href');
-        if (!href || href.startsWith('#') || href.startsWith('javascript:')) return;
-
+        if (!href || href.startsWith('#') || href.startsWith('javascript:') || link.target === '_blank') return;
         link.addEventListener('click', e => {
-          if (link.target === '_blank' || href.startsWith('http')) return;
           e.preventDefault();
-
           overlay.classList.add('active');
-          document.body.classList.remove('fade-in');
           document.body.classList.add('fade-out');
-
-          setTimeout(() => {
-            window.location.href = href;
-          }, 400);
+          setTimeout(()=> window.location.href = href, 360);
         });
       });
     });
-
-
   </script>
 </body>
 </html>
