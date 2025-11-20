@@ -2,286 +2,208 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
-  <title>My Account - GodStake</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Account — CryptoYieldPro</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
 
   <style>
-    :root {
-      --accent: #a855f7;
-      --glass-bg: rgba(255, 255, 255, 0.05);
-      --glass-border: rgba(255, 255, 255, 0.12);
+    :root{
+      --bg-1:#040406;
+      --bg-2:#08080b;
+      --glass:rgba(255,255,255,0.03);
+      --glass-border:rgba(255,255,255,0.06);
+      --accent:#a855f7;
+      --accent-2:#5eead4;
+      --muted:#9aa3b2;
+      --danger:#ff6b6b;
+      --radius:14px;
     }
 
-    body {
-      margin: 0;
-      padding: 0;
-      font-family: "Inter", sans-serif;
-      background: #0b0b0b;
-      color: white;
-      overflow-x: hidden;
-      padding-bottom: 100px; /* makes space for bottom nav */
+    html,body{
+      margin:0;
+      font-family:Inter,system-ui;
+      background:
+        radial-gradient(800px 500px at 10% 10%, rgba(168,85,247,0.06), transparent 8%),
+        radial-gradient(600px 400px at 90% 90%, rgba(94,234,212,0.03), transparent 6%),
+        linear-gradient(180deg, var(--bg-1), var(--bg-2));
+      color:#eaf3ff;
+      padding-bottom:100px;
+      -webkit-font-smoothing:antialiased;
     }
 
-    /* HEADER */
-    header {
-      padding: 15px;
-      background: #111;
-      border-bottom: 1px solid #222;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+    .wrap { max-width:900px; margin:0 auto; padding:20px; }
+
+    /* Profile section */
+    .profile-box{
+      text-align:center;
+      padding-top:18px;
+      padding-bottom:4px;
+    }
+    .avatar{
+      width:110px;height:110px;border-radius:50%;
+      background:linear-gradient(135deg,var(--accent),var(--accent-2));
+      display:flex;align-items:center;justify-content:center;
+      font-size:2.4rem;font-weight:800;color:#021;
+      box-shadow:0 0 40px rgba(168,85,247,0.35);
+      margin:0 auto 12px;
+    }
+    .username{font-size:1.6rem;font-weight:800}
+    .vip-badge{
+      margin-top:8px;display:inline-block;padding:6px 16px;
+      background:linear-gradient(90deg, gold, #ffd55c);
+      border-radius:999px;color:#241e00;font-weight:800;
+      font-size:0.9rem;letter-spacing:0.3px;
     }
 
-    header img {
-      height: 32px;
+    .card{
+      background:var(--glass);
+      border:1px solid var(--glass-border);
+      border-radius:var(--radius);
+      padding:18px;
+      margin-top:20px;
+      backdrop-filter:blur(12px);
+      box-shadow:0 18px 50px rgba(0,0,0,0.55);
     }
 
-    /* ACCOUNT TOP SECTION */
-    .account-header {
-      text-align: center;
-      padding: 30px 10px;
+    .card-title{
+      color:var(--muted);
+      font-size:0.9rem;
+      font-weight:600;
+    }
+    .card-balance{
+      font-size:2.2rem;
+      font-weight:800;
+      margin-top:6px;
+      background:linear-gradient(90deg,var(--accent),var(--accent-2));
+      -webkit-background-clip:text;
+      color:transparent;
     }
 
-    .avatar {
-      width: 90px;
-      height: 90px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, #a855f7, #7c3aed);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 2.2rem;
-      color: white;
-      margin: 0 auto 10px;
-      box-shadow: 0 0 25px rgba(168, 85, 247, 0.4);
+    /* Menu */
+    .menu a{
+      display:block;margin-top:14px;padding:14px;
+      border-radius:var(--radius);
+      background:rgba(255,255,255,0.02);
+      border:1px solid rgba(255,255,255,0.04);
+      color:white;text-decoration:none;font-size:1rem;
+      font-weight:600;transition:0.25s;
+    }
+    .menu a:hover{
+      transform:translateY(-3px);
+      border-color:var(--accent);
+      box-shadow:0 0 15px rgba(168,85,247,0.4);
     }
 
-    .username {
-      font-size: 1.5rem;
-      font-weight: 700;
+    /* Logout */
+    .logout-btn{
+      width:100%;margin-top:22px;padding:14px;
+      background:linear-gradient(135deg,#ff4949,#c90000);
+      border:none;border-radius:var(--radius);
+      color:white;font-size:1rem;font-weight:700;
+      cursor:pointer;
     }
 
-    .vip {
-      margin-top: 8px;
-      display: inline-block;
-      background: gold;
-      padding: 4px 13px;
-      border-radius: 20px;
-      color: #000;
-      font-weight: 700;
-      font-size: 0.9rem;
+    /* Bottom nav */
+    .bottom-nav{
+      position:fixed;bottom:16px;left:50%;transform:translateX(-50%);
+      background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));
+      border:1px solid rgba(255,255,255,0.04);
+      border-radius:999px;padding:10px 16px;
+      display:flex;gap:18px;box-shadow:0 18px 45px rgba(0,0,0,0.6);z-index:999;
     }
-
-    /* TOTAL BALANCE CARD */
-    .balance-card {
-      margin: 20px;
-      background: var(--glass-bg);
-      padding: 20px;
-      border-radius: 15px;
-      border: 1px solid var(--glass-border);
-      backdrop-filter: blur(10px);
-      text-align: center;
+    .nav-item{
+      display:flex;flex-direction:column;align-items:center;
+      color:var(--muted);font-size:0.85rem;text-decoration:none;
+      font-weight:700;
     }
-
-    .balance-title {
-      font-size: 0.9rem;
-      color: #aaa;
-    }
-
-    .balance-amount {
-      font-size: 2rem;
-      color: var(--accent);
-      font-weight: 700;
-      margin-top: 8px;
-    }
-
-    /* MENU */
-    .menu {
-      padding: 10px 20px;
-      padding-bottom: 40px; /* prevents last items from hiding */
-    }
-
-    .menu a {
-      display: block;
-      padding: 15px;
-      margin-bottom: 12px;
-      text-decoration: none;
-      background: var(--glass-bg);
-      border: 1px solid var(--glass-border);
-      border-radius: 12px;
-      color: white;
-      font-size: 1rem;
-      backdrop-filter: blur(10px);
-      transition: 0.25s;
-    }
-
-    .menu a:hover {
-      transform: translateY(-3px);
-      border-color: var(--accent);
-      box-shadow: 0 0 15px rgba(168, 85, 247, 0.4);
-    }
-
-    /* BOTTOM NAVIGATION */
-    .bottom-nav {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      height: 65px;
-      background: #111;
-      border-top: 1px solid #222;
-      display: flex;
-      justify-content: space-around;
-      align-items: center;
-      z-index: 99;
-    }
-
-    .bottom-nav a {
-      color: #888;
-      text-decoration: none;
-      text-align: center;
-      font-size: 0.85rem;
-    }
-
-    .nav-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 4px;
-    }
-
-    .nav-icon {
-      width: 22px;
-      height: 22px;
-      opacity: 0.8;
-    }
-    
-    .nav-item.active .nav-icon {
-      opacity: 1;
-      filter: drop-shadow(0 0 4px var(--accent));
-    }
-
-    .nav-item span {
-      font-size: 0.75rem;
-    }
-
-
-    .bottom-nav a.active {
-      color: var(--accent);
-    }
-
-    .logout-btn {
-      width: calc(100% - 40px);
-      margin: 20px;
-      padding: 15px;
-      font-size: 1rem;
-      background: linear-gradient(135deg, #ff4d4d, #cc0000);
-      border: none;
-      border-radius: 12px;
-      color: #fff;
-      font-weight: 600;
-      cursor: pointer;
-    }
-
-    .logout-btn:hover {
-      opacity: 0.85;
-    }
-
+    .nav-item img{width:22px;height:22px;margin-bottom:4px}
+    .nav-item.active{color:var(--accent);transform:translateY(-4px) scale(1.04)}
   </style>
 </head>
 
 <body>
 
-  <header>
-    <img src="/img/logo.png" alt="Logo" />
-  </header>
+<div class="wrap">
 
-  <section class="account-header">
-    <div class="avatar" id="userAvatar">U</div>
-    <div class="username" id="username">Loading...</div>
-    <div class="vip">VIP 1</div>
-  </section>
-
-  <div class="balance-card">
-    <div class="balance-title">Total Balance</div>
-    <div class="balance-amount" id="totalBalance">0.00</div>
+  <div class="profile-box">
+    <div id="avatar" class="avatar">U</div>
+    <div id="username" class="username">Loading...</div>
+    <div id="vipBadge" class="vip-badge" style="display:none"></div>
   </div>
 
-  <!-- MENU -->
+  <div class="card">
+    <div class="card-title">Total Balance</div>
+    <div id="totalBalance" class="card-balance">0.00</div>
+  </div>
+
   <div class="menu">
     <a href="profile.html">Profile Settings</a>
     <a href="security.html">Security</a>
     <a href="wallet.html">Wallet Balance</a>
     <a href="transaction-history.html">Transaction History</a>
-    <a href="payment-methods.html">Payment Methods</a>
     <a href="support.html">Customer Support</a>
   </div>
 
-
-  <!-- BOTTOM NAV -->
-<div class="bottom-nav">
-
-  <a href="index.html" class="nav-item">
-    <img src="/img/house.png" class="nav-icon">
-    <span>Home</span>
-  </a>
-
-  <a href="trade.html" class="nav-item">
-    <img src="/img/nav/trade.png" class="nav-icon">
-    <span>Trade</span>
-  </a>
-
-  <a href="internal-transfer.html" class="nav-item">
-    <img src="/img/nav/transfer.png" class="nav-icon">
-    <span>Transfer</span>
-  </a>
-
-  <a href="account.html" class="nav-item active">
-    <img src="/img/nav/myaccount.png" class="nav-icon">
-    <span>Account</span>
-  </a>
+  <button class="logout-btn" onclick="logout()">Logout</button>
 
 </div>
 
-  <button class="logout-btn" onclick="logout()">Logout</button>
+<!-- bottom nav -->
+<nav class="bottom-nav">
+  <a href="house.html" class="nav-item">
+    <img src="/img/house.png"><span>Home</span>
+  </a>
+  <a href="trade.html" class="nav-item">
+    <img src="/img/trade.png"><span>Trade</span>
+  </a>
+  <a href="internal-transfer.html" class="nav-item">
+    <img src="/img/transfer.png"><span>Transfer</span>
+  </a>
+  <a href="account.html" class="nav-item active">
+    <img src="/img/myaccount.png"><span>Account</span>
+  </a>
+</nav>
 
+<script>
+async function logout(){
+  await fetch("/api/logout",{method:"POST",credentials:"include"});
+  window.location.href="login.html";
+}
 
+document.addEventListener("DOMContentLoaded", async () => {
+  try {
+    const res = await fetch("/api/profile",{credentials:"include"});
 
-  <script>
-    document.addEventListener("DOMContentLoaded", async () => {
-      try {
-        const res = await fetch("/api/profile", { credentials: "include" });
+    if(res.status === 401){
+      window.location.href = "login.html";
+      return;
+    }
 
-        if (res.status === 401) {
-          window.location.href = "login.html";
-          return;
-        }
+    const data = await res.json();
+    const user = data.user || {};
 
-        const data = await res.json();
-        const user = data.user || {};
-        const balance = data.balance || {};
-        
-        const username = user.username || "User";
-        document.getElementById("username").textContent = username;
-        document.getElementById("userAvatar").textContent = username[0].toUpperCase();
+    // Username + avatar
+    const uname = user.username || "User";
+    document.getElementById("username").textContent = uname;
+    document.getElementById("avatar").textContent = uname[0].toUpperCase();
 
-        async function logout() {
-          await fetch("/api/logout", { method: "POST", credentials: "include" });
-          localStorage.clear();
-          window.location.href = "login.html";
-        }
+    // VIP / Membership
+    if(user.membership && user.membership.tier){
+      document.getElementById("vipBadge").style.display = "inline-block";
+      document.getElementById("vipBadge").textContent = user.membership.tier;
+    }
 
+    // Balance (backend uses user.balance)
+    const total = Number(user.balance || 0);
+    document.getElementById("totalBalance").textContent =
+      total.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:6});
 
-        // Calculate total balance
-        let total = 0;
-        Object.values(balance).forEach(v => total += v);
-        document.getElementById("totalBalance").textContent = total.toFixed(4);
-
-      } catch (err) {
-        console.error("Error loading account:", err);
-      }
-    });
-  </script>
+  } catch(err){
+    console.error("Account load error:", err);
+  }
+});
+</script>
 
 </body>
 </html>
