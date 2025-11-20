@@ -158,7 +158,11 @@ app.get("/api/profile", needAuth, async (req, res) => {
         id: user._id,
         username: user.username,
         email: user.email,
-        balances: user.balances || { BTC:0, ETH:0, USDT:0, BNB:0, ADA:0, USD:0 },
+        balances: user.balances || {  USDT: user.balance || 0, // your main DB balance
+          BTC: 0,
+          ETH: 0,
+          BNB: 0,
+          ADA: 0 },
         membership: membership || null,
         createdAt: user.createdAt,
       },
