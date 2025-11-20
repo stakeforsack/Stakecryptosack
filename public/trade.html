@@ -3,695 +3,300 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Trade | CryptoYieldPro</title>
-
-  <!-- Global CSS (keep your existing) -->
-  <link rel="stylesheet" href="/style.css" />
-  <!-- Inter font for consistency -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+  <title>Trade • Live Charts</title>
 
   <style>
     :root {
-      --bg-1: #06060a;
-      --bg-2: #0b0b12;
-      --card: rgba(255,255,255,0.02);
-      --card-border: rgba(255,255,255,0.04);
-      --muted: #9aa3b2;
+      --bg1: #050507;
+      --bg2: #0b0b12;
+      --card: rgba(255,255,255,0.03);
+      --border: rgba(255,255,255,0.06);
       --accent: #a855f7;
-      --accent-soft: rgba(168,85,247,0.22);
       --accent2: #5eead4;
-      --danger: #ff6b6b;
-      --success: #7ef6b8;
-      --radius: 16px;
+      --success: #74ffb0;
+      --danger: #ff5f77;
+      --muted: #9aa3b2;
     }
 
-    html, body {
+    body {
       margin: 0;
-      padding: 0;
-      height: 100%;
-      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial;
-      background:
-        radial-gradient(1200px 800px at 0% 0%, rgba(168,85,247,0.08), transparent 40%),
-        radial-gradient(900px 700px at 100% 100%, rgba(94,234,212,0.06), transparent 40%),
-        linear-gradient(180deg, var(--bg-1), var(--bg-2));
-      color: #f9fbff;
-      -webkit-font-smoothing: antialiased;
-      padding-bottom: 70px; /* bottom nav space */
+      padding: 16px;
+      background: linear-gradient(180deg, var(--bg1), var(--bg2));
+      color: #fff;
+      font-family: "Inter", sans-serif;
+      padding-bottom: 100px;
     }
 
-    .wrap {
-      max-width: 1100px;
-      margin: 0 auto;
-      padding: 16px 16px 24px;
-    }
-
-    /* Header */
-    .trade-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 14px;
-    }
-    .trade-title {
-      font-size: 1.25rem;
+    h1 {
+      font-size: 1.8rem;
       font-weight: 800;
-      letter-spacing: 0.4px;
-    }
-    .trade-sub {
-      font-size: 0.85rem;
-      color: var(--muted);
-    }
-    .pill {
-      font-size: 0.8rem;
-      padding: 6px 10px;
-      border-radius: 999px;
-      border: 1px solid rgba(255,255,255,0.08);
-      background: rgba(0,0,0,0.3);
-      color: var(--muted);
-    }
-
-    /* Coin list */
-    .coins {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-      gap: 12px;
-      margin-bottom: 16px;
-    }
-
-    .coin-card {
-      position: relative;
-      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-      border-radius: 14px;
-      border: 1px solid rgba(255,255,255,0.035);
-      padding: 10px 12px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      cursor: pointer;
-      transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
-      box-shadow: 0 8px 25px rgba(0,0,0,0.6);
-    }
-
-    .coin-card::after {
-      content: "";
-      position: absolute;
-      inset: 0;
-      border-radius: inherit;
-      background: radial-gradient(circle at top, rgba(168,85,247,0.12), transparent 60%);
-      opacity: 0;
-      transition: opacity 0.2s ease;
-      pointer-events: none;
-    }
-
-    .coin-card:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 18px 40px rgba(0,0,0,0.8);
-      border-color: rgba(168,85,247,0.5);
-    }
-
-    .coin-card.active {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 1px rgba(168,85,247,0.5), 0 16px 36px rgba(0,0,0,0.9);
-    }
-
-    .coin-card.active::after {
-      opacity: 1;
-    }
-
-    .coin-icon {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      background: radial-gradient(circle, rgba(255,255,255,0.2), transparent 70%);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-    }
-
-    .coin-icon img {
-      width: 24px;
-      height: 24px;
-      display: block;
-    }
-
-    .coin-meta {
-      flex: 1;
-      min-width: 0;
-    }
-
-    .coin-name {
-      font-size: 0.9rem;
-      font-weight: 700;
-    }
-
-    .coin-symbol {
-      font-size: 0.75rem;
-      color: var(--muted);
-    }
-
-    .coin-price {
-      font-weight: 700;
-      font-size: 0.95rem;
-      margin-top: 4px;
-    }
-
-    .coin-change {
-      font-size: 0.8rem;
-      margin-top: 2px;
-    }
-    .coin-change.pos { color: var(--success); }
-    .coin-change.neg { color: var(--danger); }
-
-    /* Chart container */
-    .chart-shell {
-      margin-top: 4px;
-      background: linear-gradient(160deg, rgba(10,10,16,1), rgba(5,5,10,1));
-      border-radius: var(--radius);
-      border: 1px solid rgba(255,255,255,0.05);
-      padding: 12px 12px 14px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.9);
-    }
-
-    .chart-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      margin-bottom: 8px;
-    }
-
-    .chart-title-block {
-      min-width: 0;
-    }
-
-    .chart-title {
-      margin: 0;
-      font-size: 0.95rem;
-      font-weight: 700;
-    }
-
-    .chart-sub {
-      margin: 2px 0 0;
-      font-size: 0.8rem;
-      color: var(--muted);
-    }
-
-    .chart-stats {
-      font-size: 0.8rem;
-      text-align: right;
-    }
-
-    .chart-stats span {
-      display: block;
-    }
-
-    .chart-change-pos { color: var(--success); }
-    .chart-change-neg { color: var(--danger); }
-
-    /* Timeframe buttons */
-    .tf-buttons {
-      display: flex;
-      gap: 4px;
-      align-items: center;
-      justify-content: flex-end;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
       margin-bottom: 4px;
     }
 
-    .tf-btn {
-      border-radius: 999px;
-      border: 1px solid rgba(255,255,255,0.06);
-      padding: 4px 10px;
-      font-size: 0.75rem;
-      background: rgba(10,10,16,0.9);
+    .sub {
       color: var(--muted);
-      cursor: pointer;
-      transition: background 0.18s, color 0.18s, border-color 0.18s;
+      margin-bottom: 14px;
+      font-size: 0.9rem;
     }
 
-    .tf-btn.active {
-      background: linear-gradient(90deg, var(--accent), var(--accent2));
-      color: #031011;
-      border-color: transparent;
+    .coins {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+
+    .coin {
+      background: var(--card);
+      border: 1px solid var(--border);
+      padding: 14px;
+      border-radius: 14px;
+      cursor: pointer;
+      transition: .25s;
+    }
+
+    .coin.active {
+      border-color: var(--accent);
+      box-shadow: 0 0 18px rgba(168,85,247,0.25);
+      transform: translateY(-3px);
+    }
+
+    .coin img {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      margin-bottom: 6px;
+    }
+
+    .coin .name { font-weight: 700; }
+    .coin .pair { font-size: 0.8rem; color: var(--muted); }
+    .coin .price { margin-top: 6px; font-size: 1.1rem; font-weight: 700; }
+    .change.pos { color: var(--success); }
+    .change.neg { color: var(--danger); }
+
+    /* Chart card */
+    #chartBox {
+      margin-top: 18px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 14px;
+      display: none;
+    }
+
+    #chartTitle {
+      font-size: 1.1rem;
       font-weight: 700;
     }
 
-    /* Chart canvas */
-    .chart-canvas-wrap {
-      position: relative;
-      width: 100%;
-      height: 260px; /* fixed, prevents growing bug */
-    }
-
     #priceChart {
-      width: 100% !important;
-      height: 100% !important;
-      display: block;
+      width: 100%;
+      height: 260px;
+      margin-top: 10px;
     }
 
-    .chart-loader {
-      position: absolute;
-      inset: 0;
+    .periods {
       display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.8rem;
-      color: var(--muted);
-      background: radial-gradient(circle at center, rgba(0,0,0,0.6), transparent 70%);
-      pointer-events: none;
-      opacity: 0;
-      transition: opacity 0.2s;
-    }
-    .chart-loader.show {
-      opacity: 1;
+      gap: 8px;
+      margin-top: 12px;
     }
 
-    /* Bottom nav (match home theme) */
+    .periods button {
+      padding: 6px 12px;
+      border-radius: 10px;
+      border: none;
+      background: var(--border);
+      color: #fff;
+      font-weight: 600;
+      cursor: pointer;
+      transition: .2s;
+    }
+
+    .periods button.active {
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      color: #041;
+    }
+
+    /* Bottom nav */
     .bottom-nav {
       position: fixed;
+      bottom: 10px;
       left: 50%;
       transform: translateX(-50%);
-      bottom: 12px;
-      background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01));
-      border-radius: 999px;
-      border: 1px solid rgba(255,255,255,0.12);
-      padding: 8px 16px;
-      display: flex;
-      gap: 14px;
-      box-shadow: 0 18px 50px rgba(0,0,0,0.9);
+      background: rgba(255,255,255,0.04);
       backdrop-filter: blur(18px);
-      z-index: 100;
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 22px;
+      padding: 10px 20px;
+      display: flex;
+      gap: 28px;
+      z-index: 999;
     }
 
     .nav-item {
-      text-decoration: none;
+      text-align: center;
+      font-size: 0.85rem;
       color: var(--muted);
-      font-size: 0.75rem;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 4px;
-      padding: 4px 6px;
-      transition: transform 0.15s, color 0.15s;
-    }
-
-    .nav-item img {
-      width: 20px;
-      height: 20px;
-      filter: drop-shadow(0 4px 8px rgba(0,0,0,0.7));
+      text-decoration: none;
     }
 
     .nav-item.active {
       color: var(--accent);
-      transform: translateY(-3px);
+      font-weight: 700;
     }
 
-    .nav-item:hover {
-      transform: translateY(-2px);
-      color: var(--accent2);
-    }
-
-    @media (max-width: 600px) {
-      .wrap {
-        padding: 12px 12px 24px;
-      }
-      .coin-card {
-        padding: 10px;
-      }
-      .chart-canvas-wrap {
-        height: 230px;
-      }
+    .nav-item img {
+      width: 22px;
+      height: 22px;
+      margin-bottom: 3px;
     }
   </style>
 </head>
+
 <body>
-  <div class="wrap">
-    <header class="trade-header">
-      <div>
-        <div class="trade-title">Markets & Live Chart</div>
-        <div class="trade-sub">Tap a coin to view its live chart & price action.</div>
-      </div>
-      <div class="pill">Live feed · 10s refresh</div>
-    </header>
 
-    <!-- Coin list -->
-    <section class="coins" id="coinsList">
-      <!-- BTC -->
-      <article class="coin-card active" data-coin="bitcoin" data-symbol="BTC">
-        <div class="coin-icon">
-          <img src="/img/btc.png" alt="BTC">
-        </div>
-        <div class="coin-meta">
-          <div class="coin-name">Bitcoin</div>
-          <div class="coin-symbol">BTC / USDT</div>
-          <div class="coin-price" data-price-id="bitcoin">—</div>
-          <div class="coin-change" data-change-id="bitcoin">—</div>
-        </div>
-      </article>
+  <h1>Markets & Live Chart</h1>
+  <div class="sub">Tap a coin to view its chart & price action.</div>
 
-      <!-- ETH -->
-      <article class="coin-card" data-coin="ethereum" data-symbol="ETH">
-        <div class="coin-icon">
-          <img src="/img/eth.png" alt="ETH">
-        </div>
-        <div class="coin-meta">
-          <div class="coin-name">Ethereum</div>
-          <div class="coin-symbol">ETH / USDT</div>
-          <div class="coin-price" data-price-id="ethereum">—</div>
-          <div class="coin-change" data-change-id="ethereum">—</div>
-        </div>
-      </article>
+  <div class="coins">
+    <div class="coin" data-coin="bitcoin" data-name="Bitcoin (BTC)">
+      <img src="/img/bitcoin.png">
+      <div class="name">Bitcoin</div>
+      <div class="pair">BTC / USDT</div>
+      <div class="price" data-price-id="bitcoin">—</div>
+      <div class="change" data-change-id="bitcoin">—</div>
+    </div>
 
-      <!-- USDT -->
-      <article class="coin-card" data-coin="tether" data-symbol="USDT">
-        <div class="coin-icon">
-          <img src="/img/usdt.png" alt="USDT">
-        </div>
-        <div class="coin-meta">
-          <div class="coin-name">Tether</div>
-          <div class="coin-symbol">USDT</div>
-          <div class="coin-price" data-price-id="tether">—</div>
-          <div class="coin-change" data-change-id="tether">—</div>
-        </div>
-      </article>
+    <div class="coin" data-coin="ethereum" data-name="Ethereum (ETH)">
+      <img src="/img/ethereum.png">
+      <div class="name">Ethereum</div>
+      <div class="pair">ETH / USDT</div>
+      <div class="price" data-price-id="ethereum">—</div>
+      <div class="change" data-change-id="ethereum">—</div>
+    </div>
 
-      <!-- ADA -->
-      <article class="coin-card" data-coin="cardano" data-symbol="ADA">
-        <div class="coin-icon">
-          <img src="/img/ada.png" alt="ADA">
-        </div>
-        <div class="coin-meta">
-          <div class="coin-name">Cardano</div>
-          <div class="coin-symbol">ADA / USDT</div>
-          <div class="coin-price" data-price-id="cardano">—</div>
-          <div class="coin-change" data-change-id="cardano">—</div>
-        </div>
-      </article>
+    <div class="coin" data-coin="tether" data-name="Tether (USDT)">
+      <img src="/img/tether.png">
+      <div class="name">Tether</div>
+      <div class="pair">USDT</div>
+      <div class="price" data-price-id="tether">—</div>
+      <div class="change" data-change-id="tether">—</div>
+    </div>
 
-      <!-- BNB -->
-      <article class="coin-card" data-coin="binancecoin" data-symbol="BNB">
-        <div class="coin-icon">
-          <img src="/img/bnb.png" alt="BNB">
-        </div>
-        <div class="coin-meta">
-          <div class="coin-name">Binance Coin</div>
-          <div class="coin-symbol">BNB / USDT</div>
-          <div class="coin-price" data-price-id="binancecoin">—</div>
-          <div class="coin-change" data-change-id="binancecoin">—</div>
-        </div>
-      </article>
+    <div class="coin" data-coin="cardano" data-name="Cardano (ADA)">
+      <img src="/img/cardano.png">
+      <div class="name">Cardano</div>
+      <div class="pair">ADA / USDT</div>
+      <div class="price" data-price-id="cardano">—</div>
+      <div class="change" data-change-id="cardano">—</div>
+    </div>
 
-      <!-- SOL -->
-      <article class="coin-card" data-coin="solana" data-symbol="SOL">
-        <div class="coin-icon">
-          <img src="/img/sol.png" alt="SOL">
-        </div>
-        <div class="coin-meta">
-          <div class="coin-name">Solana</div>
-          <div class="coin-symbol">SOL / USDT</div>
-          <div class="coin-price" data-price-id="solana">—</div>
-          <div class="coin-change" data-change-id="solana">—</div>
-        </div>
-      </article>
-    </section>
+    <div class="coin" data-coin="binancecoin" data-name="Binance Coin (BNB)">
+      <img src="/img/binancecoin.png">
+      <div class="name">Binance</div>
+      <div class="pair">BNB / USDT</div>
+      <div class="price" data-price-id="binancecoin">—</div>
+      <div class="change" data-change-id="binancecoin">—</div>
+    </div>
 
-    <!-- Chart area (single global chart) -->
-    <section class="chart-shell" aria-label="Live price chart">
-      <div class="chart-header">
-        <div class="chart-title-block">
-          <h2 class="chart-title" id="chartTitle">Bitcoin (BTC)</h2>
-          <p class="chart-sub" id="chartSubtitle">Live price, updated from CoinGecko</p>
-        </div>
-        <div class="chart-stats">
-          <span id="chartLastPrice">Current: —</span>
-          <span id="chartChange" class="">24h: —</span>
-        </div>
-      </div>
+    <div class="coin" data-coin="solana" data-name="Solana (SOL)">
+      <img src="/img/solana.png">
+      <div class="name">Solana</div>
+      <div class="pair">SOL / USDT</div>
+      <div class="price" data-price-id="solana">—</div>
+      <div class="change" data-change-id="solana">—</div>
+    </div>
+  </div>
 
-      <div class="tf-buttons">
-        <button class="tf-btn active" data-period="1h">1H</button>
-        <button class="tf-btn" data-period="6h">6H</button>
-        <button class="tf-btn" data-period="1d">1D</button>
-      </div>
+  <!-- chart box -->
+  <div id="chartBox">
+    <div id="chartTitle">—</div>
+    <canvas id="priceChart"></canvas>
 
-      <div class="chart-canvas-wrap">
-        <canvas id="priceChart"></canvas>
-        <div class="chart-loader" id="chartLoader">Loading chart...</div>
-      </div>
-    </section>
+    <div class="periods">
+      <button data-period="1">1D</button>
+      <button data-period="7">7D</button>
+      <button data-period="30" class="active">30D</button>
+    </div>
   </div>
 
   <!-- Bottom nav -->
   <nav class="bottom-nav">
-    <a class="nav-item" href="home.html">
-      <img src="/img/house.png" alt="Home" />
-      <span>Home</span>
-    </a>
-    <a class="nav-item active" href="trade.html">
-      <img src="/img/trade.png" alt="Trade" />
-      <span>Trade</span>
-    </a>
-    <a class="nav-item" href="internal-transfer.html">
-      <img src="/img/transfer.png" alt="Transfer" />
-      <span>Transfer</span>
-    </a>
-    <a class="nav-item" href="account.html">
-      <img src="/img/myaccount.png" alt="Account" />
-      <span>Account</span>
-    </a>
+    <a class="nav-item" href="home.html"><img src="/img/house.png"><div>Home</div></a>
+    <a class="nav-item active" href="trade.html"><img src="/img/trade.png"><div>Trade</div></a>
+    <a class="nav-item" href="internal-transfer.html"><img src="/img/transfer.png"><div>Transfer</div></a>
+    <a class="nav-item" href="account.html"><img src="/img/myaccount.png"><div>Account</div></a>
   </nav>
 
-  <!-- Chart.js CDN -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-  <!-- Your existing price updater (for cards) -->
   <script src="/js/market-prices.js"></script>
 
   <script>
-    // Start your existing live price system
-    document.addEventListener('DOMContentLoaded', () => {
-      try {
-        MarketPrices.start(
-          ['bitcoin','ethereum','tether','cardano','binancecoin','solana'],
-          10000
-        );
-      } catch (e) {
-        console.warn('MarketPrices not available or error', e);
-      }
-    });
-  </script>
-
-  <!-- Live chart logic (CoinGecko) -->
-  <script>
-    const COINGECKO_BASE = 'https://api.coingecko.com/api/v3';
     let chartInstance = null;
-    let currentCoin = 'bitcoin';
-    let currentSymbol = 'BTC';
-    let currentPeriod = '1h';
 
-    const chartTitleEl = document.getElementById('chartTitle');
-    const chartSubtitleEl = document.getElementById('chartSubtitle');
-    const chartLastPriceEl = document.getElementById('chartLastPrice');
-    const chartChangeEl = document.getElementById('chartChange');
-    const chartLoader = document.getElementById('chartLoader');
-    const ctx = document.getElementById('priceChart').getContext('2d');
+    async function loadChart(coin, days = 30) {
+      document.getElementById("chartBox").style.display = "block";
+      const ctx = document.getElementById("priceChart");
 
-    function showLoader(show) {
-      if (show) chartLoader.classList.add('show');
-      else chartLoader.classList.remove('show');
-    }
-
-    function setActiveCoinCard(coinId) {
-      document.querySelectorAll('.coin-card').forEach(card => {
-        card.classList.toggle('active', card.dataset.coin === coinId);
-      });
-    }
-
-    function setActivePeriodButton(period) {
-      document.querySelectorAll('.tf-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.period === period);
-      });
-    }
-
-    function periodToHours(period) {
-      if (period === '1h') return 1;
-      if (period === '6h') return 6;
-      return 24; // 1d
-    }
-
-    async function fetchHistory(coinId, period) {
-      const hours = periodToHours(period);
-      // we'll fetch 1 day and slice locally for smaller windows
-      const url = `${COINGECKO_BASE}/coins/${coinId}/market_chart?vs_currency=usd&days=1&interval=minute`;
-      const res = await fetch(url);
-      if (!res.ok) throw new Error('Failed to load chart data');
+      const res = await fetch(`/api/chart/${coin}?days=${days}`);
       const data = await res.json();
-      const now = Date.now();
-      const cutoff = now - hours * 60 * 60 * 1000;
 
-      const prices = (data.prices || []).filter(([ts]) => ts >= cutoff);
-      return prices;
-    }
+      const prices = data.prices.map(p => p[1]);
+      const labels = data.prices.map(p => new Date(p[0]).toLocaleTimeString());
 
-    async function fetchCurrent(coinId) {
-      const url = `${COINGECKO_BASE}/simple/price?ids=${coinId}&vs_currencies=usd&include_24hr_change=true`;
-      const res = await fetch(url);
-      if (!res.ok) throw new Error('Failed to load current price');
-      const json = await res.json();
-      const entry = json[coinId];
-      return {
-        price: entry?.usd ?? null,
-        change: entry?.usd_24h_change ?? null
-      };
-    }
-
-    function createOrUpdateChart(labels, values) {
-      const gradient = ctx.createLinearGradient(0, 0, 0, ctx.canvas.height);
-      gradient.addColorStop(0, 'rgba(168,85,247,0.4)');
-      gradient.addColorStop(1, 'rgba(168,85,247,0.02)');
-
-      if (chartInstance) {
-        chartInstance.data.labels = labels;
-        chartInstance.data.datasets[0].data = values;
-        chartInstance.update();
-        return;
-      }
+      if (chartInstance) chartInstance.destroy();
 
       chartInstance = new Chart(ctx, {
         type: 'line',
         data: {
           labels,
           datasets: [{
-            label: 'Price (USD)',
-            data: values,
-            borderColor: '#a855f7',
-            borderWidth: 2,
-            pointRadius: 0,
-            pointHitRadius: 8,
-            cubicInterpolationMode: 'monotone',
-            tension: 0.3,
+            label: coin,
+            data: prices,
+            borderColor: "#a855f7",
+            backgroundColor: "rgba(168,85,247,0.15)",
             fill: true,
-            backgroundColor: gradient
+            tension: 0.3,
+            borderWidth: 2,
           }]
         },
         options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          animation: {
-            duration: 600
-          },
+          plugins: { legend: { display: false } },
           scales: {
-            x: {
-              grid: { color: 'rgba(255,255,255,0.04)' },
-              ticks: {
-                color: 'rgba(230,240,255,0.7)',
-                maxTicksLimit: 6
-              }
-            },
-            y: {
-              grid: { color: 'rgba(255,255,255,0.04)' },
-              ticks: {
-                color: 'rgba(230,240,255,0.7)',
-                maxTicksLimit: 5
-              }
-            }
-          },
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              mode: 'index',
-              intersect: false,
-              backgroundColor: '#050509',
-              borderColor: 'rgba(255,255,255,0.08)',
-              borderWidth: 1,
-              titleColor: '#fff',
-              bodyColor: '#cfd9ff',
-              displayColors: false
-            }
+            x: { ticks: { color: "#777" } },
+            y: { ticks: { color: "#aaa" } },
           }
         }
       });
     }
 
-    async function loadChart(coinId, symbol, period, { silent = false } = {}) {
-      try {
-        if (!silent) showLoader(true);
-        currentCoin = coinId;
-        currentSymbol = symbol;
-        setActiveCoinCard(coinId);
-        setActivePeriodButton(period);
+    // coin selection
+    document.querySelectorAll('.coin').forEach(c => {
+      c.addEventListener("click", () => {
+        document.querySelectorAll('.coin').forEach(x => x.classList.remove("active"));
+        c.classList.add("active");
 
-        const [history, current] = await Promise.all([
-          fetchHistory(coinId, period),
-          fetchCurrent(coinId)
-        ]);
-
-        const labels = history.map(([ts]) => {
-          const d = new Date(ts);
-          return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        });
-        const values = history.map(([, p]) => p);
-
-        createOrUpdateChart(labels, values);
-
-        // Update header stats
-        chartTitleEl.textContent = `${symbol} Live Chart`;
-        chartSubtitleEl.textContent = `${symbol}/USDT • ${period.toUpperCase()} • Source: CoinGecko`;
-
-        if (current.price != null) {
-          chartLastPriceEl.textContent =
-            'Current: ' + current.price.toLocaleString(undefined, { style: 'currency', currency: 'USD', maximumFractionDigits: 6 });
-        } else {
-          chartLastPriceEl.textContent = 'Current: —';
-        }
-
-        if (typeof current.change === 'number') {
-          const ch = current.change;
-          const cls = ch >= 0 ? 'chart-change-pos' : 'chart-change-neg';
-          chartChangeEl.className = cls;
-          chartChangeEl.textContent = `24h: ${ch >= 0 ? '+' : ''}${ch.toFixed(2)}%`;
-        } else {
-          chartChangeEl.className = '';
-          chartChangeEl.textContent = '24h: —';
-        }
-      } catch (err) {
-        console.error(err);
-        chartSubtitleEl.textContent = 'Failed to load chart. Try again.';
-      } finally {
-        showLoader(false);
-      }
-    }
-
-    // Setup events
-    document.addEventListener('DOMContentLoaded', () => {
-      // Click on card -> load chart
-      document.querySelectorAll('.coin-card').forEach(card => {
-        card.addEventListener('click', () => {
-          const coin = card.dataset.coin;
-          const symbol = card.dataset.symbol || coin.toUpperCase();
-          loadChart(coin, symbol, currentPeriod);
-        });
+        document.getElementById("chartTitle").innerText = c.dataset.name;
+        loadChart(c.dataset.coin, 30);
       });
-
-      // Timeframe buttons
-      document.querySelectorAll('.tf-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const period = btn.dataset.period;
-          currentPeriod = period;
-          const symbol = currentSymbol;
-          loadChart(currentCoin, symbol, period);
-        });
-      });
-
-      // Initial load: BTC 1H
-      loadChart('bitcoin', 'BTC', '1h');
-
-      // Auto-refresh current chart every 30 seconds
-      setInterval(() => {
-        loadChart(currentCoin, currentSymbol, currentPeriod, { silent: true });
-      }, 30000);
     });
+
+    // period buttons
+    document.querySelectorAll('.periods button').forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll('.periods button').forEach(x => x.classList.remove("active"));
+        btn.classList.add("active");
+
+        const coin = document.querySelector('.coin.active')?.dataset.coin;
+        if (coin) loadChart(coin, btn.dataset.period);
+      });
+    });
+
+    // start live price updater
+    MarketPrices.start(['bitcoin','ethereum','tether','cardano','binancecoin','solana'], 10000);
   </script>
 </body>
 </html>
