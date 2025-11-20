@@ -1,218 +1,324 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>CryptoYieldPro — Home</title>
+
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+
   <style>
-    :root{
-      --bg-1:#030305; --bg-2:#07070b;
-      --accent:#a855f7; --accent2:#5eead4;
-      --glass: rgba(255,255,255,0.02);
-      --muted:#9aa3b2;
-      --card-radius:14px;
-      --maxw:1100px;
+    :root {
+      --accent: #a855f7;
+      --accent2: #5eead4;
+      --bg1: #050509;
+      --bg2: #0b0b11;
+      --card: rgba(255,255,255,0.03);
+      --glass: rgba(255,255,255,0.05);
+      --muted: #9aa3b2;
+      --success: #7ef6b8;
+      --danger: #ff6b6b;
     }
-    html,body{height:100%;margin:0;background:
-      radial-gradient(800px 500px at 10% 10%, rgba(168,85,247,0.06), transparent 8%),
-      radial-gradient(700px 500px at 90% 90%, rgba(94,234,212,0.03), transparent 8%),
-      linear-gradient(180deg,var(--bg-1),var(--bg-2));
-      color:#eaf3ff;font-family:Inter,system-ui,Arial; -webkit-font-smoothing:antialiased;}
-    .wrap{max-width:var(--maxw);margin:20px auto;padding:16px}
-    .top{display:flex;justify-content:space-between;align-items:center;gap:12px}
-    .brand{display:flex;align-items:center;gap:12px}
-    .logoCircle{width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;color:#021;font-weight:800;box-shadow:0 8px 30px rgba(168,85,247,0.12)}
-    .brand h1{font-size:1.05rem;margin:0; background:linear-gradient(90deg,var(--accent),var(--accent2)); -webkit-background-clip:text; background-clip:text; color:transparent; font-weight:800}
-    .top .cta{background:linear-gradient(90deg,var(--accent2),var(--accent));padding:8px 12px;border-radius:10px;color:#021;font-weight:800;border:none;cursor:pointer;box-shadow:0 10px 30px rgba(94,234,212,0.06)}
-    /* Banner slider */
-    .sliderWrap{margin-top:16px;position:relative;overflow:hidden;border-radius:14px;border:1px solid rgba(255,255,255,0.03);background:linear-gradient(180deg,rgba(255,255,255,0.01),transparent);padding:12px}
-    .slider{display:flex;gap:12px;transition:transform 600ms cubic-bezier(.2,.9,.3,1);will-change:transform}
-    .slide{flex:0 0 88%;max-width:88%;border-radius:12px;overflow:hidden;position:relative}
-    .slide img{width:100%;height:160px;object-fit:cover;display:block;filter:contrast(1.02) saturate(1.05)}
-    @media(min-width:720px){ .slide img{height:260px} .slide{flex:0 0 48%;max-width:48%} }
-    .sliderDots{display:flex;gap:8px;justify-content:center;margin-top:10px}
-    .dot{width:8px;height:8px;border-radius:99px;background:rgba(255,255,255,0.08);cursor:pointer}
-    .dot.active{background:linear-gradient(90deg,var(--accent),var(--accent2));box-shadow:0 6px 18px rgba(168,85,247,0.08)}
-    /* Account / balance card */
-    .grid{display:grid;grid-template-columns:1fr 320px;gap:16px;margin-top:14px}
-    @media(max-width:980px){ .grid{grid-template-columns:1fr} }
-    .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); border-radius:var(--card-radius); padding:14px; border:1px solid rgba(255,255,255,0.03); box-shadow:0 14px 50px rgba(0,0,0,0.6)}
-    .balanceLabel{color:var(--muted);font-weight:700}
-    .balanceValue{font-weight:900;font-size:1.8rem;margin-top:6px}
-    .actionsGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:14px}
-    .actionCard{display:flex;align-items:center;gap:12px;padding:12px;border-radius:12px;background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.00));border:1px solid rgba(255,255,255,0.02);cursor:pointer;transition:transform .18s}
-    .actionCard:hover{transform:translateY(-6px);box-shadow:0 16px 40px rgba(168,85,247,0.06)}
-    .actionIcon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:linear-gradient(90deg,var(--accent),var(--accent2));color:#021;font-weight:900}
-    .actionTitle{font-weight:800}
-    /* Sidebar membership box */
-    .sideBox{display:flex;flex-direction:column;gap:10px}
-    .pill{padding:8px 12px;border-radius:999px;font-weight:800;background:linear-gradient(90deg,var(--accent),var(--accent2));color:#021;display:inline-block}
-    /* Market row */
-    .marketRow{display:flex;gap:10px;align-items:center;justify-content:space-between; padding:10px;border-radius:10px;background:rgba(255,255,255,0.01);border:1px solid rgba(255,255,255,0.02);margin-bottom:8px}
-    .bottomNav{position:fixed;left:50%;transform:translateX(-50%);bottom:12px;background:rgba(5,5,7,0.6);backdrop-filter:blur(8px);padding:10px 18px;border-radius:999px;display:flex;gap:20px;border:1px solid rgba(255,255,255,0.03)}
-    .navItem{display:flex;flex-direction:column;align-items:center;color:var(--muted);text-decoration:none;font-weight:800;font-size:0.85rem}
-    .navItem.active{color:var(--accent)}
+
+    body {
+      margin: 0;
+      background: linear-gradient(180deg, var(--bg1), var(--bg2));
+      font-family: Inter, sans-serif;
+      color: #e5eeff;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    .wrap {
+      width: 94%;
+      margin: 0 auto;
+      padding-bottom: 90px;
+    }
+
+    /* ---------------- Banner Slider ---------------- */
+    .banner-container {
+      margin-top: 14px;
+      width: 100%;
+      height: 140px;
+      border-radius: 16px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .banner-slider {
+      display: flex;
+      width: 300%;
+      height: 100%;
+      animation: slide 12s infinite linear;
+    }
+
+    .banner-slider img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    @keyframes slide {
+      0% { transform: translateX(0); }
+      30% { transform: translateX(0); }
+      33% { transform: translateX(-100%); }
+      63% { transform: translateX(-100%); }
+      66% { transform: translateX(-200%); }
+      96% { transform: translateX(-200%); }
+      100% { transform: translateX(0); }
+    }
+
+    /* ---------------- Account Balance Card ---------------- */
+    .balance-card {
+      background: var(--card);
+      margin-top: 20px;
+      padding: 18px;
+      border-radius: 16px;
+      backdrop-filter: blur(6px);
+      border: 1px solid rgba(255,255,255,0.05);
+      box-shadow: 0 4px 18px rgba(0,0,0,0.4);
+    }
+
+    .balance-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .balance-value {
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: #fff;
+    }
+
+    .badge {
+      padding: 6px 12px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      color: #041;
+      font-weight: 800;
+      border-radius: 999px;
+      font-size: 0.8rem;
+    }
+
+    /* ---------------- Action Buttons ---------------- */
+    .actions {
+      margin-top: 16px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+
+    .action-btn {
+      background: var(--card);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 14px;
+      padding: 12px 6px;
+      text-align: center;
+      font-size: 0.85rem;
+      color: #fff;
+      font-weight: 600;
+      transition: 0.25s;
+    }
+
+    .action-btn img {
+      width: 32px;
+      height: 32px;
+      margin-bottom: 4px;
+    }
+
+    .action-btn:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 0 15px rgba(168,85,247,0.3);
+      border-color: rgba(168,85,247,0.4);
+    }
+
+    /* ---------------- Market List ---------------- */
+    .market-section {
+      margin-top: 22px;
+    }
+
+    .market-section h2 {
+      margin-bottom: 8px;
+      font-size: 1.1rem;
+      color: #fff;
+      font-weight: 700;
+    }
+
+    .market-row {
+      background: var(--card);
+      border: 1px solid rgba(255,255,255,0.04);
+      padding: 12px;
+      border-radius: 14px;
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      transition: 0.25s;
+    }
+
+    .market-row:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 0 15px rgba(168,85,247,0.2);
+    }
+
+    .coin-name { font-weight: 700; }
+    .price { font-weight: 700; }
+    .change.positive { color: var(--success); font-weight: 700; }
+    .change.negative { color: var(--danger); font-weight: 700; }
+
+    /* ---------------- Bottom Navigation ---------------- */
+    .bottom-nav {
+      position: fixed;
+      bottom: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 26px;
+      padding: 12px 20px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.04);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      z-index: 9999;
+    }
+
+    .nav-item {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.8rem;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .nav-item img {
+      width: 22px;
+      height: 22px;
+    }
+
+    .nav-item.active {
+      color: var(--accent);
+    }
+
   </style>
 </head>
+
 <body>
-  <div class="wrap">
-    <div class="top">
-      <div class="brand">
-        <div class="logoCircle">CY</div>
-        <div>
-          <h1>CryptoYieldPro</h1>
-          <div style="color:var(--muted);font-size:0.9rem">Premium crypto bonuses & memberships</div>
-        </div>
-      </div>
-      <button class="cta" onclick="location.href='account.html'">My Account</button>
-    </div>
+<div class="wrap">
 
-    <!-- Banner slider (uses the 3 created banners) -->
-    <div class="sliderWrap card">
-      <div id="slider" class="slider">
-        <!-- Replace these src values with your hosting URLs if needed.
-             Currently they point to the files I created on the environment. -->
-        <div class="slide"><img src="/img/banner_1.png" alt="banner1"></div>
-        <div class="slide"><img src="/img/banner_2.png" alt="banner2"></div>
-        <div class="slide"><img src="/img/banner_3.png" alt="banner3"></div>
-      </div>
-      <div class="sliderDots" id="dots"></div>
-    </div>
-
-    <!-- Main grid: balance + sidebar -->
-    <div class="grid">
-      <div class="card">
-        <div class="balanceLabel">Account Balance</div>
-        <div class="balanceValue" id="balance">$0.00</div>
-        <div style="color:var(--muted);margin-top:6px">Available reflects confirmed deposits & payouts</div>
-
-        <div class="actionsGrid">
-          <div class="actionCard" onclick="location.href='deposit.html'">
-            <div class="actionIcon">↓</div>
-            <div>
-              <div class="actionTitle">Deposit</div>
-              <div style="color:var(--muted);font-size:13px">Add funds</div>
-            </div>
-          </div>
-          <div class="actionCard" onclick="location.href='withdraw.html'">
-            <div class="actionIcon">↑</div>
-            <div>
-              <div class="actionTitle">Withdraw</div>
-              <div style="color:var(--muted);font-size:13px">Request payout</div>
-            </div>
-          </div>
-          <div class="actionCard" onclick="location.href='upgrade.html'">
-            <div class="actionIcon">★</div>
-            <div>
-              <div class="actionTitle">Membership</div>
-              <div style="color:var(--muted);font-size:13px">Upgrade packages</div>
-            </div>
-          </div>
-          <div class="actionCard" onclick="location.href='internal-transfer.html'">
-            <div class="actionIcon">⇄</div>
-            <div>
-              <div class="actionTitle">Transfer</div>
-              <div style="color:var(--muted);font-size:13px">Send to user</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="sideBox">
-        <div class="card">
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <div>
-              <div style="color:var(--muted);font-weight:700">Membership</div>
-              <div style="font-weight:900;margin-top:6px" id="memText">None</div>
-            </div>
-            <div class="pill" id="memPill">—</div>
-          </div>
-          <div style="color:var(--muted);margin-top:10px;font-size:13px">Admin approval required for membership purchases and deposits.</div>
-        </div>
-
-        <div class="card">
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <div style="font-weight:700">Platform</div>
-            <div style="color:var(--muted)">Online</div>
-          </div>
-          <div style="margin-top:10px">
-            <div class="marketRow"><div>Pending Deposits</div><div id="pendingDeposits">0</div></div>
-            <div class="marketRow"><div>Pending Withdrawals</div><div id="pendingWithdraws">0</div></div>
-          </div>
-        </div>
-      </div>
+  <!-- Banner Slider -->
+  <div class="banner-container">
+    <div class="banner-slider">
+      <img src="/img/banner_1.png" />
+      <img src="/img/banner_2.png" />
+      <img src="/img/banner_3.png" />
     </div>
   </div>
 
-  <!-- bottom nav -->
-  <nav class="bottomNav" role="navigation">
-    <a class="navItem active" href="home.html">Home</a>
-    <a class="navItem" href="trade.html">Trade</a>
-    <a class="navItem" href="internal-transfer.html">Transfer</a>
-    <a class="navItem" href="account.html">Account</a>
-  </nav>
+  <!-- Account Balance -->
+  <div class="balance-card">
+    <div class="balance-row">
+      <div>
+        <div style="color:var(--muted); font-size:0.85rem;">Account Balance</div>
+        <div class="balance-value" id="balanceValue">$0.00</div>
+      </div>
+      <div class="badge" id="membershipBadge">None</div>
+    </div>
+  </div>
 
-  <script>
-    // ---------- Slider logic ----------
-    const slider = document.getElementById('slider');
-    const slides = Array.from(document.querySelectorAll('.slide'));
-    const dotsWrap = document.getElementById('dots');
-    let index = 0, timer;
+  <!-- Actions -->
+  <div class="actions">
+    <a class="action-btn" href="deposit.html">
+      <img src="/img/deposit.png" />
+      Deposit
+    </a>
+    <a class="action-btn" href="withdraw.html">
+      <img src="/img/withdraw.png" />
+      Withdraw
+    </a>
+    <a class="action-btn" href="upgrade.html">
+      <img src="/img/vip-card.png" />
+      Upgrade
+    </a>
+    <a class="action-btn" href="internal-transfer.html">
+      <img src="/img/money.png" />
+      Transfer
+    </a>
+  </div>
 
-    function buildDots(){
-      dotsWrap.innerHTML = '';
-      slides.forEach((s,i)=>{
-        const d = document.createElement('div');
-        d.className = 'dot' + (i===0? ' active':'');
-        d.addEventListener('click', ()=> goTo(i));
-        dotsWrap.appendChild(d);
-      });
-    }
-    function updateSlider(){
-      const cardW = slides[0].clientWidth + 12; // gap
-      slider.style.transform = `translateX(${- index * cardW}px)`;
-      document.querySelectorAll('.dot').forEach((d,i)=> d.classList.toggle('active', i===index));
-    }
-    function next(){
-      index = (index + 1) % slides.length;
-      updateSlider();
-    }
-    function goTo(i){
-      index = i;
-      updateSlider();
-      restartTimer();
-    }
-    function restartTimer(){
-      clearInterval(timer);
-      timer = setInterval(next, 4200);
-    }
-    window.addEventListener('load', ()=> {
-      buildDots();
-      updateSlider();
-      restartTimer();
-      window.addEventListener('resize', updateSlider);
+  <!-- Market Section -->
+  <div class="market-section">
+    <h2>Live Crypto Market</h2>
+
+    <div class="market-row" data-coin="bitcoin">
+      <span class="coin-name">BTC/USDT</span>
+      <span class="price" data-price-id="bitcoin">—</span>
+      <span class="change" data-change-id="bitcoin"></span>
+    </div>
+
+    <div class="market-row" data-coin="ethereum">
+      <span class="coin-name">ETH/USDT</span>
+      <span class="price" data-price-id="ethereum">—</span>
+      <span class="change" data-change-id="ethereum"></span>
+    </div>
+
+    <div class="market-row" data-coin="binancecoin">
+      <span class="coin-name">BNB/USDT</span>
+      <span class="price" data-price-id="binancecoin">—</span>
+      <span class="change" data-change-id="binancecoin"></span>
+    </div>
+
+    <div class="market-row" data-coin="solana">
+      <span class="coin-name">SOL/USDT</span>
+      <span class="price" data-price-id="solana">—</span>
+      <span class="change" data-change-id="solana"></span>
+    </div>
+
+    <div class="market-row" data-coin="dogecoin">
+      <span class="coin-name">DOGE/USDT</span>
+      <span class="price" data-price-id="dogecoin">—</span>
+      <span class="change" data-change-id="dogecoin"></span>
+    </div>
+
+    <div class="market-row" data-coin="tron">
+      <span class="coin-name">TRX/USDT</span>
+      <span class="price" data-price-id="tron">—</span>
+      <span class="change" data-change-id="tron"></span>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- Bottom Navigation -->
+<nav class="bottom-nav">
+  <a class="nav-item active" href="home.html"><img src="/img/house.png"><br>Home</a>
+  <a class="nav-item" href="trade.html"><img src="/img/trade.png"><br>Trade</a>
+  <a class="nav-item" href="internal-transfer.html"><img src="/img/transfer.png"><br>Transfer</a>
+  <a class="nav-item" href="account.html"><img src="/img/myaccount.png"><br>Account</a>
+</nav>
+
+<script src="/js/market-prices.js"></script>
+
+<script>
+  // Auto-update market prices (your existing script)
+  document.addEventListener("DOMContentLoaded", () => {
+    MarketPrices.start(
+      ["bitcoin", "ethereum", "binancecoin", "solana", "dogecoin", "tron"],
+      10000
+    );
+  });
+
+  // Load balance from backend
+  fetch("/api/profile", { credentials: "include" })
+    .then(res => res.json())
+    .then(data => {
+      if (data.user) {
+        document.getElementById("balanceValue").innerText =
+          "$" + Number(data.user.balance || 0).toFixed(2);
+        document.getElementById("membershipBadge").innerText =
+          data.user.membership?.tier || "None";
+      }
     });
+</script>
 
-    // ---------- Basic profile fetch to update balance (uses your /api/profile) ----------
-    async function refreshProfile(){
-      try {
-        const res = await fetch('/api/profile', { credentials: 'include' });
-        if (!res.ok) return;
-        const j = await res.json();
-        if (j && j.user){
-          const u = j.user;
-          document.getElementById('balance').innerText = (Number(u.balance||0)).toLocaleString(undefined,{style:'currency',currency:'USD',maximumFractionDigits:2});
-          document.getElementById('memText').innerText = u.membership?.tier || (u.currentMembership?.tier) || 'None';
-          document.getElementById('memPill').innerText = u.membership?.status || u.currentMembership?.status || '—';
-          document.getElementById('pendingDeposits').innerText = u.pendingDeposits || 0;
-          document.getElementById('pendingWithdraws').innerText = u.pendingWithdrawals || 0;
-        }
-      } catch(e){ /* ignore */ }
-    }
-    // poll profile every 6s while on page
-    refreshProfile();
-    setInterval(refreshProfile, 6000);
-  </script>
 </body>
 </html>
