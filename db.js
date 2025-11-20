@@ -10,27 +10,38 @@ export async function connectDB() {
   }
 }
 
-// User schema
+// User schema - multi-coin balances
+const balancesSchema = new mongoose.Schema({
+  BTC: { type: Number, default: 0 },
+  ETH: { type: Number, default: 0 },
+  USDT: { type: Number, default: 0 },
+  BNB: { type: Number, default: 0 },
+  ADA: { type: Number, default: 0 },
+  USD: { type: Number, default: 0 } // for membership payouts / platform USD accounting
+}, { _id: false });
+
 const userSchema = new mongoose.Schema({
   email: { type: String, unique: true, sparse: true },
   username: { type: String, unique: true, required: true },
   password: { type: String, required: true },
   vip: { type: Boolean, default: false },
-  balance: { type: Number, default: 0 },
+  balances: { type: balancesSchema, default: () => ({}) },
   membership: { type: String, default: "NONE" },
   membershipActivatedAt: { type: Date, default: null }
 }, { timestamps: true });
+
 export const User = mongoose.models.User || mongoose.model("User", userSchema);
 
-// Transaction schema
+// Transaction schema (unchanged except coin stays string)
 const transactionSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-  type: { type: String, enum: ["DEPOSIT","WITHDRAW","PAYOUT"], required: true },
+  type: { type: String, enum: ["DEPOSIT","WITHDRAW","PAYOUT","MEMBERSHIP_PAYOUT"], required: true },
   coin: { type: String, required: true },
   amount: { type: Number, required: true },
   status: { type: String, default: "PENDING" },
   meta: { type: Object, default: {} }
 }, { timestamps: true });
+
 export const Transaction = mongoose.models.Transaction || mongoose.model("Transaction", transactionSchema);
 
 // Deposit (optional)
@@ -44,6 +55,7 @@ const depositSchema = new mongoose.Schema({
   status: { type: String, default: "PENDING" },
   confirmations: { type: Number, default: 0 }
 }, { timestamps: true });
+
 export const Deposit = mongoose.models.Deposit || mongoose.model("Deposit", depositSchema);
 
 // Membership schema
@@ -56,6 +68,8 @@ const membershipSchema = new mongoose.Schema({
   daysPaid: { type: Number, default: 0 },
   dailyAmount: { type: Number, required: true },
   bonusAtMonthEnd: { type: Number, default: 0 },
-  lastPayout: { type: Date, default: null }
+  lastPayout: { type: Date, default: null },
+  bonusPaid: { type: Boolean, default: false }
 }, { timestamps: true });
+
 export const Membership = mongoose.models.Membership || mongoose.model("Membership", membershipSchema);

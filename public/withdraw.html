@@ -136,26 +136,9 @@
       margin-top: 16px;
       line-height: 1.4;
     }
-
-    @media(max-width:480px){
-      h2 { font-size:1.5rem; }
-      input, select, .primary-btn, .balance-box { padding: 12px; }
-    }
-
-    .page-transition-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: #0b0b0b;
-      z-index: 9999;
-      opacity: 1;
-      pointer-events: none;
-      transition: opacity 0.4s ease;
-    }
   </style>
 </head>
+
 <body>
   <div class="wrap">
     <div class="card">
@@ -180,7 +163,7 @@
 
         <div class="input-group">
           <label for="wallet">Wallet Address</label>
-          <input id="wallet" type="text" placeholder="Enter wallet address" autocomplete="off" spellcheck="false" />
+          <input id="wallet" type="text" placeholder="Enter wallet address" autocomplete="off" />
         </div>
 
         <div class="input-group">
@@ -195,140 +178,45 @@
       </form>
 
       <p class="note">
-        Withdrawals are processed within 24 hours. Ensure your wallet address is correct — incorrect addresses may cause permanent loss of funds.
+        Withdrawals are processed within 24 hours. Please ensure your wallet
+        address is correct.
       </p>
     </div>
   </div>
 
   <script>
-    (function(){
-      const form = document.getElementById('withdrawForm');
-      const walletEl = document.getElementById('wallet');
-      const amountEl = document.getElementById('amount');
-      const balanceEl = document.getElementById('balance');
-      const currencyEl = document.getElementById('currency');
-      const submitBtn = document.getElementById('submitBtn');
-      const errorEl = document.getElementById('error');
-      const successEl = document.getElementById('success');
+    (function() {
+      const balanceEl = document.getElementById("balance");
+      const currencyEl = document.getElementById("currency");
 
-      let userBalance = {};
+      async function loadBalance() {
+        const coin = currencyEl.value;
 
-      function showError(msg){
-        errorEl.textContent = msg;
-        errorEl.style.display = 'block';
-        successEl.style.display = 'none';
-      }
-
-      function showSuccess(msg){
-        successEl.textContent = msg;
-        successEl.style.display = 'block';
-        errorEl.style.display = 'none';
-      }
-
-      async function loadUserBalance(){
         try {
-          const res = await fetch('/api/profile', { 
-            credentials: 'include' // ✅ required for session cookie
+          const res = await fetch(`/api/balance?coin=${coin}`, {
+            credentials: "include"
           });
 
           if (res.status === 401) {
-            balanceEl.textContent = 'Please login';
-            setTimeout(() => window.location.href = '/login.html', 1200);
+            balanceEl.textContent = "Please login";
+            setTimeout(() => (window.location.href = "/login.html"), 1000);
             return;
           }
 
-          if (!res.ok) throw new Error('Failed to load balance');
-
           const data = await res.json();
-          userBalance = data.balance || {};
-          updateBalanceDisplay();
+          if (!res.ok) throw new Error(data.error || "Error loading balance");
+
+          balanceEl.textContent = `${Number(data.balance).toFixed(4)} ${coin}`;
         } catch (err) {
-          console.error('Error loading balance:', err);
-          balanceEl.textContent = 'Error loading balance';
-        }
-      }
-
-      function updateBalanceDisplay(){
-        const coin = currencyEl.value;
-        const amount = userBalance[coin] || 0;
-        balanceEl.textContent = `${amount.toFixed(4)} ${coin}`;
-      }
-
-      currencyEl.addEventListener('change', updateBalanceDisplay);
-
-      form.addEventListener('submit', async (e)=>{
-        e.preventDefault();
-        errorEl.style.display = 'none';
-        successEl.style.display = 'none';
-
-        const wallet = walletEl.value.trim();
-        const amount = parseFloat(amountEl.value.trim());
-        const coin = currencyEl.value;
-
-        if (!wallet) return showError('Enter wallet address');
-        if (!amount || amount <= 0) return showError('Enter a valid amount');
-
-        const availableBalance = userBalance[coin] || 0;
-        if (amount > availableBalance) {
-          return showError(`Insufficient balance. Available: ${availableBalance.toFixed(4)} ${coin}`);
-        }
-
-        submitBtn.disabled = true;
-        const prevText = submitBtn.textContent;
-        submitBtn.textContent = 'Processing...';
-
-        try {
-          const res = await fetch('/api/withdraw', {
-            method: 'POST',
-            credentials: 'include',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ wallet, amount, coin })
-          });
-
-          const data = await res.json();
-
-          if (!res.ok || !data.ok) {
-            return showError(data.error || 'Withdrawal failed');
-          }
-
-          showSuccess('Withdrawal request submitted! Transaction ID: ' + data.txId);
-          walletEl.value = '';
-          amountEl.value = '';
-          loadUserBalance();
-
-          setTimeout(() => window.location.href = '/account.html', 2500);
-        } catch (err) {
+          balanceEl.textContent = "Error";
           console.error(err);
-          showError('Network error. Try again.');
-        } finally {
-          submitBtn.disabled = false;
-          submitBtn.textContent = prevText;
         }
-      });
-
-      window.addEventListener('load', loadUserBalance);
-    })();
-  </script>
-
-  <script>
-    // Page transition effect
-    const createTransitionOverlay = () => {
-      let overlay = document.querySelector('.page-transition-overlay');
-      if (!overlay) {
-        overlay = document.createElement('div');
-        overlay.className = 'page-transition-overlay';
-        document.body.appendChild(overlay);
       }
-      return overlay;
-    };
 
-    const overlay = createTransitionOverlay();
-    window.addEventListener('DOMContentLoaded', () => {
-      requestAnimationFrame(() => {
-        overlay.style.opacity = '0';
-        setTimeout(() => overlay.remove(), 500);
-      });
-    });
+      currencyEl.addEventListener("change", loadBalance);
+
+      window.addEventListener("DOMContentLoaded", loadBalance);
+    })();
   </script>
 </body>
 </html>

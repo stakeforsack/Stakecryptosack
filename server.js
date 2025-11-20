@@ -1,5 +1,4 @@
-// server.js (FINAL with Membership support)
-
+// server.js (UPDATED to support per-coin balances: BTC, ETH, USDT, BNB, ADA)
 import express from "express";
 import session from "express-session";
 import bcrypt from "bcryptjs";
@@ -29,10 +28,10 @@ const isProd = process.env.NODE_ENV === "production";
 // membership tiers config (keep synced with frontend)
 const TIERS = {
   V1: { price: 51, daily: 10, duration: 5, bonus: 50 },
-  V2: { price: 101, daily: 20, duration: 7, bonus: 100 },
-  V3: { price: 201, daily: 30, duration: 10, bonus: 150 },
-  V4: { price: 401, daily: 50, duration: 15, bonus: 250 },
-  V5: { price: 1001, daily: 100, duration: 30, bonus: 500 },
+  V2: { price: 1498.5, daily: 100, duration: 7, bonus: 3000 },
+  V3: { price: 3001, daily: 10000, duration: 10, bonus: 90000 },
+  V4: { price: 29998.5, daily: 50000, duration: 15, bonus: 300000 },
+  V5: { price: 50001, daily: 75000, duration: 30, bonus: 500000 },
 };
 
 app.use(
@@ -101,7 +100,12 @@ app.post("/api/register", async (req, res) => {
     if (exists) return res.status(400).json({ error: "User exists" });
 
     const hash = await bcrypt.hash(password, 10);
-    const user = await User.create({ email, username, password: hash, balance: 0 });
+    const user = await User.create({
+      email,
+      username,
+      password: hash,
+      balances: { BTC:0, ETH:0, USDT:0, BNB:0, ADA:0, USD:0 }
+    });
 
     req.session.userId = user._id.toString();
     req.session.username = user.username;
@@ -154,7 +158,7 @@ app.get("/api/profile", needAuth, async (req, res) => {
         id: user._id,
         username: user.username,
         email: user.email,
-        balance: user.balance || 0,
+        balances: user.balances || { BTC:0, ETH:0, USDT:0, BNB:0, ADA:0, USD:0 },
         membership: membership || null,
         createdAt: user.createdAt,
       },
@@ -165,7 +169,6 @@ app.get("/api/profile", needAuth, async (req, res) => {
     res.status(500).json({ error: err.message || "Server error" });
   }
 });
-
 
 // ===============================
 // CHART DATA API (CoinGecko Proxy)
@@ -200,7 +203,6 @@ app.get("/api/chart/:coin", async (req, res) => {
   }
 });
 
-
 // LOGOUT ============================
 app.post("/api/logout", (req, res) => {
   req.session.destroy(() => {
@@ -220,6 +222,10 @@ app.post("/api/deposit", needAuth, async (req, res) => {
     const { coin, amount, membershipTier } = req.body;
 
     if (!coin || !amount || amount <= 0) return res.status(400).json({ error: "Invalid deposit" });
+
+    // validate allowed coins
+    const ALLOWED = ["BTC","ETH","USDT","BNB","ADA"];
+    if (!ALLOWED.includes(coin)) return res.status(400).json({ error: "Unsupported coin" });
 
     const meta = {};
     if (membershipTier) {
@@ -263,8 +269,16 @@ app.post("/api/withdraw", needAuth, async (req, res) => {
     const { coin, amount } = req.body;
     if (!coin || !amount || amount <= 0) return res.status(400).json({ error: "Invalid withdrawal" });
 
+    const ALLOWED = ["BTC","ETH","USDT","BNB","ADA"];
+    if (!ALLOWED.includes(coin)) return res.status(400).json({ error: "Unsupported coin" });
+
     const user = await User.findById(req.session.userId);
-    const currentBalance = user.balance || 0;
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    // ensure balances object exists
+    user.balances = user.balances || { BTC:0, ETH:0, USDT:0, BNB:0, ADA:0, USD:0 };
+
+    const currentBalance = Number(user.balances[coin] || 0);
     if (amount > currentBalance) return res.status(400).json({ error: "Insufficient balance" });
 
     const tx = await Transaction.create({ userId: user._id, type: "WITHDRAW", coin, amount, status: "PENDING" });
@@ -332,15 +346,22 @@ app.post("/api/admin/approve-deposit", requireAdmin, async (req, res) => {
     tx.status = "CONFIRMED";
     await tx.save();
 
+    // ensure user exists
+    const user = await User.findById(tx.userId);
+    if (!user) return res.status(404).json({ error: "User not found for tx" });
+
+    // Ensure balances object
+    user.balances = user.balances || { BTC:0, ETH:0, USDT:0, BNB:0, ADA:0, USD:0 };
+
     // Membership purchase?
     if (tx.meta && tx.meta.isMembership && tx.meta.membershipTier) {
       const tier = tx.meta.membershipTier;
       const tcfg = TIERS[tier];
       if (!tcfg) {
         console.warn("Unknown membership tier on tx:", tier);
-        // fallback: credit as normal deposit
-        const userFallback = await User.findById(tx.userId);
-        if (userFallback) { userFallback.balance = (userFallback.balance || 0) + tx.amount; await userFallback.save(); }
+        // fallback: credit as normal deposit to the coin balance
+        user.balances[tx.coin] = (user.balances[tx.coin] || 0) + tx.amount;
+        await user.save();
         return res.json({ ok: true, message: "Confirmed (unknown tier, credited as deposit)" });
       }
 
@@ -357,16 +378,17 @@ app.post("/api/admin/approve-deposit", requireAdmin, async (req, res) => {
         bonusPaid: false,
       });
 
-      // Optionally mark user as vip
-      const user = await User.findById(tx.userId);
-      if (user) { user.membership = tier; user.membershipActivatedAt = new Date(); await user.save(); }
+      // Optionally mark user as vip and save
+      user.membership = tier;
+      user.membershipActivatedAt = new Date();
+      await user.save();
 
       return res.json({ ok: true, membershipActivated: true });
     }
 
-    // Normal deposit -> credit user balance
-    const user = await User.findById(tx.userId);
-    if (user) { user.balance = (user.balance || 0) + tx.amount; await user.save(); }
+    // Normal deposit -> credit user coin balance
+    user.balances[tx.coin] = (user.balances[tx.coin] || 0) + tx.amount;
+    await user.save();
 
     return res.json({ ok: true });
   } catch (err) {
@@ -386,13 +408,26 @@ app.post("/api/admin/approve-withdraw", requireAdmin, async (req, res) => {
     if (tx.type !== "WITHDRAW") return res.status(400).json({ error: "Not a withdraw" });
     if (tx.status === "CONFIRMED") return res.json({ ok: true, message: "Already confirmed" });
 
+    // ensure user
+    const user = await User.findById(tx.userId);
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    user.balances = user.balances || { BTC:0, ETH:0, USDT:0, BNB:0, ADA:0, USD:0 };
+    const current = Number(user.balances[tx.coin] || 0);
+    if (tx.amount > current) {
+      // Mark as declined or error (but we'll still mark as DECLINED to avoid negative)
+      tx.status = "DECLINED";
+      await tx.save();
+      return res.status(400).json({ error: "Insufficient user balance to approve withdraw" });
+    }
+
     tx.status = "CONFIRMED";
     tx.meta = { ...(tx.meta || {}), tx_hash };
     await tx.save();
 
-    // deduct user balance
-    const user = await User.findById(tx.userId);
-    if (user) { user.balance = (user.balance || 0) - tx.amount; if (user.balance < 0) user.balance = 0; await user.save(); }
+    // deduct user coin balance
+    user.balances[tx.coin] = current - tx.amount;
+    await user.save();
 
     return res.json({ ok: true });
   } catch (err) {
@@ -448,9 +483,16 @@ app.post("/api/cron/payouts", requireAdmin, async (req, res) => {
         if (!m.bonusPaid) {
           const bonusAmt = m.bonusAtMonthEnd || 0;
           if (bonusAmt > 0) {
-            const txBonus = await Transaction.create({ userId: m.userId, type: "PAYOUT", coin: "USD", amount: bonusAmt, status: "CONFIRMED", meta: { reason: "membership_bonus", membershipId: m._id } });
+            const txBonus = await Transaction.create({
+              userId: m.userId,
+              type: "PAYOUT",
+              coin: "USD",
+              amount: bonusAmt,
+              status: "CONFIRMED",
+              meta: { reason: "membership_bonus", membershipId: m._id }
+            });
             const u = await User.findById(m.userId);
-            if (u) { u.balance = (u.balance || 0) + bonusAmt; await u.save(); }
+            if (u) { u.balances = u.balances || { BTC:0, ETH:0, USDT:0, BNB:0, ADA:0, USD:0 }; u.balances.USD = (u.balances.USD || 0) + bonusAmt; await u.save(); }
             m.bonusPaid = true;
             await m.save();
             results.push({ membership: m._id.toString(), bonusTx: txBonus._id.toString() });
@@ -461,13 +503,20 @@ app.post("/api/cron/payouts", requireAdmin, async (req, res) => {
         continue;
       }
 
-      // pay daily amount
+      // pay daily amount (to USD)
       const daily = m.dailyAmount || 0;
       if (daily <= 0) { results.push({ membership: m._id.toString(), skipped: "no daily amount configured" }); continue; }
 
-      const txDaily = await Transaction.create({ userId: m.userId, type: "MEMBERSHIP_PAYOUT", coin: "USD", amount: daily, status: "CONFIRMED", meta: { membershipId: m._id } });
+      const txDaily = await Transaction.create({
+        userId: m.userId,
+        type: "MEMBERSHIP_PAYOUT",
+        coin: "USD",
+        amount: daily,
+        status: "CONFIRMED",
+        meta: { membershipId: m._id }
+      });
       const user = await User.findById(m.userId);
-      if (user) { user.balance = (user.balance || 0) + daily; await user.save(); }
+      if (user) { user.balances = user.balances || { BTC:0, ETH:0, USDT:0, BNB:0, ADA:0, USD:0 }; user.balances.USD = (user.balances.USD || 0) + daily; await user.save(); }
 
       m.daysPaid = (m.daysPaid || 0) + 1;
       m.lastPayout = new Date();
