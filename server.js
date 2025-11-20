@@ -166,6 +166,41 @@ app.get("/api/profile", needAuth, async (req, res) => {
   }
 });
 
+
+// ===============================
+// CHART DATA API (CoinGecko Proxy)
+// ===============================
+app.get("/api/chart/:coin", async (req, res) => {
+  try {
+    const { coin } = req.params;
+    const days = req.query.days || 30;
+
+    const url = `https://api.coingecko.com/api/v3/coins/${coin}/market_chart?vs_currency=usd&days=${days}`;
+
+    const response = await fetch(url, {
+      headers: { "User-Agent": "Mozilla/5.0" }
+    });
+
+    if (!response.ok) {
+      return res.status(400).json({ error: "Failed to fetch chart data" });
+    }
+
+    const data = await response.json();
+
+    // only return necessary data (reduces size)
+    res.json({
+      prices: data.prices || [],
+      market_caps: data.market_caps || [],
+      total_volumes: data.total_volumes || []
+    });
+
+  } catch (err) {
+    console.error("Chart API error:", err);
+    res.status(500).json({ error: "Chart server error" });
+  }
+});
+
+
 // LOGOUT ============================
 app.post("/api/logout", (req, res) => {
   req.session.destroy(() => {
