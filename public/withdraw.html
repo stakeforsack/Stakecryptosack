@@ -3,220 +3,243 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Withdraw | GodStake</title>
+  <title>Withdraw | CryptoYieldPro</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+
   <style>
     :root {
-      --bg: #0b0b0b;
-      --card: #0f0f0f;
-      --muted: #9aa0a6;
       --accent: #a855f7;
+      --accent2: #5eead4;
+      --bg1: #050509;
+      --bg2: #0b0b11;
+      --card: rgba(255,255,255,0.04);
+      --glass: rgba(255,255,255,0.06);
+      --muted: #9aa3b2;
       --error: #ff6b6b;
-      --success: #56d364;
+      --success: #7ef6b8;
     }
 
     body {
-      font-family: "Poppins", sans-serif;
-      background: var(--bg);
-      color: #fff;
       margin: 0;
+      background: linear-gradient(180deg,var(--bg1),var(--bg2));
+      font-family: Inter, sans-serif;
+      color: #fff;
+      -webkit-font-smoothing: antialiased;
       min-height: 100vh;
+      padding-bottom: 80px;
+    }
+
+    .back-btn {
+      position: fixed;
+      top: 18px;
+      left: 18px;
+      background: rgba(255,255,255,0.08);
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.1);
+      font-weight: 600;
+      color: #fff;
+      cursor: pointer;
+      backdrop-filter: blur(6px);
+      z-index: 30;
     }
 
     .wrap {
-      max-width: 720px;
-      margin: 48px auto;
-      padding: 20px;
+      width: 92%;
+      margin: 80px auto 0;
     }
 
     .card {
-      background: var(--card);
-      padding: 28px 24px;
-      border-radius: 12px;
-      border: 1px solid #222;
-      box-shadow: 0 3px 12px rgba(0,0,0,0.4);
-      animation: fadeIn 0.5s ease forwards;
+      background: var(--glass);
+      padding: 24px;
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,0.06);
+      backdrop-filter: blur(12px);
+      box-shadow: 0 4px 18px rgba(0,0,0,0.5);
+      animation: slideUp .5s ease;
     }
 
-    @keyframes fadeIn {
-      0% { opacity: 0; transform: translateY(-10px); }
-      100% { opacity: 1; transform: translateY(0); }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
     }
 
     h2 {
-      margin-bottom: 24px;
-      font-weight: 600;
-      font-size: 1.8rem;
-    }
-
-    .input-group {
-      margin-bottom: 18px;
+      font-size: 1.7rem;
+      font-weight: 800;
+      text-align: center;
+      background: linear-gradient(90deg,var(--accent),var(--accent2));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      margin-bottom: 22px;
     }
 
     label {
       display: block;
-      color: var(--muted);
       margin-bottom: 6px;
-      font-size: 0.9rem;
-      font-weight: 500;
+      font-size: .9rem;
+      color: var(--muted);
+      font-weight: 600;
     }
 
     input, select {
       width: 100%;
       padding: 14px;
-      border-radius: 10px;
-      border: 1px solid #262626;
-      background: #111;
+      border-radius: 12px;
+      background: #0d0d12;
+      border: 1px solid rgba(255,255,255,0.08);
       color: #fff;
       font-size: 1rem;
-      transition: 0.2s all;
+      outline: none;
     }
 
     input:focus, select:focus {
-      outline: none;
       border-color: var(--accent);
-      box-shadow: 0 0 0 1px var(--accent);
     }
 
     .balance-box {
-      background: #111;
-      padding: 14px;
-      border-radius: 10px;
-      margin-bottom: 22px;
-      font-weight: 600;
+      background: #0e0e13;
+      padding: 16px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.06);
+      margin-bottom: 18px;
       display: flex;
       justify-content: space-between;
-      align-items: center;
-      border: 1px solid #222;
+      font-weight: 700;
+      color: var(--accent2);
     }
 
     .primary-btn {
+      margin-top: 16px;
       width: 100%;
-      padding: 14px;
+      padding: 15px;
+      border-radius: 12px;
+      background: linear-gradient(90deg,var(--accent),var(--accent2));
+      color: #031;
       border: none;
-      border-radius: 10px;
-      background: linear-gradient(90deg, var(--accent), #5eead4);
-      color: #fff;
-      font-size: 1rem;
-      font-weight: 600;
+      font-weight: 800;
       cursor: pointer;
-      transition: 0.2s all;
+      transition: 0.25s;
+      font-size: 1rem;
     }
 
-    .primary-btn:hover:not(:disabled) {
-      filter: brightness(1.1);
-      transform: translateY(-2px);
-    }
-
-    .primary-btn:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
+    .primary-btn:hover { transform: scale(1.03); }
 
     .error, .success {
-      margin-top: 10px;
-      padding: 8px 12px;
-      border-radius: 8px;
+      margin-top: 12px;
+      padding: 12px;
+      border-radius: 12px;
+      font-weight: 600;
       display: none;
-      font-weight: 500;
     }
+    .error { background: rgba(255,107,107,0.12); color: var(--error); }
+    .success { background: rgba(126,246,184,0.12); color: var(--success); }
 
-    .error {
-      color: var(--error);
-      background: rgba(255,107,107,0.1);
+    /* bottom navbar */
+    .bottom-nav {
+      position: fixed;
+      bottom: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 26px;
+      padding: 12px 20px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.04);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      z-index: 999;
     }
-
-    .success {
-      color: var(--success);
-      background: rgba(86,211,100,0.1);
-    }
-
-    .note {
+    .nav-item {
+      text-align: center;
       color: var(--muted);
-      font-size: 0.88rem;
-      margin-top: 16px;
-      line-height: 1.4;
+      font-size: 0.8rem;
+      text-decoration: none;
+      font-weight: 600;
     }
+    .nav-item img {
+      width: 22px;
+      height: 22px;
+    }
+    .nav-item.active { color: var(--accent); }
+
   </style>
 </head>
 
 <body>
-  <div class="wrap">
-    <div class="card">
-      <h2>Withdraw Funds</h2>
 
-      <div class="balance-box">
-        <span>Available Balance</span>
-        <span id="balance">Loading...</span>
-      </div>
+<div class="back-btn" onclick="location.href='home.html'">← Back</div>
 
-      <form id="withdrawForm">
-        <div class="input-group">
-          <label for="currency">Select Currency</label>
-          <select id="currency">
-            <option value="USDT" selected>USDT</option>
-            <option value="BTC">BTC</option>
-            <option value="ETH">ETH</option>
-            <option value="BNB">BNB</option>
-            <option value="ADA">ADA</option>
-          </select>
-        </div>
+<div class="wrap">
+  <div class="card">
 
-        <div class="input-group">
-          <label for="wallet">Wallet Address</label>
-          <input id="wallet" type="text" placeholder="Enter wallet address" autocomplete="off" />
-        </div>
+    <h2>Withdraw Funds</h2>
 
-        <div class="input-group">
-          <label for="amount">Amount to Withdraw</label>
-          <input id="amount" type="number" min="0" step="any" placeholder="0.00" />
-        </div>
-
-        <button type="submit" id="submitBtn" class="primary-btn">Withdraw</button>
-
-        <div id="error" class="error"></div>
-        <div id="success" class="success"></div>
-      </form>
-
-      <p class="note">
-        Withdrawals are processed within 24 hours. Please ensure your wallet
-        address is correct.
-      </p>
+    <div class="balance-box">
+      <span>Available</span>
+      <span id="balance">Loading...</span>
     </div>
+
+    <form id="withdrawForm">
+
+      <label>Select Currency</label>
+      <select id="currency">
+        <option value="USDT">USDT</option>
+        <option value="BTC">BTC</option>
+        <option value="ETH">ETH</option>
+        <option value="BNB">BNB</option>
+        <option value="ADA">ADA</option>
+      </select>
+
+      <label style="margin-top:18px;">Wallet Address</label>
+      <input id="wallet" placeholder="Enter your wallet address">
+
+      <label style="margin-top:18px;">Amount</label>
+      <input id="amount" type="number" min="0" step="any" placeholder="0.00">
+
+      <button class="primary-btn" id="submitBtn">Withdraw</button>
+
+      <div id="error" class="error"></div>
+      <div id="success" class="success"></div>
+
+    </form>
+
   </div>
+</div>
 
-  <script>
-    (function() {
-      const balanceEl = document.getElementById("balance");
-      const currencyEl = document.getElementById("currency");
+<!-- Bottom navigation -->
+<nav class="bottom-nav">
+  <a class="nav-item" href="home.html"><img src="/img/house.png"><br>Home</a>
+  <a class="nav-item" href="trade.html"><img src="/img/trade.png"><br>Trade</a>
+  <a class="nav-item active" href="withdraw.html"><img src="/img/withdraw.png"><br>Withdraw</a>
+  <a class="nav-item" href="account.html"><img src="/img/myaccount.png"><br>Account</a>
+</nav>
 
-      async function loadBalance() {
-        const coin = currencyEl.value;
+<script>
+  async function loadBalance() {
+    const coin = document.getElementById("currency").value;
 
-        try {
-          const res = await fetch(`/api/balance?coin=${coin}`, {
-            credentials: "include"
-          });
+    try {
+      const res = await fetch(`/api/balance?coin=${coin}`, { credentials: "include" });
+      const data = await res.json();
 
-          if (res.status === 401) {
-            balanceEl.textContent = "Please login";
-            setTimeout(() => (window.location.href = "/login.html"), 1000);
-            return;
-          }
+      if (!res.ok) throw new Error(data.error);
 
-          const data = await res.json();
-          if (!res.ok) throw new Error(data.error || "Error loading balance");
+      document.getElementById("balance").textContent =
+        Number(data.balance).toFixed(4) + " " + coin;
 
-          balanceEl.textContent = `${Number(data.balance).toFixed(4)} ${coin}`;
-        } catch (err) {
-          balanceEl.textContent = "Error";
-          console.error(err);
-        }
-      }
+    } catch (err) {
+      document.getElementById("balance").textContent = "Error";
+      console.log(err);
+    }
+  }
 
-      currencyEl.addEventListener("change", loadBalance);
+  // load on start + when coin changes
+  document.getElementById("currency").addEventListener("change", loadBalance);
+  window.addEventListener("DOMContentLoaded", loadBalance);
+</script>
 
-      window.addEventListener("DOMContentLoaded", loadBalance);
-    })();
-  </script>
 </body>
 </html>
