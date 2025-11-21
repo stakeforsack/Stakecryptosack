@@ -311,7 +311,7 @@
       }
 
       // Show correct balance
-      const balance = Number(data.user.balance || 0).toFixed(2);
+      const balance = Number(data.user.balances || 0).toFixed(2);
       document.getElementById("balanceValue").innerText = "$" + balance;
 
       // Show membership tier correctly
