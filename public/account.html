@@ -171,6 +171,19 @@ async function logout(){
   window.location.href="login.html";
 }
 
+async function getPrices() {
+  const coins = ["bitcoin","ethereum","binancecoin","cardano"];
+  const url = `https://api.coingecko.com/api/v3/simple/price?ids=${coins.join(",")}&vs_currencies=usd`;
+
+  try {
+    const res = await fetch(url);
+    return await res.json();
+  } catch(err){
+    console.error("Price API error:", err);
+    return {};
+  }
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
   try {
     const res = await fetch("/api/profile",{credentials:"include"});
@@ -194,16 +207,37 @@ document.addEventListener("DOMContentLoaded", async () => {
       document.getElementById("vipBadge").textContent = user.membership.tier;
     }
 
-    // Balance (backend uses user.balance)
-    const total = Number(user.balance || 0);
+    // ----------------------------
+    // 🔥 NEW BALANCE CALCULATION
+    // ----------------------------
+    const balances = user.balances || {
+      BTC:0, ETH:0, USDT:0, BNB:0, ADA:0, USD:0
+    };
+
+    const prices = await getPrices();
+
+    const btcUsd = balances.BTC * (prices.bitcoin?.usd || 0);
+    const ethUsd = balances.ETH * (prices.ethereum?.usd || 0);
+    const bnbUsd = balances.BNB * (prices.binancecoin?.usd || 0);
+    const adaUsd = balances.ADA * (prices.cardano?.usd || 0);
+    const usdtUsd = balances.USDT * 1; // stablecoin
+    const usdBal = balances.USD * 1;   // membership payouts
+
+    const finalTotal =
+      btcUsd + ethUsd + bnbUsd + adaUsd + usdtUsd + usdBal;
+
     document.getElementById("totalBalance").textContent =
-      total.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:6});
+      finalTotal.toLocaleString(undefined,{
+        minimumFractionDigits:2,
+        maximumFractionDigits:6
+      });
 
   } catch(err){
     console.error("Account load error:", err);
   }
 });
 </script>
+
 
 </body>
 </html>
