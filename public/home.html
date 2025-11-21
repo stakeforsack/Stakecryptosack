@@ -299,25 +299,40 @@
 <script src="/js/market-prices.js"></script>
 
 <script>
-  // Auto-update market prices (your existing script)
+  async function loadProfile() {
+    try {
+      const res = await fetch("/api/profile", { credentials: "include" });
+      const data = await res.json();
+
+      if (!data.ok || !data.user) {
+        document.getElementById("balanceValue").innerText = "$0.00";
+        document.getElementById("membershipBadge").innerText = "None";
+        return;
+      }
+
+      // Show correct balance
+      const balance = Number(data.user.balance || 0).toFixed(2);
+      document.getElementById("balanceValue").innerText = "$" + balance;
+
+      // Show membership tier correctly
+      document.getElementById("membershipBadge").innerText =
+        data.user.membership?.tier || "None";
+
+    } catch (err) {
+      console.error("Profile load failed:", err);
+      document.getElementById("balanceValue").innerText = "$0.00";
+    }
+  }
+
+  loadProfile();
+
+  // Auto-update market prices
   document.addEventListener("DOMContentLoaded", () => {
     MarketPrices.start(
       ["bitcoin", "ethereum", "binancecoin", "solana", "dogecoin", "tron"],
       10000
     );
   });
-
-  // Load balance from backend
-  fetch("/api/profile", { credentials: "include" })
-    .then(res => res.json())
-    .then(data => {
-      if (data.user) {
-        document.getElementById("balanceValue").innerText =
-          "$" + Number(data.user.balance || 0).toFixed(2);
-        document.getElementById("membershipBadge").innerText =
-          data.user.membership?.tier || "None";
-      }
-    });
 </script>
 
 </body>
