@@ -298,58 +298,26 @@
 
 <script src="/js/market-prices.js"></script>
 
-<script src="/js/market-prices.js"></script>
 
 <script>
   async function loadProfile() {
-    try {
-      const res = await fetch("/api/profile", { credentials: "include" });
-      const data = await res.json();
+  try {
+    const res = await fetch("/api/total-usd", { credentials: "include" });
+    const data = await res.json();
 
-      if (!data.ok || !data.user) {
-        document.getElementById("balanceValue").innerText = "$0.00";
-        document.getElementById("membershipBadge").innerText = "None";
-        return;
-      }
-
-      const balances = data.user.balances || {
-        BTC: 0, ETH: 0, USDT: 0, BNB: 0, ADA: 0, USD: 0
-      };
-
-      // --- Get real-time USD prices for each coin ---
-      const priceRes = await fetch(
-        "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,binancecoin,cardano,tether&vs_currencies=usd"
-      );
-      const prices = await priceRes.json();
-
-      const btcPrice = prices.bitcoin.usd || 0;
-      const ethPrice = prices.ethereum.usd || 0;
-      const bnbPrice = prices.binancecoin.usd || 0;
-      const adaPrice = prices.cardano.usd || 0;
-      const usdtPrice = prices.tether.usd || 1;
-
-      // --- Convert coin holdings to USD ---
-      const totalUSD =
-        balances.BTC * btcPrice +
-        balances.ETH * ethPrice +
-        balances.BNB * bnbPrice +
-        balances.ADA * adaPrice +
-        balances.USDT * usdtPrice +
-        balances.USD; // membership earnings
-
-      // Show final USD balance
-      document.getElementById("balanceValue").innerText =
-        "$" + totalUSD.toFixed(2);
-
-      // Show membership tier
-      document.getElementById("membershipBadge").innerText =
-        data.user.membership?.tier || "None";
-
-    } catch (err) {
-      console.error("Profile load failed:", err);
+    if (!data.ok) {
       document.getElementById("balanceValue").innerText = "$0.00";
+      return;
+    }
+
+    document.getElementById("balanceValue").innerText =
+      "$" + data.totalUSD.toLocaleString();
+  } catch (err) {
+    console.error("Profile load failed:", err);
+    document.getElementById("balanceValue").innerText = "$0.00";
     }
   }
+
 
   loadProfile();
 

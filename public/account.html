@@ -19,7 +19,6 @@
       --danger:#ff6b6b;
       --radius:14px;
     }
-
     html,body{
       margin:0;
       font-family:Inter,system-ui;
@@ -31,31 +30,21 @@
       padding-bottom:100px;
       -webkit-font-smoothing:antialiased;
     }
-
     .wrap { max-width:900px; margin:0 auto; padding:20px; }
-
-    /* Profile section */
-    .profile-box{
-      text-align:center;
-      padding-top:18px;
-      padding-bottom:4px;
-    }
+    .profile-box{ text-align:center;padding-top:18px;padding-bottom:4px }
     .avatar{
       width:110px;height:110px;border-radius:50%;
       background:linear-gradient(135deg,var(--accent),var(--accent-2));
       display:flex;align-items:center;justify-content:center;
       font-size:2.4rem;font-weight:800;color:#021;
-      box-shadow:0 0 40px rgba(168,85,247,0.35);
       margin:0 auto 12px;
     }
     .username{font-size:1.6rem;font-weight:800}
     .vip-badge{
       margin-top:8px;display:inline-block;padding:6px 16px;
       background:linear-gradient(90deg, gold, #ffd55c);
-      border-radius:999px;color:#241e00;font-weight:800;
-      font-size:0.9rem;letter-spacing:0.3px;
+      border-radius:999px;color:#241e00;font-weight:800;font-size:0.9rem;
     }
-
     .card{
       background:var(--glass);
       border:1px solid var(--glass-border);
@@ -65,58 +54,28 @@
       backdrop-filter:blur(12px);
       box-shadow:0 18px 50px rgba(0,0,0,0.55);
     }
-
-    .card-title{
-      color:var(--muted);
-      font-size:0.9rem;
-      font-weight:600;
-    }
+    .card-title{ color:var(--muted);font-size:0.9rem;font-weight:600 }
     .card-balance{
-      font-size:2.2rem;
-      font-weight:800;
-      margin-top:6px;
+      font-size:2.2rem;font-weight:800;margin-top:6px;
       background:linear-gradient(90deg,var(--accent),var(--accent-2));
-      -webkit-background-clip:text;background-clip:text;
-      color:transparent;
+      -webkit-background-clip:text;background-clip:text;color:transparent;
     }
-
-    /* Menu */
-    .menu a{
-      display:block;margin-top:14px;padding:14px;
-      border-radius:var(--radius);
-      background:rgba(255,255,255,0.02);
-      border:1px solid rgba(255,255,255,0.04);
-      color:white;text-decoration:none;font-size:1rem;
-      font-weight:600;transition:0.25s;
-    }
-    .menu a:hover{
-      transform:translateY(-3px);
-      border-color:var(--accent);
-      box-shadow:0 0 15px rgba(168,85,247,0.4);
-    }
-
-    /* Logout */
-    .logout-btn{
-      width:100%;margin-top:22px;padding:14px;
+    .menu a{ display:block;margin-top:14px;padding:14px;border-radius:var(--radius);
+      background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);
+      color:white;text-decoration:none;font-size:1rem;font-weight:600;transition:0.25s }
+    .menu a:hover{ transform:translateY(-3px);border-color:var(--accent);
+      box-shadow:0 0 15px rgba(168,85,247,0.4) }
+    .logout-btn{ width:100%;margin-top:22px;padding:14px;
       background:linear-gradient(135deg,#ff4949,#c90000);
-      border:none;border-radius:var(--radius);
-      color:white;font-size:1rem;font-weight:700;
-      cursor:pointer;
-    }
-
-    /* Bottom nav */
+      border:none;border-radius:var(--radius);color:white;font-size:1rem;font-weight:700;cursor:pointer }
     .bottom-nav{
       position:fixed;bottom:16px;left:50%;transform:translateX(-50%);
       background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));
-      border:1px solid rgba(255,255,255,0.04);
-      border-radius:999px;padding:10px 16px;
+      border:1px solid rgba(255,255,255,0.04);border-radius:999px;padding:10px 16px;
       display:flex;gap:18px;box-shadow:0 18px 45px rgba(0,0,0,0.6);z-index:999;
     }
-    .nav-item{
-      display:flex;flex-direction:column;align-items:center;
-      color:var(--muted);font-size:0.85rem;text-decoration:none;
-      font-weight:700;
-    }
+    .nav-item{display:flex;flex-direction:column;align-items:center;color:var(--muted);
+      font-size:0.85rem;text-decoration:none;font-weight:700}
     .nav-item img{width:22px;height:22px;margin-bottom:4px}
     .nav-item.active{color:var(--accent);transform:translateY(-4px) scale(1.04)}
   </style>
@@ -149,7 +108,6 @@
 
 </div>
 
-<!-- bottom nav -->
 <nav class="bottom-nav">
   <a href="home.html" class="nav-item">
     <img src="/img/house.png"><span>Home</span>
@@ -171,63 +129,32 @@ async function logout(){
   window.location.href="login.html";
 }
 
-async function getPrices() {
-  const coins = ["bitcoin","ethereum","binancecoin","cardano"];
-  const url = `https://api.coingecko.com/api/v3/simple/price?ids=${coins.join(",")}&vs_currencies=usd`;
-
-  try {
-    const res = await fetch(url);
-    return await res.json();
-  } catch(err){
-    console.error("Price API error:", err);
-    return {};
-  }
-}
-
 document.addEventListener("DOMContentLoaded", async () => {
   try {
     const res = await fetch("/api/profile",{credentials:"include"});
-
-    if(res.status === 401){
-      window.location.href = "login.html";
-      return;
-    }
+    if(res.status === 401){ window.location.href = "login.html"; return; }
 
     const data = await res.json();
     const user = data.user || {};
 
-    // Username + avatar
+    // username + avatar
     const uname = user.username || "User";
     document.getElementById("username").textContent = uname;
     document.getElementById("avatar").textContent = uname[0].toUpperCase();
 
-    // VIP / Membership
+    // membership badge
     if(user.membership && user.membership.tier){
       document.getElementById("vipBadge").style.display = "inline-block";
       document.getElementById("vipBadge").textContent = user.membership.tier;
     }
 
-    // ----------------------------
-    // 🔥 NEW BALANCE CALCULATION
-    // ----------------------------
-    const balances = user.balances || {
-      BTC:0, ETH:0, USDT:0, BNB:0, ADA:0, USD:0
-    };
-
-    const prices = await getPrices();
-
-    const btcUsd = balances.BTC * (prices.bitcoin?.usd || 0);
-    const ethUsd = balances.ETH * (prices.ethereum?.usd || 0);
-    const bnbUsd = balances.BNB * (prices.binancecoin?.usd || 0);
-    const adaUsd = balances.ADA * (prices.cardano?.usd || 0);
-    const usdtUsd = balances.USDT * 1; // stablecoin
-    const usdBal = balances.USD * 1;   // membership payouts
-
-    const finalTotal =
-      btcUsd + ethUsd + bnbUsd + adaUsd + usdtUsd + usdBal;
+    // 🔥 NEW TOTAL BALANCE SYSTEM (sync with home)
+    const res2 = await fetch("/api/total-usd",{credentials:"include"});
+    const t = await res2.json();
+    const total = Number(t.totalUSD || 0);
 
     document.getElementById("totalBalance").textContent =
-      finalTotal.toLocaleString(undefined,{
+      total.toLocaleString(undefined,{
         minimumFractionDigits:2,
         maximumFractionDigits:6
       });
@@ -237,7 +164,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 });
 </script>
-
 
 </body>
 </html>
