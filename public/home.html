@@ -301,27 +301,44 @@
 
 <script>
   async function loadProfile() {
-  try {
-    const res = await fetch("/api/total-usd", { credentials: "include" });
-    const data = await res.json();
+    try {
+      // 1️⃣ Get total balance
+      const resBal = await fetch("/api/total-usd", { credentials: "include" });
+      const bal = await resBal.json();
 
-    if (!data.ok) {
+      if (!bal.ok) {
+        document.getElementById("balanceValue").innerText = "$0.00";
+      } else {
+        document.getElementById("balanceValue").innerText =
+          "$" + bal.totalUSD.toLocaleString();
+      }
+
+      // 2️⃣ Get membership status
+      const resProfile = await fetch("/api/profile", { credentials: "include" });
+      if (resProfile.status === 401) {
+        window.location.href = "login.html";
+        return;
+      }
+      const data = await resProfile.json();
+      const user = data.user || {};
+
+      const badge = document.getElementById("membershipBadge");
+      if (user.membership && user.membership.tier) {
+        badge.innerText = user.membership.tier; // example: V1 / V2 / V3
+      } else {
+        badge.innerText = "None";
+      }
+
+    } catch (err) {
+      console.error("Home load failed:", err);
       document.getElementById("balanceValue").innerText = "$0.00";
-      return;
-    }
-
-    document.getElementById("balanceValue").innerText =
-      "$" + data.totalUSD.toLocaleString();
-  } catch (err) {
-    console.error("Profile load failed:", err);
-    document.getElementById("balanceValue").innerText = "$0.00";
+      document.getElementById("membershipBadge").innerText = "None";
     }
   }
 
-
   loadProfile();
 
-  // Auto-update market prices
+  // Live market
   document.addEventListener("DOMContentLoaded", () => {
     MarketPrices.start(
       ["bitcoin", "ethereum", "binancecoin", "solana", "dogecoin", "tron"],
@@ -329,6 +346,7 @@
     );
   });
 </script>
+
 
 
 
