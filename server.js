@@ -1,9 +1,7 @@
-// server.updated.js
-// Based on your server.fixed.js with added endpoints:
-// - GET /api/balance?coin=COIN  -> returns per-coin balance
-// - GET /api/balances           -> returns object of balances (already present)
-// - GET /api/total-balance      -> returns total USD value (converts per-coin balances using CoinGecko)
-// - price cache to avoid hitting CoinGecko repeatedly
+// server.js
+// Production-ready server with per-coin balances, Mongo session store, profile normalization,
+// /api/balances endpoint, deposit/withdraw/membership flows and admin endpoints.
+// Node ESM expected (type: module in package.json).
 
 import express from "express";
 import session from "express-session";
@@ -17,14 +15,16 @@ import MongoStore from "connect-mongo";
 import { connectDB, User, Transaction, Membership } from "./db.js";
 
 dotenv.config();
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// connect to MongoDB (db.js exports connectDB + models)
 await connectDB();
 
 const app = express();
 
-// CONFIG ===========================
+// ---------------- CONFIG ----------------
 const FRONTEND_URL = process.env.FRONTEND_URL || "https://stakecryptosack.vercel.app";
 const ALLOWED_ORIGINS = [
   FRONTEND_URL,
@@ -33,7 +33,7 @@ const ALLOWED_ORIGINS = [
 ];
 const isProd = process.env.NODE_ENV === "production";
 
-// membership tiers config
+// membership tiers config (keep synced with frontend)
 const TIERS = {
   V1: { price: 51, daily: 10, duration: 5, bonus: 50 },
   V2: { price: 1498.5, daily: 100, duration: 7, bonus: 3000 },
@@ -42,11 +42,14 @@ const TIERS = {
   V5: { price: 50001, daily: 75000, duration: 30, bonus: 500000 },
 };
 
+// ---------------- CORS ----------------
+// Allow only expected origins, but allow no-origin requests (curl/mobile)
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin) return callback(null, true);
+      if (!origin) return callback(null, true); // allow server-to-server / curl
       if (ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
+      // helpful debug in dev
       console.warn("Blocked CORS origin:", origin);
       return callback(new Error("CORS blocked: " + origin));
     },
@@ -57,9 +60,13 @@ app.use(
 
 app.set("trust proxy", isProd ? 1 : 0);
 
+// ---------------- Sessions (MongoStore recommended) ----------------
 let sessionStore = null;
 if (process.env.MONGO_URI) {
-  sessionStore = MongoStore.create({ mongoUrl: process.env.MONGO_URI, collectionName: 'sessions' });
+  sessionStore = MongoStore.create({
+    mongoUrl: process.env.MONGO_URI,
+    collectionName: "sessions",
+  });
 }
 
 app.use(
@@ -70,7 +77,7 @@ app.use(
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      secure: isProd,
+      secure: isProd, // must be true in production with HTTPS
       sameSite: isProd ? "none" : "lax",
       maxAge: 24 * 60 * 60 * 1000,
       path: "/",
@@ -78,6 +85,7 @@ app.use(
   })
 );
 
+// ensure browser will allow credentials
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Credentials", "true");
   next();
@@ -87,12 +95,13 @@ app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "public")));
 
-// AUTH MIDDLEWARE
+// ---------------- Auth middleware ----------------
 const needAuth = (req, res, next) => {
   if (!req.session?.userId) return res.status(401).json({ error: "Please login" });
   next();
 };
 
+// ---------------- Admin middleware ----------------
 function requireAdmin(req, res, next) {
   const key = req.headers["x-admin-key"] || req.query.key || req.query.admin_key;
   if (key !== process.env.ADMIN_KEY) {
@@ -101,57 +110,10 @@ function requireAdmin(req, res, next) {
   next();
 }
 
-// ---------------- Price helper + cache ----------------
-// Map coin symbols used in your DB to CoinGecko ids
-const COINGECKO_IDS = {
-  BTC: 'bitcoin',
-  ETH: 'ethereum',
-  BNB: 'binancecoin',
-  ADA: 'cardano',
-  USDT: 'tether'
-};
+// ---------------- Health ----------------
+app.get("/api/health", (req, res) => res.json({ ok: true }));
 
-let priceCache = { ts: 0, data: {} };
-const PRICE_TTL = 30 * 1000; // 30s cache
-
-async function fetchPrices(symbols = Object.keys(COINGECKO_IDS)) {
-  const now = Date.now();
-  if (now - priceCache.ts < PRICE_TTL && Object.keys(priceCache.data).length) {
-    return priceCache.data;
-  }
-
-  try {
-    const ids = symbols.map(s => COINGECKO_IDS[s]).filter(Boolean).join(',');
-    // if no ids (e.g. only USD) return trivial
-    if (!ids) return {};
-    const url = `https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd`;
-    const resp = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } });
-    if (!resp.ok) throw new Error('CoinGecko fetch failed');
-    const json = await resp.json();
-    // map back to symbols
-    const out = {};
-    for (const sym of symbols) {
-      const id = COINGECKO_IDS[sym];
-      if (!id) {
-        // USDT => assume 1
-        out[sym] = sym === 'USDT' ? 1 : 0;
-        continue;
-      }
-      out[sym] = Number(json[id]?.usd || 0);
-    }
-    priceCache = { ts: Date.now(), data: out };
-    return out;
-  } catch (err) {
-    console.warn('Price fetch failed', err.message);
-    // fall back to last cache if present
-    return priceCache.data || {};
-  }
-}
-
-// HEALTH
-app.get('/api/health', (req, res) => res.json({ ok: true }));
-
-// REGISTER / LOGIN (unchanged) ...
+// ---------------- Register ----------------
 app.post("/api/register", async (req, res) => {
   try {
     const { email, username, password } = req.body;
@@ -165,7 +127,7 @@ app.post("/api/register", async (req, res) => {
       email,
       username,
       password: hash,
-      balances: { BTC: 0, ETH: 0, USDT: 0, BNB: 0, ADA: 0, USD: 0 }
+      balances: { BTC: 0, ETH: 0, USDT: 0, BNB: 0, ADA: 0, USD: 0 },
     });
 
     req.session.userId = user._id.toString();
@@ -178,6 +140,7 @@ app.post("/api/register", async (req, res) => {
   }
 });
 
+// ---------------- Login ----------------
 app.post("/api/login", async (req, res) => {
   try {
     const { username, email, password } = req.body;
@@ -200,7 +163,7 @@ app.post("/api/login", async (req, res) => {
   }
 });
 
-// PROFILE: normalize balances
+// ---------------- Profile (normalizes balances) ----------------
 app.get("/api/profile", needAuth, async (req, res) => {
   try {
     const user = await User.findById(req.session.userId).select("-password");
@@ -209,10 +172,12 @@ app.get("/api/profile", needAuth, async (req, res) => {
     const transactions = await Transaction.find({ userId: user._id }).sort({ createdAt: -1 }).limit(200);
     const membership = await Membership.findOne({ userId: user._id }).sort({ createdAt: -1 });
 
+    // Normalize/migrate legacy balance -> balances object
     if (!user.balances) {
       const legacy = Number(user.balance || 0) || 0;
       user.balances = { BTC: 0, ETH: 0, USDT: legacy, BNB: 0, ADA: 0, USD: 0 };
-      user.save().catch(() => {});
+      // attempt to persist but don't block response
+      user.save().catch((e) => console.warn("Balances migration save failed", e));
     }
 
     res.json({
@@ -221,7 +186,7 @@ app.get("/api/profile", needAuth, async (req, res) => {
         id: user._id,
         username: user.username,
         email: user.email,
-        balances: user.balances || { BTC:0, ETH:0, USDT:0, BNB:0, ADA:0, USD:0 },
+        balances: user.balances || { BTC: 0, ETH: 0, USDT: 0, BNB: 0, ADA: 0, USD: 0 },
         membership: membership || null,
         createdAt: user.createdAt,
       },
@@ -233,151 +198,382 @@ app.get("/api/profile", needAuth, async (req, res) => {
   }
 });
 
-// Quick balances endpoint (keeps backward compatibility)
-app.get('/api/balances', needAuth, async (req, res) => {
+// ---------------- New: GET /api/balances ----------------
+// Returns per-coin balances quickly for pages like withdraw
+app.get("/api/balances", needAuth, async (req, res) => {
   try {
-    const user = await User.findById(req.session.userId).select('balances balance');
-    if (!user) return res.status(404).json({ error: 'User not found' });
+    const user = await User.findById(req.session.userId).select("balances balance");
+    if (!user) return res.status(404).json({ error: "User not found" });
+
     if (!user.balances) {
       const legacy = Number(user.balance || 0) || 0;
-      user.balances = { BTC:0, ETH:0, USDT: legacy, BNB:0, ADA:0, USD:0 };
-      user.save().catch(()=>{});
+      user.balances = { BTC: 0, ETH: 0, USDT: legacy, BNB: 0, ADA: 0, USD: 0 };
+      user.save().catch(() => {});
     }
+
     return res.json({ ok: true, balances: user.balances });
-  } catch (e) {
-    console.error('Balances error', e);
-    return res.status(500).json({ error: 'Could not load balances' });
-  }
-});
-
-// NEW: single coin balance endpoint: GET /api/balance?coin=BTC
-app.get('/api/balance', needAuth, async (req, res) => {
-  try {
-    const coin = (req.query.coin || 'USDT').toUpperCase();
-    const user = await User.findById(req.session.userId).select('balances balance');
-    if (!user) return res.status(404).json({ error: 'User not found' });
-    if (!user.balances) {
-      const legacy = Number(user.balance || 0) || 0;
-      user.balances = { BTC:0, ETH:0, USDT: legacy, BNB:0, ADA:0, USD:0 };
-      user.save().catch(()=>{});
-    }
-    if (coin === 'TOTAL' || coin === 'USD_TOTAL') {
-      // compute total USD value
-      const balances = user.balances || {};
-      const symbols = Object.keys(balances).filter(k => k !== 'USD');
-      const prices = await fetchPrices(symbols);
-      let total = 0;
-      const breakdown = {};
-      for (const sym of symbols) {
-        const amt = Number(balances[sym] || 0);
-        const price = Number(prices[sym] || (sym === 'USDT' ? 1 : 0));
-        const usdVal = amt * price;
-        breakdown[sym] = { amount: amt, price, usd: usdVal };
-        total += usdVal;
-      }
-      // include USD balance if present
-      if (balances.USD) { total += Number(balances.USD || 0); breakdown.USD = { amount: balances.USD, price: 1, usd: Number(balances.USD||0) }; }
-      return res.json({ ok: true, totalUSD: total, breakdown });
-    }
-
-    const val = Number((user.balances || {})[coin] || 0);
-    return res.json({ ok: true, coin, balance: val });
   } catch (err) {
-    console.error('Single balance error', err);
-    res.status(500).json({ error: 'Could not load balance' });
+    console.error("Balances error:", err);
+    return res.status(500).json({ error: "Could not load balances" });
   }
 });
 
-// Total-balance convenience endpoint
-app.get('/api/total-balance', needAuth, async (req, res) => {
+// ---------------- CoinGecko chart proxy ----------------
+app.get("/api/chart/:coin", async (req, res) => {
   try {
-    const user = await User.findById(req.session.userId).select('balances balance');
-    if (!user) return res.status(404).json({ error: 'User not found' });
-    if (!user.balances) {
-      const legacy = Number(user.balance || 0) || 0;
-      user.balances = { BTC:0, ETH:0, USDT: legacy, BNB:0, ADA:0, USD:0 };
-      user.save().catch(()=>{});
-    }
-    const balances = user.balances || {};
-    const symbols = Object.keys(balances).filter(k => k !== 'USD');
-    const prices = await fetchPrices(symbols);
-    let total = 0;
-    const breakdown = {};
-    for (const sym of symbols) {
-      const amt = Number(balances[sym] || 0);
-      const price = Number(prices[sym] || (sym === 'USDT' ? 1 : 0));
-      const usdVal = amt * price;
-      breakdown[sym] = { amount: amt, price, usd: usdVal };
-      total += usdVal;
-    }
-    if (balances.USD) { total += Number(balances.USD || 0); breakdown.USD = { amount: balances.USD, price:1, usd: Number(balances.USD||0) }; }
-    return res.json({ ok: true, totalUSD: total, breakdown });
-  } catch (e) {
-    console.error('Total balance error', e);
-    return res.status(500).json({ error: 'Could not compute total balance' });
+    const { coin } = req.params;
+    const days = req.query.days || 30;
+    const url = `https://api.coingecko.com/api/v3/coins/${coin}/market_chart?vs_currency=usd&days=${days}`;
+
+    const response = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0" } });
+    if (!response.ok) return res.status(400).json({ error: "Failed to fetch chart data" });
+
+    const data = await response.json();
+    res.json({
+      prices: data.prices || [],
+      market_caps: data.market_caps || [],
+      total_volumes: data.total_volumes || [],
+    });
+  } catch (err) {
+    console.error("Chart API error:", err);
+    res.status(500).json({ error: "Chart server error" });
   }
 });
 
-// DEPOSIT / VERIFY / WITHDRAW endpoints (unchanged logic from server.fixed)
-app.post('/api/deposit', needAuth, async (req, res) => {
+// ---------------- Logout ----------------
+app.post("/api/logout", (req, res) => {
+  req.session.destroy(() => {
+    res.clearCookie("connect.sid", {
+      path: "/",
+      secure: isProd,
+      sameSite: isProd ? "none" : "lax",
+    });
+    res.json({ ok: true });
+  });
+});
+
+// ---------------- Create deposit (pending) ----------------
+app.post("/api/deposit", needAuth, async (req, res) => {
   try {
     const { coin, amount, membershipTier } = req.body;
-    if (!coin || !amount || amount <= 0) return res.status(400).json({ error: 'Invalid deposit' });
-    const ALLOWED = ['BTC','ETH','USDT','BNB','ADA'];
-    if (!ALLOWED.includes(coin)) return res.status(400).json({ error: 'Unsupported coin' });
+    if (!coin || !amount || amount <= 0) return res.status(400).json({ error: "Invalid deposit" });
+
+    const ALLOWED = ["BTC", "ETH", "USDT", "BNB", "ADA"];
+    if (!ALLOWED.includes(coin)) return res.status(400).json({ error: "Unsupported coin" });
+
     const meta = {};
-    if (membershipTier) { meta.isMembership = true; meta.membershipTier = membershipTier; }
-    const tx = await Transaction.create({ userId: req.session.userId, type: 'DEPOSIT', coin, amount, status: 'PENDING', meta });
+    if (membershipTier) {
+      meta.isMembership = true;
+      meta.membershipTier = membershipTier;
+    }
+
+    const tx = await Transaction.create({
+      userId: req.session.userId,
+      type: "DEPOSIT",
+      coin,
+      amount,
+      status: "PENDING",
+      meta,
+    });
+
     res.json({ ok: true, txId: tx._id.toString(), coin, amount, meta });
   } catch (err) {
-    console.error('Deposit error:', err);
-    res.status(500).json({ error: 'Deposit failed' });
+    console.error("Deposit error:", err);
+    res.status(500).json({ error: "Deposit failed" });
   }
 });
 
-app.post('/api/verify-payment', needAuth, async (req, res) => {
+// ---------------- Verify payment status ----------------
+app.post("/api/verify-payment", needAuth, async (req, res) => {
   try {
     const { txId } = req.body;
-    if (!txId) return res.status(400).json({ error: 'txId required' });
+    if (!txId) return res.status(400).json({ error: "txId required" });
     const tx = await Transaction.findById(txId);
-    if (!tx) return res.json({ status: 'NOT_FOUND' });
+    if (!tx) return res.json({ status: "NOT_FOUND" });
     res.json({ status: tx.status, coin: tx.coin, amount: tx.amount, meta: tx.meta || {} });
   } catch (err) {
-    console.error('Verify payment error:', err);
-    res.status(500).json({ error: 'Could not verify payment' });
+    console.error("Verify payment error:", err);
+    res.status(500).json({ error: "Could not verify payment" });
   }
 });
 
-app.post('/api/withdraw', needAuth, async (req, res) => {
+// ---------------- Withdraw request (creates pending withdraw tx) ----------------
+app.post("/api/withdraw", needAuth, async (req, res) => {
   try {
     const { coin, amount } = req.body;
-    if (!coin || !amount || amount <= 0) return res.status(400).json({ error: 'Invalid withdrawal' });
-    const ALLOWED = ['BTC','ETH','USDT','BNB','ADA'];
-    if (!ALLOWED.includes(coin)) return res.status(400).json({ error: 'Unsupported coin' });
+    if (!coin || !amount || amount <= 0) return res.status(400).json({ error: "Invalid withdrawal" });
+
+    const ALLOWED = ["BTC", "ETH", "USDT", "BNB", "ADA"];
+    if (!ALLOWED.includes(coin)) return res.status(400).json({ error: "Unsupported coin" });
+
     const user = await User.findById(req.session.userId);
-    if (!user) return res.status(404).json({ error: 'User not found' });
-    user.balances = user.balances || { BTC:0, ETH:0, USDT:0, BNB:0, ADA:0, USD:0 };
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    user.balances = user.balances || { BTC: 0, ETH: 0, USDT: 0, BNB: 0, ADA: 0, USD: 0 };
     const currentBalance = Number(user.balances[coin] || 0);
-    if (amount > currentBalance) return res.status(400).json({ error: 'Insufficient balance' });
-    const tx = await Transaction.create({ userId: user._id, type: 'WITHDRAW', coin, amount, status: 'PENDING' });
-    res.json({ ok: true, txId: tx._1d?.toString?.() || tx._id.toString() });
+    if (amount > currentBalance) return res.status(400).json({ error: "Insufficient balance" });
+
+    const tx = await Transaction.create({ userId: user._id, type: "WITHDRAW", coin, amount, status: "PENDING" });
+    res.json({ ok: true, txId: tx._id.toString() });
   } catch (err) {
-    console.error('Withdraw error:', err);
-    res.status(500).json({ error: 'Withdraw failed' });
+    console.error("Withdraw error:", err);
+    res.status(500).json({ error: "Withdraw failed" });
   }
 });
 
-// ADMIN endpoints and other code remain unchanged (not repeated here for brevity). You can copy them from your server.fixed.js.
-
-// API NOT FOUND
-app.use('/api/*', (req, res) => res.status(404).json({ error: 'API endpoint not found' }));
-
-// STATIC FALLBACK
-app.use((req, res) => {
-  const file = req.path === '/' ? '/index.html' : req.path;
-  res.sendFile(path.join(__dirname, 'public', file));
+// ---------------- Admin endpoints ----------------
+// (keeps all your previous admin routes intact)
+// GET /api/admin/users
+app.get("/api/admin/users", requireAdmin, async (req, res) => {
+  try {
+    const users = await User.find().select("-password");
+    res.json({ ok: true, users });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
+// GET /api/admin/pending-deposits
+app.get("/api/admin/pending-deposits", requireAdmin, async (req, res) => {
+  try {
+    const pending = await Transaction.find({ type: "DEPOSIT", status: "PENDING" }).populate("userId", "username email");
+    res.json({ ok: true, pending });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/admin/pending-withdraws
+app.get("/api/admin/pending-withdraws", requireAdmin, async (req, res) => {
+  try {
+    const pending = await Transaction.find({ type: "WITHDRAW", status: "PENDING" }).populate("userId", "username email");
+    res.json({ ok: true, pending });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/admin/all-transactions
+app.get("/api/admin/all-transactions", requireAdmin, async (req, res) => {
+  try {
+    const tx = await Transaction.find().sort({ createdAt: -1 }).populate("userId", "username email");
+    res.json({ ok: true, tx });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/admin/approve-deposit
+app.post("/api/admin/approve-deposit", requireAdmin, async (req, res) => {
+  try {
+    const { txId } = req.body;
+    if (!txId) return res.status(400).json({ error: "txId required" });
+
+    const tx = await Transaction.findById(txId);
+    if (!tx) return res.status(404).json({ error: "Transaction not found" });
+    if (tx.type !== "DEPOSIT") return res.status(400).json({ error: "Not a deposit" });
+    if (tx.status === "CONFIRMED") return res.json({ ok: true, message: "Already confirmed" });
+
+    tx.status = "CONFIRMED";
+    await tx.save();
+
+    const user = await User.findById(tx.userId);
+    if (!user) return res.status(404).json({ error: "User not found for tx" });
+
+    user.balances = user.balances || { BTC: 0, ETH: 0, USDT: 0, BNB: 0, ADA: 0, USD: 0 };
+
+    // membership purchase?
+    if (tx.meta && tx.meta.isMembership && tx.meta.membershipTier) {
+      const tier = tx.meta.membershipTier;
+      const tcfg = TIERS[tier];
+      if (!tcfg) {
+        user.balances[tx.coin] = (user.balances[tx.coin] || 0) + tx.amount;
+        await user.save();
+        return res.json({ ok: true, message: "Confirmed (unknown tier, credited as deposit)" });
+      }
+
+      await Membership.create({
+        userId: tx.userId,
+        tier,
+        startDate: new Date(),
+        status: "ACTIVE",
+        durationDays: tcfg.duration,
+        daysPaid: 0,
+        dailyAmount: tcfg.daily,
+        bonusAtMonthEnd: tcfg.bonus,
+        bonusPaid: false,
+      });
+
+      user.membership = tier;
+      user.membershipActivatedAt = new Date();
+      await user.save();
+
+      return res.json({ ok: true, membershipActivated: true });
+    }
+
+    // normal deposit credit to coin balance
+    user.balances[tx.coin] = (user.balances[tx.coin] || 0) + tx.amount;
+    await user.save();
+
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error("Approve deposit error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/admin/approve-withdraw
+app.post("/api/admin/approve-withdraw", requireAdmin, async (req, res) => {
+  try {
+    const { txId, tx_hash } = req.body;
+    if (!txId) return res.status(400).json({ error: "txId required" });
+
+    const tx = await Transaction.findById(txId);
+    if (!tx) return res.status(404).json({ error: "Transaction not found" });
+    if (tx.type !== "WITHDRAW") return res.status(400).json({ error: "Not a withdraw" });
+    if (tx.status === "CONFIRMED") return res.json({ ok: true, message: "Already confirmed" });
+
+    const user = await User.findById(tx.userId);
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    user.balances = user.balances || { BTC: 0, ETH: 0, USDT: 0, BNB: 0, ADA: 0, USD: 0 };
+    const current = Number(user.balances[tx.coin] || 0);
+    if (tx.amount > current) {
+      tx.status = "DECLINED";
+      await tx.save();
+      return res.status(400).json({ error: "Insufficient user balance to approve withdraw" });
+    }
+
+    tx.status = "CONFIRMED";
+    tx.meta = { ...(tx.meta || {}), tx_hash };
+    await tx.save();
+
+    user.balances[tx.coin] = current - tx.amount;
+    await user.save();
+
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error("Approve withdraw error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/admin/decline-transaction
+app.post("/api/admin/decline-transaction", requireAdmin, async (req, res) => {
+  try {
+    const { txId } = req.body;
+    if (!txId) return res.status(400).json({ error: "txId required" });
+    const tx = await Transaction.findById(txId);
+    if (!tx) return res.status(404).json({ error: "Transaction not found" });
+    tx.status = "DECLINED";
+    await tx.save();
+    return res.json({ ok: true, message: "Transaction declined" });
+  } catch (err) {
+    console.error("Decline transaction error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/admin/user-transactions/:userId
+app.get("/api/admin/user-transactions/:userId", requireAdmin, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const tx = await Transaction.find({ userId }).sort({ createdAt: -1 });
+    return res.json({ ok: true, tx });
+  } catch (err) {
+    console.error("User transactions error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/cron/payouts (admin)
+app.post("/api/cron/payouts", requireAdmin, async (req, res) => {
+  try {
+    const memberships = await Membership.find({ status: "ACTIVE" });
+    const results = [];
+
+    for (const m of memberships) {
+      if (m.lastPayout && new Date(m.lastPayout).toDateString() === new Date().toDateString()) {
+        results.push({ membership: m._id.toString(), skipped: "already paid today" });
+        continue;
+      }
+
+      if (m.daysPaid >= m.durationDays) {
+        if (!m.bonusPaid) {
+          const bonusAmt = m.bonusAtMonthEnd || 0;
+          if (bonusAmt > 0) {
+            const txBonus = await Transaction.create({
+              userId: m.userId,
+              type: "PAYOUT",
+              coin: "USD",
+              amount: bonusAmt,
+              status: "CONFIRMED",
+              meta: { reason: "membership_bonus", membershipId: m._id },
+            });
+            const u = await User.findById(m.userId);
+            if (u) {
+              u.balances = u.balances || { BTC: 0, ETH: 0, USDT: 0, BNB: 0, ADA: 0, USD: 0 };
+              u.balances.USD = (u.balances.USD || 0) + bonusAmt;
+              await u.save();
+            }
+            m.bonusPaid = true;
+            await m.save();
+            results.push({ membership: m._id.toString(), bonusTx: txBonus._id.toString() });
+          }
+        } else {
+          results.push({ membership: m._id.toString(), skipped: "completed & bonus paid" });
+        }
+        continue;
+      }
+
+      const daily = m.dailyAmount || 0;
+      if (daily <= 0) {
+        results.push({ membership: m._id.toString(), skipped: "no daily amount configured" });
+        continue;
+      }
+
+      const txDaily = await Transaction.create({
+        userId: m.userId,
+        type: "MEMBERSHIP_PAYOUT",
+        coin: "USD",
+        amount: daily,
+        status: "CONFIRMED",
+        meta: { membershipId: m._id },
+      });
+      const user = await User.findById(m.userId);
+      if (user) {
+        user.balances = user.balances || { BTC: 0, ETH: 0, USDT: 0, BNB: 0, ADA: 0, USD: 0 };
+        user.balances.USD = (user.balances.USD || 0) + daily;
+        await user.save();
+      }
+
+      m.daysPaid = (m.daysPaid || 0) + 1;
+      m.lastPayout = new Date();
+      if (m.daysPaid >= m.durationDays) {
+        m.status = "COMPLETED";
+      }
+      await m.save();
+
+      results.push({ membership: m._id.toString(), txId: txDaily._id.toString(), daysPaid: m.daysPaid });
+    }
+
+    res.json({ ok: true, results });
+  } catch (err) {
+    console.error("Cron payouts error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// API not found for unknown /api routes
+app.use("/api/*", (req, res) => res.status(404).json({ error: "API endpoint not found" }));
+
+// Static fallback (serve files from public)
+app.use((req, res) => {
+  const file = req.path === "/" ? "/index.html" : req.path;
+  res.sendFile(path.join(__dirname, "public", file));
+});
+
+// Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
 
