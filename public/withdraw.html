@@ -218,28 +218,40 @@
 </nav>
 
 <script>
+(function () {
+  const balanceEl = document.getElementById("balance");
+  const currencyEl = document.getElementById("currency");
+
   async function loadBalance() {
-    const coin = document.getElementById("currency").value;
-
     try {
-      const res = await fetch(`/api/balance?coin=${coin}`, { credentials: "include" });
+      const res = await fetch(`/api/balances`, {
+        credentials: "include"
+      });
+
+      if (res.status === 401) {
+        balanceEl.textContent = "Please login";
+        setTimeout(() => (window.location.href = "/login.html"), 800);
+        return;
+      }
+
       const data = await res.json();
+      if (!data.ok) throw new Error("Failed to load balances");
 
-      if (!res.ok) throw new Error(data.error);
+      const coin = currencyEl.value;
+      const value = Number(data.balances[coin] || 0);
 
-      document.getElementById("balance").textContent =
-        Number(data.balance).toFixed(4) + " " + coin;
-
+      balanceEl.textContent = `${value.toFixed(4)} ${coin}`;
     } catch (err) {
-      document.getElementById("balance").textContent = "Error";
-      console.log(err);
+      console.error("Balance error:", err);
+      balanceEl.textContent = "Error";
     }
   }
 
-  // load on start + when coin changes
-  document.getElementById("currency").addEventListener("change", loadBalance);
+  currencyEl.addEventListener("change", loadBalance);
   window.addEventListener("DOMContentLoaded", loadBalance);
+})();
 </script>
+
 
 </body>
 </html>
