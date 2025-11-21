@@ -305,7 +305,7 @@
       const data = await res.json();
 
       if (!data.ok || !data.user) {
-        document.getElementById("balanceValue").innerText = "$0.00";
+        document.getElementById("balances").innerText = "$0.00";
         document.getElementById("membershipBadge").innerText = "None";
         return;
       }
