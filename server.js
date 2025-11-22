@@ -173,26 +173,24 @@ app.post("/api/internal-transfer", needAuth, async (req, res) => {
     const sender = await User.findById(req.session.userId);
     if (!sender) return res.status(404).json({ error: "Sender not found" });
 
-    sender.balances = sender.balances || {};
-    const senderBalance = Number(sender.balances[coin] || 0);
+    if (sender.username === recipient)
+      return res.status(400).json({ error: "You cannot transfer to yourself" });
+
+    const senderBalance = Number(sender.balances?.[coin] || 0);
     if (senderBalance < amount)
       return res.status(400).json({ error: "Insufficient balance" });
 
     const receiver = await User.findOne({ username: recipient });
     if (!receiver) return res.status(404).json({ error: "Recipient not found" });
 
-    receiver.balances = receiver.balances || {};
-
-    // Deduct from sender
+    // update balances safely
     sender.balances[coin] = senderBalance - amount;
-
-    // Credit to receiver
-    receiver.balances[coin] = Number(receiver.balances[coin] || 0) + amount;
+    receiver.balances[coin] = Number(receiver.balances?.[coin] || 0) + amount;
 
     await sender.save();
     await receiver.save();
 
-    // Transaction logs
+    // logs for sender
     await Transaction.create({
       userId: sender._id,
       type: "TRANSFER",
@@ -202,6 +200,7 @@ app.post("/api/internal-transfer", needAuth, async (req, res) => {
       meta: { direction: "SENT", to: receiver.username }
     });
 
+    // logs for receiver
     await Transaction.create({
       userId: receiver._id,
       type: "TRANSFER",
@@ -211,11 +210,11 @@ app.post("/api/internal-transfer", needAuth, async (req, res) => {
       meta: { direction: "RECEIVED", from: sender.username }
     });
 
-    res.json({ ok: true, message: "Transfer successful" });
+    return res.json({ ok: true, message: "Transfer successful" });
 
   } catch (err) {
     console.error("Internal transfer error:", err);
-    res.status(500).json({ error: "Transfer failed" });
+    return res.status(500).json({ error: err.message || "Transfer failed" });
   }
 });
 
