@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Internal Transfer — CryptoYieldPro</title>
 
-  <!-- Inter font for premium look -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
 
   <style>
@@ -13,269 +12,227 @@
       --bg-1:#040406;
       --bg-2:#08080b;
       --card: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-      --glass: rgba(255,255,255,0.03);
       --muted:#9aa3b2;
       --accent:#a855f7;
       --accent-2:#5eead4;
       --success:#7ef6b8;
       --danger:#ff6b6b;
       --radius:14px;
-      --maxw:980px;
     }
 
-    html,body{height:100%;margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;background:
-      radial-gradient(800px 500px at 10% 10%, rgba(168,85,247,0.06), transparent 8%),
-      radial-gradient(600px 400px at 90% 90%, rgba(94,234,212,0.03), transparent 6%),
-      linear-gradient(180deg, var(--bg-1), var(--bg-2)); color:#eaf3ff;-webkit-font-smoothing:antialiased;}
-
-    .wrap{max-width:var(--maxw);margin:28px auto;padding:18px;}
-
-    .card {
-      background: var(--card);
-      border-radius: var(--radius);
-      padding:18px;
-      border:1px solid rgba(255,255,255,0.04);
-      box-shadow: 0 18px 50px rgba(0,0,0,0.55);
-      transition: transform .26s, box-shadow .26s;
+    body{
+      margin:0;
+      font-family:Inter;
+      background: linear-gradient(180deg,var(--bg-1),var(--bg-2));
+      padding-bottom:100px;
+      color:#fff;
     }
-    .card:hover{ transform: translateY(-6px); box-shadow: 0 36px 80px rgba(0,0,0,0.6); }
 
-    .topRow{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
-    h2{margin:0;font-size:1.4rem;letter-spacing:0.4px}
-    .sub{color:var(--muted);font-size:0.95rem}
+    .wrap{max-width:900px;margin:24px auto;padding:18px}
+    .card{
+      background:var(--card);
+      padding:20px;
+      border-radius:var(--radius);
+      box-shadow:0 20px 60px rgba(0,0,0,0.55);
+    }
 
     .balance-box{
-      display:flex;justify-content:space-between;align-items:center;padding:12px;border-radius:12px;background:rgba(255,255,255,0.01);
-      border:1px solid rgba(255,255,255,0.02); margin-bottom:16px; font-weight:700;
+      background:rgba(255,255,255,0.02);
+      border:1px solid rgba(255,255,255,0.05);
+      padding:14px;
+      border-radius:12px;
+      display:flex;
+      justify-content:space-between;
+      margin-bottom:20px;
+      font-weight:700;
     }
-    .balance-box .label{color:var(--muted);font-weight:600}
-    .balance-box .value{font-size:1.18rem;color:#fff}
 
-    form{display:block}
-    .grid{display:grid;grid-template-columns: 1fr 1fr; gap:12px}
-    @media(max-width:720px){ .grid{grid-template-columns:1fr} }
-
-    label{display:block;color:var(--muted);font-size:0.88rem;margin-bottom:6px;font-weight:600}
-    input, select {
-      width:100%; padding:12px 14px; border-radius:10px; border:1px solid rgba(255,255,255,0.04);
-      background:rgba(11,11,11,0.6); color:#fff; font-size:1rem; outline:none; box-sizing:border-box;
+    label{font-size:0.9rem;color:var(--muted);margin-bottom:6px;display:block}
+    input, select{
+      width:100%;padding:12px;border-radius:10px;
+      border:1px solid rgba(255,255,255,0.05);
+      background:#111;color:#fff;font-size:1rem;
     }
-    input:focus, select:focus{ box-shadow:0 0 0 3px rgba(168,85,247,0.08); border-color:var(--accent) }
 
-    .row{display:flex;gap:12px}
-    @media(max-width:480px){ .row{flex-direction:column} }
-
-    .primary-btn {
-      display:inline-block;width:100%;padding:12px 14px;border-radius:10px;border:none;
-      background:linear-gradient(90deg,var(--accent),var(--accent-2));color:#021;font-weight:800;cursor:pointer;
-      font-size:1rem; box-shadow:0 8px 30px rgba(168,85,247,0.12);
+    .primary-btn{
+      width:100%;padding:14px;margin-top:14px;
+      border:none;border-radius:10px;
+      background:linear-gradient(90deg,var(--accent),var(--accent-2));
+      font-size:1rem;font-weight:700;color:#021;cursor:pointer;
     }
-    .primary-btn:disabled{opacity:0.65;cursor:not-allowed}
 
-    .muted { color:var(--muted) }
-
-    .error, .success {
-      margin-top:12px;padding:10px;border-radius:10px;font-weight:700;display:none;
+    /* animated results */
+    .success, .error{
+      display:none;margin-top:14px;padding:12px;border-radius:10px;font-weight:700;
     }
-    .error{ background: rgba(255,107,107,0.08); color:var(--danger); border:1px solid rgba(255,107,107,0.12) }
-    .success{ background: rgba(126,246,184,0.06); color:var(--success); border:1px solid rgba(126,246,184,0.08) }
+    .success{background:rgba(126,246,184,0.1);color:var(--success)}
+    .error{background:rgba(255,107,107,0.1);color:var(--danger)}
 
-    .note{color:var(--muted);font-size:0.9rem;margin-top:12px}
+    @keyframes shake {
+      0%,100%{transform:translateX(0)}
+      25%{transform:translateX(-6px)}
+      75%{transform:translateX(6px)}
+    }
 
-    /* bottom nav (match Home/Trade) */
-    .bottom-nav{position:fixed;left:50%;transform:translateX(-50%);bottom:16px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border:1px solid rgba(255,255,255,0.03);padding:10px 14px;border-radius:999px;display:flex;gap:14px;box-shadow:0 18px 40px rgba(0,0,0,0.6);z-index:999}
-    .nav-item{display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--muted);text-decoration:none;font-weight:700;font-size:0.85rem;padding:4px 8px}
-    .nav-item img{width:20px;height:20px;filter:grayscale(0.1)}
-    .nav-item.active{color:var(--accent);transform:translateY(-6px) scale(1.02)}
-    @media(max-width:480px){ .bottom-nav{bottom:10px;padding:8px 10px} .nav-item span{font-size:11px} }
+    /* Success Popup */
+    #popup{
+      position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0.6);
+      background:#0c0c0c;border:1px solid rgba(255,255,255,0.1);
+      padding:32px;border-radius:18px;text-align:center;
+      width:80%;max-width:320px;display:none;z-index:9999;
+      box-shadow:0 0 60px rgba(168,85,247,0.5);
+      animation:pop 0.35s ease forwards;
+    }
+    @keyframes pop{to{transform:translate(-50%,-50%) scale(1)}}
+    #popup h3{margin:0 0 12px;color:var(--accent)}
+    #popup button{margin-top:16px;padding:10px 18px;border:none;border-radius:8px;
+      background:var(--accent);color:#021;font-weight:700;cursor:pointer}
 
-    /* tiny responsive tweaks */
-    .small-italic{font-size:0.9rem;color:var(--muted);font-style:italic;margin-top:8px}
+    /* Bottom nav */
+    .bottom-nav{
+      position:fixed;bottom:16px;left:50%;transform:translateX(-50%);
+      background:rgba(255,255,255,0.03);
+      display:flex;gap:18px;padding:12px 18px;
+      border:1px solid rgba(255,255,255,0.05);border-radius:999px;z-index:999;
+    }
+    .nav-item{color:#999;text-decoration:none;font-size:0.85rem;text-align:center}
+    .nav-item.active{color:var(--accent)}
   </style>
 </head>
+
 <body>
-  <div class="wrap">
-    <div class="card">
-      <div class="topRow">
-        <div>
-          <h2>Internal Transfer</h2>
-          <div class="sub">Send funds instantly to another user on the platform</div>
-        </div>
-      </div>
 
-      <div id="balanceWrap" class="balance-box" aria-live="polite">
-        <div class="label">Available Balance</div>
-        <div class="value" id="balance">—</div>
-      </div>
+<audio id="transferSound" src="https://assets.mixkit.co/active_storage/sfx/2891/2891-preview.mp3"></audio>
 
-      <form id="transferForm" autocomplete="off" novalidate>
-        <div class="grid">
-          <div>
-            <label for="currency">Currency</label>
-            <select id="currency" name="currency" aria-label="Select currency">
-              <option value="USDT" selected>USDT</option>
-              <option value="BTC">BTC</option>
-              <option value="ETH">ETH</option>
-              <option value="BNB">BNB</option>
-              <option value="ADA">ADA</option>
-            </select>
-          </div>
+<div id="popup">
+  <h3>Transfer Successful 🎉</h3>
+  <p>Your funds have been delivered instantly.</p>
+  <button onclick="closePopup()">OK</button>
+</div>
 
-          <div>
-            <label for="amount">Amount</label>
-            <input id="amount" name="amount" type="number" min="0" step="any" placeholder="0.00" inputmode="decimal" />
-          </div>
+<div class="wrap">
+  <div class="card">
 
-          <div style="grid-column:1 / -1;">
-            <label for="recipient">Recipient Username</label>
-            <input id="recipient" name="recipient" type="text" placeholder="recipient username" autocomplete="off" />
-          </div>
-        </div>
+    <h2>Internal Transfer</h2>
+    <p style="color:var(--muted);margin-top:4px;margin-bottom:18px">
+      Send funds instantly to another user
+    </p>
 
-        <div style="height:12px"></div>
-        <button id="submitBtn" class="primary-btn" type="submit">Send Transfer</button>
-
-        <div id="error" class="error" role="alert"></div>
-        <div id="success" class="success" role="status"></div>
-
-        <div class="note">Internal transfers are instant and free. Double-check recipient username; transfers cannot be reversed.</div>
-      </form>
+    <div class="balance-box">
+      <span>Available Balance</span>
+      <span id="balance">—</span>
     </div>
+
+    <form id="transferForm">
+      <label>Currency</label>
+      <select id="currency">
+        <option value="USDT">USDT</option>
+        <option value="BTC">BTC</option>
+        <option value="ETH">ETH</option>
+        <option value="BNB">BNB</option>
+        <option value="ADA">ADA</option>
+      </select>
+
+      <label>Amount</label>
+      <input id="amount" type="number" placeholder="0.00" step="any"/>
+
+      <label>Recipient Username</label>
+      <input id="recipient" type="text" placeholder="username"/>
+
+      <button class="primary-btn" id="submitBtn">Send Transfer</button>
+
+      <div id="error" class="error"></div>
+      <div id="success" class="success"></div>
+    </form>
   </div>
+</div>
 
-  <!-- bottom nav -->
-  <nav class="bottom-nav" role="navigation" aria-label="bottom">
-    <a class="nav-item" href="home.html">
-      <img src="/img/house.png" alt="Home"><span>Home</span>
-    </a>
-    <a class="nav-item" href="trade.html">
-      <img src="/img/trade.png" alt="Trade"><span>Trade</span>
-    </a>
-    <a class="nav-item" href="internal-transfer.html">
-      <img src="/img/transfer.png" alt="Transfer"><span>Transfer</span>
-    </a>
-    <a class="nav-item" href="account.html">
-      <img src="/img/myaccount.png" alt="Account"><span>Account</span>
-    </a>
-  </nav>
+<nav class="bottom-nav">
+  <a class="nav-item" href="home.html">Home</a>
+  <a class="nav-item" href="trade.html">Trade</a>
+  <a class="nav-item active" href="internal-transfer.html">Transfer</a>
+  <a class="nav-item" href="account.html">Account</a>
+</nav>
 
-  <script>
-    (function () {
-      const API_BASE = window.location.origin;
-      const form = document.getElementById('transferForm');
-      const recipientEl = document.getElementById('recipient');
-      const amountEl = document.getElementById('amount');
-      const balanceEl = document.getElementById('balance');
-      const currencyEl = document.getElementById('currency');
-      const submitBtn = document.getElementById('submitBtn');
-      const errorEl = document.getElementById('error');
-      const successEl = document.getElementById('success');
+<script>
+  const API = window.location.origin;
 
-      function showError(msg){
-        errorEl.textContent = msg;
-        errorEl.style.display = 'block';
-        successEl.style.display = 'none';
-      }
-      function showSuccess(msg){
-        successEl.textContent = msg;
-        successEl.style.display = 'block';
-        errorEl.style.display = 'none';
-      }
-      function clearMessages(){
-        errorEl.style.display = 'none';
-        successEl.style.display = 'none';
-      }
+  const balanceEl = document.getElementById("balance");
+  const currencyEl = document.getElementById("currency");
+  const amountEl = document.getElementById("amount");
+  const recipientEl = document.getElementById("recipient");
+  const errorEl = document.getElementById("error");
+  const successEl = document.getElementById("success");
+  const submitBtn = document.getElementById("submitBtn");
+  const popup = document.getElementById("popup");
+  const transferSound = document.getElementById("transferSound");
 
-      // Use /api/profile to get balances (avoids 404)
-      async function fetchProfileAndBalance(){
-        try {
-          const res = await fetch(API_BASE + '/api/profile', { credentials: 'include' });
-          if (res.status === 401) {
-            balanceEl.textContent = 'Please login';
-            setTimeout(()=> window.location.href = '/login.html', 700);
-            return null;
-          }
-          const json = await res.json();
-          if (!res.ok) {
-            balanceEl.textContent = 'Error loading';
-            return null;
-          }
-          const user = json.user || {};
-          // balance is stored as number (USD) in backend. For multi-coin, server should return per-coin balances if available.
-          // If server returns only balance in USD, we still show that with selected coin label.
-          const coin = currencyEl.value || 'USDT';
-          // If server returns per-coin field, prefer it: json.user.balances?.[coin] else fall back to user.balance
-          const perCoin = (json.user && json.user.balances && json.user.balances[coin]) ? json.user.balances[coin] : null;
-          const bal = perCoin != null ? perCoin : (user.balance != null ? user.balance : 0);
-          balanceEl.textContent = Number(bal).toLocaleString(undefined, {maximumFractionDigits:8}) + ' ' + coin;
-          return { user, balance: bal };
-        } catch (err) {
-          console.error('Profile load error', err);
-          balanceEl.textContent = 'Error loading';
-          return null;
-        }
-      }
+  function closePopup(){ popup.style.display = "none"; }
 
-      // initial load + whenever currency changes
-      currencyEl.addEventListener('change', fetchProfileAndBalance);
-      fetchProfileAndBalance();
+  async function loadBalance(){
+    try{
+      const res = await fetch(API + "/api/profile", { credentials:"include" });
+      const data = await res.json();
+      const coin = currencyEl.value;
+      const bal = data.user?.balances?.[coin] ?? data.user?.balance ?? 0;
+      balanceEl.textContent = bal.toFixed(6) + " " + coin;
+    } catch{ balanceEl.textContent = "Error"; }
+  }
 
-      // Transfer submit uses /api/internal-transfer (server must implement this)
-      form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        clearMessages();
+  currencyEl.addEventListener("change", loadBalance);
+  loadBalance();
 
-        const recipient = recipientEl.value.trim();
-        const amount = Number(amountEl.value);
-        const coin = currencyEl.value || 'USDT';
+  document.getElementById("transferForm").addEventListener("submit", async (e)=>{
+    e.preventDefault();
+    errorEl.style.display = "none";
+    successEl.style.display = "none";
 
-        if (!recipient) return showError('Please enter recipient username');
-        if (!amount || amount <= 0) return showError('Enter a valid amount');
+    const recipient = recipientEl.value.trim();
+    const amount = Number(amountEl.value);
+    const coin = currencyEl.value;
 
-        submitBtn.disabled = true;
-        const prev = submitBtn.textContent;
-        submitBtn.textContent = 'Sending...';
+    if(!recipient){ showError("Enter recipient username"); return; }
+    if(!amount || amount<=0){ showError("Enter valid amount"); return; }
 
-        try {
-          // POST to /api/internal-transfer (recommended)
-          const res = await fetch(API_BASE + '/api/internal-transfer', {
-            method: 'POST',
-            credentials: 'include',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ recipient, amount, coin })
-          });
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Sending...";
 
-          // robust parse
-          const text = await res.text();
-          let data;
-          try { data = JSON.parse(text); } catch(e) { data = { error: text }; }
-
-          if (!res.ok || !data.ok) {
-            return showError(data.error || 'Transfer failed');
-          }
-
-          showSuccess('Transfer successful');
-          recipientEl.value = '';
-          amountEl.value = '';
-          await fetchProfileAndBalance();
-        } catch (err) {
-          console.error('Transfer error', err);
-          showError('Network error — try again');
-        } finally {
-          submitBtn.disabled = false;
-          submitBtn.textContent = prev;
-        }
+    try{
+      const res = await fetch(API + "/api/internal-transfer",{
+        method:"POST",
+        credentials:"include",
+        headers:{ "Content-Type":"application/json" },
+        body:JSON.stringify({ recipient, amount, coin })
       });
 
-      // useful: allow Enter to submit on recipient/amount
-      [recipientEl, amountEl].forEach(el => {
-        el.addEventListener('keydown', (e) => { if (e.key === 'Enter') form.dispatchEvent(new Event('submit', {cancelable:true})); });
-      });
+      const data = await res.json();
+      if(!res.ok || !data.ok) return showError(data.error || "Transfer failed");
 
-      // Nice accessibility: announce results
-      successEl.setAttribute('role','status');
-      errorEl.setAttribute('role','alert');
-    })();
-  </script>
+      // success UI upgrades:
+      transferSound.play();
+      popup.style.display = "block";
+
+      successEl.textContent = "Transfer successful";
+      successEl.style.display = "block";
+      recipientEl.value = "";
+      amountEl.value = "";
+      await loadBalance();
+
+    }catch{
+      showError("Network error — try again");
+    }
+
+    submitBtn.disabled = false;
+    submitBtn.textContent = "Send Transfer";
+  });
+
+  function showError(msg){
+    errorEl.style.display = "block";
+    errorEl.textContent = msg;
+    errorEl.style.animation = "shake 0.35s";
+    setTimeout(()=> errorEl.style.animation="",350);
+  }
+</script>
+
 </body>
 </html>

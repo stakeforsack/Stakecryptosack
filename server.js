@@ -418,6 +418,69 @@ app.get("/api/transactions", needAuth, async (req, res) => {
   }
 });
 
+
+// ---------------- Internal Transfer ----------------
+app.post("/api/internal-transfer", needAuth, async (req, res) => {
+  try {
+    const { recipient, amount, coin } = req.body;
+
+    if (!recipient || !amount || amount <= 0)
+      return res.status(400).json({ error: "Invalid transfer" });
+
+    const ALLOWED = ["BTC", "ETH", "USDT", "BNB", "ADA"];
+    if (!ALLOWED.includes(coin))
+      return res.status(400).json({ error: "Unsupported coin" });
+
+    const sender = await User.findById(req.session.userId);
+    if (!sender) return res.status(404).json({ error: "Sender not found" });
+
+    sender.balances = sender.balances || {};
+    const senderBalance = Number(sender.balances[coin] || 0);
+    if (senderBalance < amount)
+      return res.status(400).json({ error: "Insufficient balance" });
+
+    const receiver = await User.findOne({ username: recipient });
+    if (!receiver) return res.status(404).json({ error: "Recipient not found" });
+
+    receiver.balances = receiver.balances || {};
+
+    // Deduct from sender
+    sender.balances[coin] = senderBalance - amount;
+
+    // Credit to receiver
+    receiver.balances[coin] = Number(receiver.balances[coin] || 0) + amount;
+
+    await sender.save();
+    await receiver.save();
+
+    // Transaction logs
+    await Transaction.create({
+      userId: sender._id,
+      type: "TRANSFER",
+      coin,
+      amount,
+      status: "CONFIRMED",
+      meta: { direction: "SENT", to: receiver.username }
+    });
+
+    await Transaction.create({
+      userId: receiver._id,
+      type: "TRANSFER",
+      coin,
+      amount,
+      status: "CONFIRMED",
+      meta: { direction: "RECEIVED", from: sender.username }
+    });
+
+    res.json({ ok: true, message: "Transfer successful" });
+
+  } catch (err) {
+    console.error("Internal transfer error:", err);
+    res.status(500).json({ error: "Transfer failed" });
+  }
+});
+
+
 // ---------------- Unknown API routes ----------------
 app.use("/api/*", (req, res) => res.status(404).json({ error: "API endpoint not found" }));
 
