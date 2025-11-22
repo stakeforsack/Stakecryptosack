@@ -354,10 +354,13 @@
       const icons = {
         'DEPOSIT': '📥',
         'WITHDRAW': '📤',
-        'TRANSFER': '↔️'
+        'TRANSFER': '↔️',
+        'MEMBERSHIP_PAYOUT': '💰',
+        'PAYOUT': '🎁'
       };
       return icons[type] || '💸';
     }
+
 
     function displayTransactions() {
       const container = document.getElementById('txContainer');
@@ -390,7 +393,10 @@
         const typeClass = tx.type === 'WITHDRAW' ? 'withdraw' : tx.type === 'TRANSFER' ? 'transfer' : '';
         const statusClass = tx.status.toLowerCase();
         const icon = getIcon(tx.type);
-        const sign = tx.type === 'WITHDRAW' ? '-' : '+';
+        let sign = '+';
+        if (tx.type === 'WITHDRAW') sign = '-';
+        if (tx.type === 'TRANSFER' && tx.amount < 0) sign = '-';
+
 
         return `
           <div class="tx-item ${typeClass} ${statusClass}">

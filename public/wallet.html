@@ -31,7 +31,7 @@
 
     .wallet-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(165px, 1fr));
       gap: 18px;
       padding-bottom: 60px;
     }
@@ -71,9 +71,16 @@
     }
 
     .coin-balance {
-      font-size: 1.2rem;
+      font-size: 1.15rem;
       color: var(--accent);
       font-weight: 700;
+    }
+
+    .coin-usd {
+      margin-top: 6px;
+      font-size: 0.88rem;
+      color: #bbb;
+      font-weight: 500;
     }
 
     .back-btn {
@@ -92,31 +99,6 @@
     .back-btn:hover {
       background: #9333ea;
     }
-
-    .bottom-nav {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      height: 65px;
-      background: #111;
-      border-top: 1px solid #222;
-      display: flex;
-      justify-content: space-around;
-      align-items: center;
-      z-index: 99;
-    }
-
-    .bottom-nav a {
-      color: #888;
-      text-decoration: none;
-      text-align: center;
-      font-size: 0.85rem;
-    }
-
-    .bottom-nav a.active {
-      color: var(--accent);
-    }
   </style>
 </head>
 
@@ -124,55 +106,64 @@
 
   <h2>💼 Your Wallet</h2>
 
-  <div class="wallet-grid" id="walletGrid">
-    <!-- Dynamic Coins Inserted Here -->
-  </div>
+  <div class="wallet-grid" id="walletGrid"></div>
 
   <button class="back-btn" onclick="window.location.href='account.html'">
     ← Back to Account
   </button>
 
-  <div class="bottom-nav">
-    <a href="index.html">Home</a>
-    <a href="trade.html">Trade</a>
-    <a href="transfer.html">Transfer</a>
-    <a href="account.html" class="active">Account</a>
-  </div>
-
   <script>
+    async function getPrices() {
+      const coins = ["bitcoin","ethereum","binancecoin","cardano"];
+      const url = `https://api.coingecko.com/api/v3/simple/price?ids=${coins.join(",")}&vs_currencies=usd`;
+
+      try {
+        const res = await fetch(url);
+        return await res.json();
+      } catch {
+        return {};
+      }
+    }
+
     document.addEventListener("DOMContentLoaded", async () => {
       try {
         const res = await fetch("/api/profile", { credentials: "include" });
 
-        if (res.status === 401) {
-          window.location.href = "login.html";
-          return;
-        }
+        if (res.status === 401) return (window.location.href = "login.html");
 
         const data = await res.json();
-        const balance = data.balance || {};
+        const balances = data.user?.balances || {};
 
         const icons = {
           BTC: "🟧",
           ETH: "🔷",
           USDT: "🟩",
           BNB: "🟨",
-          TRX: "🔺"
+          ADA: "🟥",
+          USD: "💵"
         };
 
+        const coinList = ["BTC", "ETH", "USDT", "BNB", "ADA", "USD"];
+        const prices = await getPrices();
         const grid = document.getElementById("walletGrid");
-        grid.innerHTML = "";
-
-        const coinList = ["BTC", "ETH", "USDT", "BNB", "TRX"];
 
         coinList.forEach(coin => {
-          const amount = balance[coin] || 0;
+          const bal = Number(balances[coin] || 0);
+
+          let usdValue = bal;
+          if (coin === "BTC") usdValue *= prices.bitcoin?.usd || 0;
+          if (coin === "ETH") usdValue *= prices.ethereum?.usd || 0;
+          if (coin === "BNB") usdValue *= prices.binancecoin?.usd || 0;
+          if (coin === "ADA") usdValue *= prices.cardano?.usd || 0;
+          if (coin === "USDT") usdValue = bal;
+          if (coin === "USD") usdValue = bal;
 
           grid.innerHTML += `
             <div class="wallet-card">
               <div class="coin-icon">${icons[coin]}</div>
               <div class="coin-name">${coin}</div>
-              <div class="coin-balance">${amount.toFixed(4)}</div>
+              <div class="coin-balance">${bal.toFixed(6)}</div>
+              <div class="coin-usd">$${usdValue.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
             </div>
           `;
         });

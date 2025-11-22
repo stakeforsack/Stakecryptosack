@@ -404,6 +404,20 @@ app.post("/api/admin/decline-transaction", requireAdmin, async (req, res) => {
   }
 });
 
+// ---------------- User transaction history (for frontend) ----------------
+app.get("/api/transactions", needAuth, async (req, res) => {
+  try {
+    const tx = await Transaction.find({ userId: req.session.userId })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    res.json({ ok: true, transactions: tx });
+  } catch (err) {
+    console.error("Transactions load error:", err);
+    res.status(500).json({ error: "Unable to load transactions" });
+  }
+});
+
 // ---------------- Unknown API routes ----------------
 app.use("/api/*", (req, res) => res.status(404).json({ error: "API endpoint not found" }));
 
