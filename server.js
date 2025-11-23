@@ -163,7 +163,6 @@ app.post("/api/internal-transfer", needAuth, async (req, res) => {
   try {
     let { recipient, amount, coin } = req.body;
 
-    // Normalize
     recipient = String(recipient || "").trim();
     amount = Number(amount);
 
@@ -181,13 +180,11 @@ app.post("/api/internal-transfer", needAuth, async (req, res) => {
       return res.status(404).json({ ok: false, error: "Sender not found" });
     }
 
-    // Prevent sending to self
     if (sender.username === recipient) {
       return res.status(400).json({ ok: false, error: "You cannot transfer to yourself" });
     }
 
-    // Ensure balances object
-    sender.balances = sender.balances || { BTC:0, ETH:0, USDT:0, BNB:0, ADA:0, USD:0 };
+    sender.balances = sender.balances || { BTC: 0, ETH: 0, USDT: 0, BNB: 0, ADA: 0, USD: 0 };
 
     const senderBalance = Number(sender.balances[coin] || 0);
     if (senderBalance < amount) {
@@ -199,18 +196,14 @@ app.post("/api/internal-transfer", needAuth, async (req, res) => {
       return res.status(404).json({ ok: false, error: "Recipient not found" });
     }
 
-    receiver.balances = receiver.balances || { BTC:0, ETH:0, USDT:0, BNB:0, ADA:0, USD:0 };
+    receiver.balances = receiver.balances || { BTC: 0, ETH: 0, USDT: 0, BNB: 0, ADA: 0, USD: 0 };
 
-    // Deduct from sender
     sender.balances[coin] = senderBalance - amount;
-
-    // Credit to receiver
     receiver.balances[coin] = Number(receiver.balances[coin] || 0) + amount;
 
     await sender.save();
     await receiver.save();
 
-    // Create tx for sender
     await Transaction.create({
       userId: sender._id,
       type: "TRANSFER",
@@ -224,7 +217,6 @@ app.post("/api/internal-transfer", needAuth, async (req, res) => {
       },
     });
 
-    // Create tx for receiver
     await Transaction.create({
       userId: receiver._id,
       type: "TRANSFER",
@@ -245,8 +237,7 @@ app.post("/api/internal-transfer", needAuth, async (req, res) => {
   }
 });
 
-
-// ---------------- Profile ----------------
+// ---------------- Profile (now returns full membership object) ----------------
 app.get("/api/profile", needAuth, async (req, res) => {
   try {
     const user = await User.findById(req.session.userId).select("-password");
@@ -268,13 +259,89 @@ app.get("/api/profile", needAuth, async (req, res) => {
         username: user.username,
         email: user.email,
         balances: user.balances,
-        membership: membership ? membership.tier : null,
+        membership: membership || null,   // 🔥 full object, not just tier
         createdAt: user.createdAt,
       },
       transactions,
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+// ---------------- Create deposit (for membership & normal deposit) ----------------
+app.post("/api/deposit", needAuth, async (req, res) => {
+  try {
+    const { coin, amount, membershipTier } = req.body;
+    if (!coin || !amount || amount <= 0) return res.status(400).json({ error: "Invalid deposit" });
+
+    const ALLOWED = ["BTC", "ETH", "USDT", "BNB", "ADA"];
+    if (!ALLOWED.includes(coin)) return res.status(400).json({ error: "Unsupported coin" });
+
+    const meta = {};
+    if (membershipTier) {
+      meta.isMembership = true;
+      meta.membershipTier = membershipTier;
+    }
+
+    const tx = await Transaction.create({
+      userId: req.session.userId,
+      type: "DEPOSIT",
+      coin,
+      amount,
+      status: "PENDING",
+      meta,
+    });
+
+    res.json({ ok: true, txId: tx._id.toString(), coin, amount, meta });
+  } catch (err) {
+    console.error("Deposit error:", err);
+    res.status(500).json({ error: "Deposit failed" });
+  }
+});
+
+// ---------------- Verify payment status ----------------
+app.post("/api/verify-payment", needAuth, async (req, res) => {
+  try {
+    const { txId } = req.body;
+    if (!txId) return res.status(400).json({ error: "txId required" });
+    const tx = await Transaction.findById(txId);
+    if (!tx) return res.json({ status: "NOT_FOUND" });
+    res.json({ status: tx.status, coin: tx.coin, amount: tx.amount, meta: tx.meta || {} });
+  } catch (err) {
+    console.error("Verify payment error:", err);
+    res.status(500).json({ error: "Could not verify payment" });
+  }
+});
+
+// ---------------- Withdraw request (creates pending withdraw tx) ----------------
+app.post("/api/withdraw", needAuth, async (req, res) => {
+  try {
+    const { coin, amount } = req.body;
+    if (!coin || !amount || amount <= 0) return res.status(400).json({ error: "Invalid withdrawal" });
+
+    const ALLOWED = ["BTC", "ETH", "USDT", "BNB", "ADA"];
+    if (!ALLOWED.includes(coin)) return res.status(400).json({ error: "Unsupported coin" });
+
+    const user = await User.findById(req.session.userId);
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    user.balances = user.balances || { BTC: 0, ETH: 0, USDT: 0, BNB: 0, ADA: 0, USD: 0 };
+    const currentBalance = Number(user.balances[coin] || 0);
+    if (amount > currentBalance) return res.status(400).json({ error: "Insufficient balance" });
+
+    const tx = await Transaction.create({
+      userId: user._id,
+      type: "WITHDRAW",
+      coin,
+      amount,
+      status: "PENDING",
+    });
+
+    res.json({ ok: true, txId: tx._id.toString() });
+  } catch (err) {
+    console.error("Withdraw error:", err);
+    res.status(500).json({ error: "Withdraw failed" });
   }
 });
 
@@ -296,7 +363,7 @@ app.get("/api/balances", needAuth, async (req, res) => {
   }
 });
 
-// ---------------- NEW: GET /api/total-usd (FIXES BALANCE DIFFERENCE) ----------------
+// ---------------- NEW: GET /api/total-usd ----------------
 app.get("/api/total-usd", needAuth, async (req, res) => {
   try {
     const user = await User.findById(req.session.userId).select("balances").lean();
@@ -354,7 +421,7 @@ app.get("/api/total-usd", needAuth, async (req, res) => {
 });
 
 // ------------------------------------------------------------------------------------
-// (Remaining admin sections + payout cron remain unchanged from your server.js)
+// Admin + Transactions
 // ------------------------------------------------------------------------------------
 
 app.get("/api/admin/users", requireAdmin, async (req, res) => {
@@ -414,7 +481,7 @@ app.post("/api/admin/approve-deposit", requireAdmin, async (req, res) => {
     if (tx.meta?.isMembership && tx.meta.membershipTier) {
       const tcfg = TIERS[tx.meta.membershipTier];
       if (!tcfg) {
-        user.balances[tx.coin] += tx.amount;
+        user.balances[tx.coin] = (user.balances[tx.coin] || 0) + tx.amount;
         await user.save();
         return res.json({ ok: true, message: "Confirmed as normal deposit" });
       }
@@ -437,7 +504,7 @@ app.post("/api/admin/approve-deposit", requireAdmin, async (req, res) => {
       return res.json({ ok: true, membershipActivated: true });
     }
 
-    user.balances[tx.coin] += tx.amount;
+    user.balances[tx.coin] = (user.balances[tx.coin] || 0) + tx.amount;
     await user.save();
 
     return res.json({ ok: true });
@@ -505,10 +572,6 @@ app.get("/api/transactions", needAuth, async (req, res) => {
     res.status(500).json({ error: "Unable to load transactions" });
   }
 });
-
-
-
-
 
 // ---------------- Unknown API routes ----------------
 app.use("/api/*", (req, res) => res.status(404).json({ error: "API endpoint not found" }));

