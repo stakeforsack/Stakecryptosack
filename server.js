@@ -158,65 +158,93 @@ app.post("/api/login", async (req, res) => {
   }
 });
 
-// ---------------- Internal Transfer ----------------
+// ---------------- Internal Transfer (improved) ----------------
 app.post("/api/internal-transfer", needAuth, async (req, res) => {
   try {
-    const { recipient, amount, coin } = req.body;
+    let { recipient, amount, coin } = req.body;
 
-    if (!recipient || !amount || amount <= 0)
-      return res.status(400).json({ error: "Invalid transfer" });
+    // Normalize
+    recipient = String(recipient || "").trim();
+    amount = Number(amount);
+
+    if (!recipient || !amount || isNaN(amount) || amount <= 0) {
+      return res.status(400).json({ ok: false, error: "Invalid transfer data" });
+    }
 
     const ALLOWED = ["BTC", "ETH", "USDT", "BNB", "ADA"];
-    if (!ALLOWED.includes(coin))
-      return res.status(400).json({ error: "Unsupported coin" });
+    if (!ALLOWED.includes(coin)) {
+      return res.status(400).json({ ok: false, error: "Unsupported coin" });
+    }
 
     const sender = await User.findById(req.session.userId);
-    if (!sender) return res.status(404).json({ error: "Sender not found" });
+    if (!sender) {
+      return res.status(404).json({ ok: false, error: "Sender not found" });
+    }
 
-    if (sender.username === recipient)
-      return res.status(400).json({ error: "You cannot transfer to yourself" });
+    // Prevent sending to self
+    if (sender.username === recipient) {
+      return res.status(400).json({ ok: false, error: "You cannot transfer to yourself" });
+    }
 
-    const senderBalance = Number(sender.balances?.[coin] || 0);
-    if (senderBalance < amount)
-      return res.status(400).json({ error: "Insufficient balance" });
+    // Ensure balances object
+    sender.balances = sender.balances || { BTC:0, ETH:0, USDT:0, BNB:0, ADA:0, USD:0 };
+
+    const senderBalance = Number(sender.balances[coin] || 0);
+    if (senderBalance < amount) {
+      return res.status(400).json({ ok: false, error: "Insufficient balance" });
+    }
 
     const receiver = await User.findOne({ username: recipient });
-    if (!receiver) return res.status(404).json({ error: "Recipient not found" });
+    if (!receiver) {
+      return res.status(404).json({ ok: false, error: "Recipient not found" });
+    }
 
-    // update balances safely
+    receiver.balances = receiver.balances || { BTC:0, ETH:0, USDT:0, BNB:0, ADA:0, USD:0 };
+
+    // Deduct from sender
     sender.balances[coin] = senderBalance - amount;
-    receiver.balances[coin] = Number(receiver.balances?.[coin] || 0) + amount;
+
+    // Credit to receiver
+    receiver.balances[coin] = Number(receiver.balances[coin] || 0) + amount;
 
     await sender.save();
     await receiver.save();
 
-    // logs for sender
+    // Create tx for sender
     await Transaction.create({
       userId: sender._id,
       type: "TRANSFER",
       coin,
       amount,
       status: "CONFIRMED",
-      meta: { direction: "SENT", to: receiver.username }
+      meta: {
+        direction: "SENT",
+        toUsername: receiver.username,
+        toUserId: receiver._id
+      },
     });
 
-    // logs for receiver
+    // Create tx for receiver
     await Transaction.create({
       userId: receiver._id,
       type: "TRANSFER",
       coin,
       amount,
       status: "CONFIRMED",
-      meta: { direction: "RECEIVED", from: sender.username }
+      meta: {
+        direction: "RECEIVED",
+        fromUsername: sender.username,
+        fromUserId: sender._id
+      },
     });
 
     return res.json({ ok: true, message: "Transfer successful" });
-
   } catch (err) {
     console.error("Internal transfer error:", err);
-    return res.status(500).json({ error: err.message || "Transfer failed" });
+    return res.status(500).json({ ok: false, error: "Transfer failed (server error)" });
   }
 });
+
 
 // ---------------- Profile ----------------
 app.get("/api/profile", needAuth, async (req, res) => {
