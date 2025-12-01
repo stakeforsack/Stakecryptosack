@@ -342,6 +342,8 @@ app.post("/api/withdraw", needAuth, async (req, res) => {
       meta,
     });
 
+    console.log("[WITHDRAW] Created withdrawal tx:", { txId: tx._id, userId: user._id, coin, amount });
+
     res.json({ ok: true, txId: tx._id.toString() });
   } catch (err) {
     console.error("Withdraw error:", err);
@@ -449,8 +451,10 @@ app.get("/api/admin/pending-deposits", requireAdmin, async (req, res) => {
 app.get("/api/admin/pending-withdraws", requireAdmin, async (req, res) => {
   try {
     const pending = await Transaction.find({ type: "WITHDRAW", status: "PENDING" }).populate("userId", "username email");
+    console.log("[ADMIN] Pending withdraws found:", pending.length);
     res.json({ ok: true, pending });
   } catch (err) {
+    console.error("Pending withdraws error:", err);
     res.status(500).json({ error: err.message });
   }
 });
