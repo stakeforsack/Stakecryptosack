@@ -25,7 +25,6 @@
       background: linear-gradient(180deg, var(--bg1), var(--bg2));
       font-family: Inter, sans-serif;
       color: #e5eeff;
-      -webkit-font-smoothing: antialiased;
       overflow-x: hidden;
     }
 
@@ -35,7 +34,7 @@
       padding-bottom: 90px;
     }
 
-    /* ---------------- Banner Slider (UPDATED) ---------------- */
+    /* ---------------- Banner Slider (FINAL FIXED) ---------------- */
     .banner-container {
       margin-top: 14px;
       width: 100%;
@@ -64,9 +63,7 @@
       margin-top: 20px;
       padding: 18px;
       border-radius: 16px;
-      backdrop-filter: blur(6px);
       border: 1px solid rgba(255,255,255,0.05);
-      box-shadow: 0 4px 18px rgba(0,0,0,0.4);
     }
 
     .balance-row {
@@ -107,19 +104,12 @@
       font-size: 0.85rem;
       color: #fff;
       font-weight: 600;
-      transition: 0.25s;
     }
 
     .action-btn img {
       width: 32px;
       height: 32px;
       margin-bottom: 4px;
-    }
-
-    .action-btn:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 0 15px rgba(168,85,247,0.3);
-      border-color: rgba(168,85,247,0.4);
     }
 
     /* ---------------- Market List ---------------- */
@@ -142,18 +132,12 @@
       display: flex;
       justify-content: space-between;
       margin-bottom: 10px;
-      transition: 0.25s;
-    }
-
-    .market-row:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 0 15px rgba(168,85,247,0.2);
     }
 
     .coin-name { font-weight: 700; }
     .price { font-weight: 700; }
-    .change.positive { color: var(--success); font-weight: 700; }
-    .change.negative { color: var(--danger); font-weight: 700; }
+    .change.positive { color: var(--success); }
+    .change.negative { color: var(--danger); }
 
     /* ---------------- Bottom Navigation ---------------- */
     .bottom-nav {
@@ -175,8 +159,6 @@
       text-align: center;
       color: var(--muted);
       font-size: 0.8rem;
-      text-decoration: none;
-      font-weight: 600;
     }
 
     .nav-item img {
@@ -289,92 +271,45 @@
 <script src="/js/market-prices.js"></script>
 
 <script>
-  async function loadProfile() {
-    try {
-      const resBal = await fetch("/api/total-usd", { credentials: "include" });
-      const bal = await resBal.json();
+/* ---------------- Banner Slider JS (FINAL FIXED) ---------------- */
+const slider = document.getElementById("bannerSlider");
+let currentIndex = 0;
+const totalSlides = 3;
 
-      if (!bal.ok) {
-        document.getElementById("balanceValue").innerText = "$0.00";
-      } else {
-        document.getElementById("balanceValue").innerText =
-          "$" + bal.totalUSD.toLocaleString();
-      }
+let autoSlide = setInterval(() => nextSlide(), 5000);
 
-      const resProfile = await fetch("/api/profile", { credentials: "include" });
-      if (resProfile.status === 401) {
-        window.location.href = "login.html";
-        return;
-      }
-      const data = await resProfile.json();
-      const user = data.user || {};
+function nextSlide() {
+  currentIndex = (currentIndex + 1) % totalSlides;
+  slider.style.transform = `translateX(-${currentIndex * 100}%)`;
+}
 
-      const badge = document.getElementById("membershipBadge");
-      if (user.membership && user.membership.tier) {
-        badge.innerText = user.membership.tier;
-      } else {
-        badge.innerText = "None";
-      }
+function prevSlide() {
+  currentIndex = (currentIndex - 1 + totalSlides) % totalSlides;
+  slider.style.transform = `translateX(-${currentIndex * 100}%)`;
+}
 
-    } catch (err) {
-      console.error("Home load failed:", err);
-      document.getElementById("balanceValue").innerText = "$0.00";
-      document.getElementById("membershipBadge").innerText = "None";
-    }
+let startX = 0;
+let endX = 0;
+
+slider.addEventListener("touchstart", e => {
+  clearInterval(autoSlide);
+  startX = e.touches[0].clientX;
+});
+
+slider.addEventListener("touchmove", e => {
+  endX = e.touches[0].clientX;
+});
+
+slider.addEventListener("touchend", () => {
+  let diff = startX - endX;
+
+  if (Math.abs(diff) > 50) {
+    if (diff > 0) nextSlide();
+    else prevSlide();
   }
 
-  loadProfile();
-
-  document.addEventListener("DOMContentLoaded", () => {
-    MarketPrices.start(
-      ["bitcoin", "ethereum", "binancecoin", "solana", "dogecoin", "tron"],
-      10000
-    );
-  });
-
-  /* ---------------- Banner Slider JS (Swipe + Auto Slide) ---------------- */
-  const slider = document.getElementById("bannerSlider");
-  let currentIndex = 0;
-  const totalSlides = 3;
-
-  let autoSlide = setInterval(nextSlide, 5000);
-
-  function nextSlide() {
-    currentIndex = (currentIndex + 1) % totalSlides;
-    updateSlide();
-  }
-
-  function prevSlide() {
-    currentIndex = (currentIndex - 1 + totalSlides) % totalSlides;
-    updateSlide();
-  }
-
-  function updateSlide() {
-    slider.style.transform = `translateX(-${currentIndex * 100}%)`;
-  }
-
-  let startX = 0;
-  let endX = 0;
-
-  slider.addEventListener("touchstart", (e) => {
-    clearInterval(autoSlide);
-    startX = e.touches[0].clientX;
-  });
-
-  slider.addEventListener("touchmove", (e) => {
-    endX = e.touches[0].clientX;
-  });
-
-  slider.addEventListener("touchend", () => {
-    let diff = startX - endX;
-
-    if (Math.abs(diff) > 50) {
-      if (diff > 0) nextSlide();
-      else prevSlide();
-    }
-
-    autoSlide = setInterval(nextSlide, 5000);
-  });
+  autoSlide = setInterval(() => nextSlide(), 5000);
+});
 </script>
 
 </body>
