@@ -237,14 +237,15 @@ app.post("/api/internal-transfer", needAuth, async (req, res) => {
   }
 });
 
-// ---------------- Profile (now returns full membership object) ----------------
+// ---------------- Profile (now returns memberships array) ----------------
 app.get("/api/profile", needAuth, async (req, res) => {
   try {
     const user = await User.findById(req.session.userId).select("-password");
     if (!user) return res.status(404).json({ error: "User not found" });
 
     const transactions = await Transaction.find({ userId: user._id }).sort({ createdAt: -1 }).limit(200);
-    const membership = await Membership.findOne({ userId: user._id }).sort({ createdAt: -1 });
+    // fetch all memberships for the user (most recent first)
+    const memberships = await Membership.find({ userId: user._id }).sort({ createdAt: -1 }).lean();
 
     if (!user.balances) {
       const legacy = Number(user.balance || 0) || 0;
@@ -259,7 +260,7 @@ app.get("/api/profile", needAuth, async (req, res) => {
         username: user.username,
         email: user.email,
         balances: user.balances,
-        membership: membership || null,   // 🔥 full object, not just tier
+        memberships: memberships || [],   // <-- array of memberships
         createdAt: user.createdAt,
       },
       transactions,
@@ -426,23 +427,21 @@ app.get("/api/total-usd", needAuth, async (req, res) => {
   }
 });
 
-// ---------------- DAILY MEMBERSHIP COLLECT ----------------
+// ---------------- DAILY MEMBERSHIP COLLECT (now per membershipId) ----------------
 app.post("/api/membership/collect", needAuth, async (req, res) => {
   try {
-    // latest active membership
-    const membership = await Membership.findOne({
-      userId: req.session.userId,
-      status: "ACTIVE"
-    }).sort({ createdAt: -1 });
+    const { membershipId } = req.body;
 
-    if (!membership)
-      return res.status(400).json({ error: "No active membership" });
+    if (!membershipId) return res.status(400).json({ error: "membershipId required" });
 
-    // already completed?
-    if (membership.daysPaid >= membership.durationDays) {
-      membership.status = "COMPLETED";
-      await membership.save();
-      return res.status(400).json({ error: "Membership already completed" });
+    const membership = await Membership.findById(membershipId);
+    if (!membership) return res.status(404).json({ error: "Membership not found" });
+    if (String(membership.userId) !== String(req.session.userId)) return res.status(403).json({ error: "Not your membership" });
+
+    if (membership.status !== "ACTIVE") {
+      // if already completed, return helpful message
+      if (membership.status === "COMPLETED") return res.status(400).json({ error: "Membership already completed" });
+      return res.status(400).json({ error: "Membership not active" });
     }
 
     // Already collected today?
@@ -476,7 +475,7 @@ app.post("/api/membership/collect", needAuth, async (req, res) => {
     membership.daysPaid = (membership.daysPaid || 0) + 1;
     membership.lastPayout = new Date();
 
-    // completion + bonus
+    // completion + bonus — each membership gets its own bonus (Q2: A)
     if (membership.daysPaid >= membership.durationDays) {
       membership.status = "COMPLETED";
 
@@ -494,7 +493,7 @@ app.post("/api/membership/collect", needAuth, async (req, res) => {
           coin: "USDT",
           amount: bonus,
           status: "CONFIRMED",
-          meta: { note: "Final membership bonus" },
+          meta: { note: "Final membership bonus", membershipId: membership._id },
         });
       }
     }
@@ -525,7 +524,6 @@ app.post("/api/membership/collect", needAuth, async (req, res) => {
     return res.status(500).json({ error: "Collect failed" });
   }
 });
-
 
 // ------------------------------------------------------------------------------------
 // Admin + Transactions
@@ -590,11 +588,27 @@ app.post("/api/admin/approve-deposit", requireAdmin, async (req, res) => {
     if (tx.meta?.isMembership && tx.meta.membershipTier) {
       const tcfg = TIERS[tx.meta.membershipTier];
       if (!tcfg) {
+        // fallback to normal deposit
         user.balances[tx.coin] = (user.balances[tx.coin] || 0) + tx.amount;
         await user.save();
-        return res.json({ ok: true, message: "Confirmed as normal deposit" });
+        return res.json({ ok: true, message: "Confirmed as normal deposit (unknown tier)" });
       }
 
+      // Prevent duplicate ACTIVE membership of same tier
+      const existingActive = await Membership.findOne({
+        userId: tx.userId,
+        tier: tx.meta.membershipTier,
+        status: "ACTIVE"
+      });
+
+      if (existingActive) {
+        // credit as normal deposit instead of creating duplicate membership
+        user.balances[tx.coin] = (user.balances[tx.coin] || 0) + tx.amount;
+        await user.save();
+        return res.json({ ok: true, message: "Existing active membership of same tier — credited as normal deposit" });
+      }
+
+      // create membership record
       await Membership.create({
         userId: tx.userId,
         tier: tx.meta.membershipTier,
@@ -607,6 +621,7 @@ app.post("/api/admin/approve-deposit", requireAdmin, async (req, res) => {
         bonusPaid: false,
       });
 
+      // keep legacy single field if present (non-blocking). Not relied upon by frontend.
       user.membership = tx.meta.membershipTier;
       user.membershipActivatedAt = new Date();
       await user.save();

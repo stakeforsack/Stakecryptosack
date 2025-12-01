@@ -10,66 +10,119 @@ export async function connectDB() {
   }
 }
 
-// User schema - multi-coin balances
-const balancesSchema = new mongoose.Schema({
-  BTC: { type: Number, default: 0 },
-  ETH: { type: Number, default: 0 },
-  USDT: { type: Number, default: 0 },
-  BNB: { type: Number, default: 0 },
-  ADA: { type: Number, default: 0 },
-  USD: { type: Number, default: 0 } // for membership payouts / platform USD accounting
-}, { _id: false });
+// ----------------------
+// USER SCHEMA
+// ----------------------
 
-const userSchema = new mongoose.Schema({
-  email: { type: String, unique: true, sparse: true },
-  username: { type: String, unique: true, required: true },
-  password: { type: String, required: true },
-  vip: { type: Boolean, default: false },
-  balances: { type: balancesSchema, default: () => ({}) },
-  membership: { type: String, default: "NONE" },
-  membershipActivatedAt: { type: Date, default: null }
-}, { timestamps: true });
+// Multi-coin balance schema
+const balancesSchema = new mongoose.Schema(
+  {
+    BTC: { type: Number, default: 0 },
+    ETH: { type: Number, default: 0 },
+    USDT: { type: Number, default: 0 },
+    BNB: { type: Number, default: 0 },
+    ADA: { type: Number, default: 0 },
+    USD: { type: Number, default: 0 }, // internal USD ledger
+  },
+  { _id: false }
+);
+
+// User schema (cleaned for multi-membership support)
+const userSchema = new mongoose.Schema(
+  {
+    email: { type: String, unique: true, sparse: true },
+    username: { type: String, unique: true, required: true },
+    password: { type: String, required: true },
+
+    vip: { type: Boolean, default: false },
+
+    // Multi-coin balances
+    balances: { type: balancesSchema, default: () => ({}) },
+
+    // LEGACY FIELDS (kept only to avoid crash for old accounts)
+    membership: { type: String, default: "NONE" },
+    membershipActivatedAt: { type: Date, default: null }
+  },
+  { timestamps: true }
+);
 
 export const User = mongoose.models.User || mongoose.model("User", userSchema);
 
-// Transaction schema (unchanged except coin stays string)
-const transactionSchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-  type: { type: String, enum: ["DEPOSIT","WITHDRAW","PAYOUT","MEMBERSHIP_PAYOUT"], required: true },
-  coin: { type: String, required: true },
-  amount: { type: Number, required: true },
-  status: { type: String, default: "PENDING" },
-  meta: { type: Object, default: {} }
-}, { timestamps: true });
+// ----------------------
+// TRANSACTION SCHEMA
+// ----------------------
+const transactionSchema = new mongoose.Schema(
+  {
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    type: {
+      type: String,
+      enum: ["DEPOSIT", "WITHDRAW", "PAYOUT", "MEMBERSHIP_PAYOUT"],
+      required: true,
+    },
+    coin: { type: String, required: true },
+    amount: { type: Number, required: true },
+    status: { type: String, default: "PENDING" },
+    meta: { type: Object, default: {} },
+  },
+  { timestamps: true }
+);
 
-export const Transaction = mongoose.models.Transaction || mongoose.model("Transaction", transactionSchema);
+export const Transaction =
+  mongoose.models.Transaction || mongoose.model("Transaction", transactionSchema);
 
-// Deposit (optional)
-const depositSchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-  coin: String,
-  amount_expected: Number,
-  amount_received: { type: Number, default: 0 },
-  address: String,
-  tx_hash: String,
-  status: { type: String, default: "PENDING" },
-  confirmations: { type: Number, default: 0 }
-}, { timestamps: true });
+// ----------------------
+// OPTIONAL: BLOCKCHAIN DEPOSIT SCHEMA
+// ----------------------
+const depositSchema = new mongoose.Schema(
+  {
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    coin: String,
+    amount_expected: Number,
+    amount_received: { type: Number, default: 0 },
+    address: String,
+    tx_hash: String,
+    status: { type: String, default: "PENDING" },
+    confirmations: { type: Number, default: 0 },
+  },
+  { timestamps: true }
+);
 
-export const Deposit = mongoose.models.Deposit || mongoose.model("Deposit", depositSchema);
+export const Deposit =
+  mongoose.models.Deposit || mongoose.model("Deposit", depositSchema);
 
-// Membership schema
-const membershipSchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-  tier: { type: String, enum: ["V1","V2","V3","V4","V5"], required: true },
-  startDate: { type: Date, default: Date.now },
-  status: { type: String, enum: ["ACTIVE","COMPLETED","CANCELLED"], default: "ACTIVE" },
-  durationDays: { type: Number, default: 5 },
-  daysPaid: { type: Number, default: 0 },
-  dailyAmount: { type: Number, required: true },
-  bonusAtMonthEnd: { type: Number, default: 0 },
-  lastPayout: { type: Date, default: null },
-  bonusPaid: { type: Boolean, default: false }
-}, { timestamps: true });
+// ----------------------
+// MEMBERSHIP SCHEMA (MULTIPLE MEMBERSHIPS)
+// ----------------------
+const membershipSchema = new mongoose.Schema(
+  {
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
 
-export const Membership = mongoose.models.Membership || mongoose.model("Membership", membershipSchema);
+    tier: {
+      type: String,
+      enum: ["V1", "V2", "V3", "V4", "V5"],
+      required: true,
+    },
+
+    startDate: { type: Date, default: Date.now },
+
+    status: {
+      type: String,
+      enum: ["ACTIVE", "PENDING", "COMPLETED", "CANCELLED"],
+      default: "ACTIVE",
+    },
+
+    durationDays: { type: Number, required: true }, // e.g. 5 / 7 / 30 days
+    daysPaid: { type: Number, default: 0 },
+
+    dailyAmount: { type: Number, required: true }, // daily earning USD
+    bonusAtMonthEnd: { type: Number, default: 0 },
+
+    lastPayout: { type: Date, default: null },
+
+    bonusPaid: { type: Boolean, default: false },
+  },
+  { timestamps: true }
+);
+
+export const Membership =
+  mongoose.models.Membership || mongoose.model("Membership", membershipSchema);
