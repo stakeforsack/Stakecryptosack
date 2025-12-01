@@ -426,6 +426,107 @@ app.get("/api/total-usd", needAuth, async (req, res) => {
   }
 });
 
+// ---------------- DAILY MEMBERSHIP COLLECT ----------------
+app.post("/api/membership/collect", needAuth, async (req, res) => {
+  try {
+    // latest active membership
+    const membership = await Membership.findOne({
+      userId: req.session.userId,
+      status: "ACTIVE"
+    }).sort({ createdAt: -1 });
+
+    if (!membership)
+      return res.status(400).json({ error: "No active membership" });
+
+    // already completed?
+    if (membership.daysPaid >= membership.durationDays) {
+      membership.status = "COMPLETED";
+      await membership.save();
+      return res.status(400).json({ error: "Membership already completed" });
+    }
+
+    // Already collected today?
+    const now = new Date();
+    if (membership.lastPayout) {
+      const last = new Date(membership.lastPayout);
+      const sameDay =
+        last.getFullYear() === now.getFullYear() &&
+        last.getMonth() === now.getMonth() &&
+        last.getDate() === now.getDate();
+      if (sameDay)
+        return res.status(400).json({ error: "Already collected today" });
+    }
+
+    const payout = Number(membership.dailyAmount || 0);
+
+    // get user
+    const user = await User.findById(req.session.userId);
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    // ensure balances exist
+    user.balances = user.balances || {
+      BTC: 0, ETH: 0, USDT: 0, BNB: 0, ADA: 0, USD: 0
+    };
+
+    // credit USDT + USD
+    user.balances.USDT = Number(user.balances.USDT || 0) + payout;
+    user.balances.USD = Number(user.balances.USD || 0) + payout;
+
+    // update membership
+    membership.daysPaid = (membership.daysPaid || 0) + 1;
+    membership.lastPayout = new Date();
+
+    // completion + bonus
+    if (membership.daysPaid >= membership.durationDays) {
+      membership.status = "COMPLETED";
+
+      if (membership.bonusAtMonthEnd && !membership.bonusPaid) {
+        const bonus = Number(membership.bonusAtMonthEnd || 0);
+
+        user.balances.USDT += bonus;
+        user.balances.USD += bonus;
+
+        membership.bonusPaid = true;
+
+        await Transaction.create({
+          userId: user._id,
+          type: "MEMBERSHIP_PAYOUT",
+          coin: "USDT",
+          amount: bonus,
+          status: "CONFIRMED",
+          meta: { note: "Final membership bonus" },
+        });
+      }
+    }
+
+    // save
+    await membership.save();
+    await user.save();
+
+    // log daily payout
+    await Transaction.create({
+      userId: user._id,
+      type: "MEMBERSHIP_PAYOUT",
+      coin: "USDT",
+      amount: payout,
+      status: "CONFIRMED",
+      meta: {
+        membershipId: membership._id,
+        day: membership.daysPaid
+      }
+    });
+
+    // return updated membership
+    const updated = await Membership.findById(membership._id).lean();
+    return res.json({ ok: true, membership: updated, payout });
+
+  } catch (err) {
+    console.error("Collect error:", err);
+    return res.status(500).json({ error: "Collect failed" });
+  }
+});
+
+
 // ------------------------------------------------------------------------------------
 // Admin + Transactions
 // ------------------------------------------------------------------------------------
