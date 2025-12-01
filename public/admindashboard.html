@@ -89,323 +89,362 @@
       </div>
     </div>
 
+    <div class="right">
+      <div class="card">
+        <h3>Actions & Transaction Viewer</h3>
+
+        <div style="display:flex;gap:8px;margin-bottom:10px">
+          <input id="txInspect" class="input" placeholder="Enter txId or userId to inspect" />
+          <button id="btnInspect" class="btn">Inspect</button>
+          <button id="btnRefresh" class="btn" style="background:linear-gradient(90deg,var(--accent2),var(--accent))">Refresh</button>
+        </div>
+
+        <div style="display:flex;gap:8px;margin-bottom:10px">
+          <div style="flex:1">
+            <input id="approveTxInput" class="input" placeholder="txId to approve" />
+            <button id="approveTxBtn" class="btn-approve" style="width:100%;margin-top:8px">Approve</button>
+          </div>
+          <div style="flex:1">
+            <input id="declineTxInput" class="input" placeholder="txId to decline" />
+            <button id="declineTxBtn" class="btn-decline" style="width:100%;margin-top:8px">Decline</button>
+          </div>
+        </div>
+
+        <h3 style="margin-top:10px">Recent Transactions</h3>
+        <div id="recentTx" class="tx-list small"><div class="small muted">Loading...</div></div>
+      </div>
+
+      <div class="card" style="margin-top:18px">
+        <h3>User Transaction History / Inspect</h3>
+        <pre id="userTxHistory">Select a user to view transaction history or inspect txId/userId above.</pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">CryptoYieldPro • Admin • Signed in as <span id="adminLabel">—</span></div>
+</div>
+
+<!-- Sign-in overlay -->
+<div id="signin" class="signinOverlay" style="display:flex">
+  <div class="signinCard">
+    <div class="logoLarge">CryptoYieldPro Admin Sign-in</div>
+    <div class="hint">Enter your Admin Key to unlock the dashboard</div>
+    <input id="signinKey" class="input" placeholder="Admin Key" style="width:100%;margin-bottom:12px"/>
+    <div style="display:flex;gap:8px;justify-content:center">
+      <button id="signinBtn" class="btn">Sign in</button>
+      <button id="cancelBtn" class="btn" style="background:#2b2b2b;color:#fff">Cancel</button>
+    </div>
+    <div style="height:8px"></div>
+    <div class="small muted">Admin key not stored — used for this session only.</div>
+  </div>
+</div>
 
 <script>
-/*
-  Updated Admin Dashboard JS (membership aware)
-  - Shows pending membership purchases (filters pending deposits with meta.isMembership)
-  - Attempts to load "all memberships" via /api/admin/all-memberships (optional backend)
-  - Falls back gracefully (shows helpful message) if backend endpoint is not present
-  - Integrates with existing approve/decline flows
-*/
+document.addEventListener('DOMContentLoaded', () => {
+  // Admin logic — runs after DOM ready
+  let ADMIN_KEY = "";          // stored in memory for this session (not saved)
+  const $ = id => document.getElementById(id);
 
-let ADMIN_KEY = "";          // stored in memory for this session (not saved)
-const $ = id => document.getElementById(id);
-
-// helper wrapper for admin calls
-async function callAdmin(path, method='GET', body=null) {
-  if (!ADMIN_KEY) {
-    alert("Admin key not set. Sign in first.");
-    return null;
-  }
-  const opts = { method, headers: { 'Content-Type': 'application/json', 'x-admin-key': ADMIN_KEY } };
-  if (body) opts.body = JSON.stringify(body);
-  try {
-    const res = await fetch(path, opts);
-    const text = await res.text();
-    try { return JSON.parse(text); } catch (e) { return text; }
-  } catch (err) {
-    console.error("callAdmin error", err);
-    alert("Network error: " + err.message);
-    return null;
-  }
-}
-
-// small element helper
-function elItem(title, subtitle, rightHtml='') {
-  return `<div class="item"><div>
-            <div class="user-row"><strong>${title}</strong></div>
-            <div class="small muted">${subtitle}</div>
-          </div>
-          <div class="actions">${rightHtml}</div></div>`;
-}
-
-// ---------------- Pending Membership Purchases ----------------
-async function loadPendingMemberships(){
-  const res = await callAdmin('/api/admin/pending-deposits');
-  const wrap = $('pendingMemberships');
-  wrap.innerHTML = '';
-  if (!res || !res.pending) {
-    wrap.innerHTML = '<div class="small muted">No data or unauthorized</div>'; 
-    return;
-  }
-
-  // filter deposits which are membership purchases (meta.isMembership)
-  const memPending = res.pending.filter(tx => tx.meta && tx.meta.isMembership);
-  if (!memPending.length) {
-    wrap.innerHTML = '<div class="small muted">No pending membership purchases</div>';
-    return;
-  }
-
-  memPending.forEach(tx=>{
-    const tier = tx.meta?.membershipTier || '—';
-    const right = `<div style="text-align:right">
-                    <div style="font-weight:700">${tx.amount} ${tx.coin}</div>
-                    <div style="height:8px"></div>
-                    <button class="btn-approve" onclick="approveTx('${tx._id}')">Approve</button>
-                    <button class="btn-decline" onclick="declineTx('${tx._id}')">Decline</button>
-                    <div class="small muted" style="margin-top:6px">User: ${tx.userId?.username || tx.userId}</div>
-                   </div>`;
-    wrap.insertAdjacentHTML('beforeend', `<div style="margin-bottom:8px">${elItem('Membership Purchase: '+tx._id, `Tier: ${tier} • User: ${tx.userId?.username || 'N/A'} • ${new Date(tx.createdAt).toLocaleString()}`, right)}</div>`);
-  });
-}
-
-// ---------------- All Memberships (attempt to load via dedicated endpoint; fallback if not present) ----------------
-async function loadAllMemberships(){
-  const wrap = $('allMemberships');
-  wrap.innerHTML = '';
-  // First try a dedicated endpoint (recommended)
-  const res = await callAdmin('/api/admin/all-memberships'); // optional endpoint on server
-  if (res && res.memberships) {
-    res.memberships.forEach(m=>{
-      const statusClass = m.status === 'ACTIVE' ? 'pill pending' : (m.status === 'COMPLETED' ? 'pill confirmed' : 'pill');
-      const right = `<div style="text-align:right">
-                      <div style="font-weight:700">${m.tier}</div>
-                      <div class="small muted" style="margin-top:6px">User: ${m.userId?.username || m.userId}</div>
-                    </div>`;
-      wrap.insertAdjacentHTML('beforeend', elItem(`${m.tier} • ${m.userId?.username || m.userId}`, `Status: ${m.status} • DaysPaid: ${m.daysPaid}/${m.durationDays} • Start: ${new Date(m.startDate).toLocaleString()}`, right));
-    });
-    return;
-  }
-
-  // Fallback: If server doesn't have the endpoint, show helpful message and option to attempt a weaker reconstruction
-  wrap.innerHTML = `<div class="small muted">Backend does not expose <code>/api/admin/all-memberships</code>. To enable a full "All Memberships" view add that endpoint (it should return { memberships: [...] }).</div>
-                    <div style="height:8px"></div>
-                    <div><button class="btn" onclick="attemptMembershipRebuild()">Try fallback (best-effort)</button></div>`;
-}
-
-// Best-effort fallback: try to reconstruct memberships by scanning recent transactions and users (limited)
-async function attemptMembershipRebuild(){
-  const wrap = $('allMemberships');
-  wrap.innerHTML = '<div class="small muted">Attempting fallback: scanning recent transactions (may be incomplete)...</div>';
-  const txRes = await callAdmin('/api/admin/all-transactions');
-  if (!txRes || !txRes.tx) {
-    wrap.innerHTML = '<div class="small muted">Unable to fetch transactions for fallback.</div>';
-    return;
-  }
-
-  // Look for transactions that indicate membership (DEPOSIT with meta.isMembership or MEMBERSHIP_PAYOUT)
-  const membershipTx = txRes.tx.filter(t => (t.type === 'DEPOSIT' && t.meta?.isMembership) || t.type === 'MEMBERSHIP_PAYOUT');
-  if (!membershipTx.length) {
-    wrap.innerHTML = '<div class="small muted">No membership-like transactions found in recent transactions.</div>';
-    return;
-  }
-
-  // Build a minimal map grouped by user + tier
-  const map = {};
-  membershipTx.forEach(t=>{
-    const user = t.userId?.username || t.userId || 'unknown';
-    const tier = t.meta?.membershipTier || (t.meta?.membershipId ? ('tx-'+String(t.meta.membershipId).slice(0,6)) : 'unknown');
-    const key = `${user}::${tier}`;
-    map[key] = map[key] || { user, tier, txs: [] };
-    map[key].txs.push(t);
-  });
-
-  wrap.innerHTML = '';
-  Object.values(map).forEach(m=>{
-    const sub = m.txs.map(x => `${x.type} • ${x.amount} ${x.coin} • ${new Date(x.createdAt).toLocaleString()}`).join('\n');
-    wrap.insertAdjacentHTML('beforeend', `<div style="margin-bottom:8px">${elItem(m.tier + ' • ' + m.user, `<pre style="white-space:pre-wrap;margin:0;font-size:12px">${sub}</pre>`,`<div class="small muted">Reconstructed</div>`)}</div>`);
-  });
-}
-
-// ---------------- Existing / updated loaders ----------------
-async function loadPendingDeposits(){
-  const res = await callAdmin('/api/admin/pending-deposits');
-  const wrap = $('pendingDeposits');
-  wrap.innerHTML = '';
-  if (!res || !res.pending) { wrap.innerHTML = '<div class="small muted">No data or unauthorized</div>'; return; }
-  res.pending.forEach(tx=>{
-    const isMembership = tx.meta && tx.meta.isMembership;
-    const memBadge = isMembership ? `<div class="small muted" style="margin-bottom:6px">🔰 Membership: ${tx.meta.membershipTier || '—'}</div>` : '';
-    const right = `<div style="text-align:right">
-                    <div style="font-weight:700">${tx.amount} ${tx.coin}</div>
-                    <div style="height:8px"></div>
-                    <button class="btn-approve" onclick="approveTx('${tx._id}')">Approve</button>
-                    <button class="btn-decline" onclick="declineTx('${tx._id}')">Decline</button>
-                    <div class="small muted" style="margin-top:6px">User: ${tx.userId?.username || tx.userId}</div>
-                   </div>`;
-    wrap.insertAdjacentHTML('beforeend', `<div style="margin-bottom:8px">${memBadge}${elItem('Deposit: '+tx._id, `User: ${tx.userId?.username || 'N/A'} • ${new Date(tx.createdAt).toLocaleString()}`, right)}</div>`);
-  });
-}
-
-async function loadPendingWithdraws(){
-  const res = await callAdmin('/api/admin/pending-withdraws');
-  const wrap = $('pendingWithdraws');
-  wrap.innerHTML = '';
-  if (!res || !res.pending) { wrap.innerHTML = '<div class="small muted">No data or unauthorized</div>'; return; }
-  res.pending.forEach(tx=>{
-    const walletAddr = tx.meta?.wallet ? `<div class="small muted" style="margin-top:4px">Wallet: ${tx.meta.wallet}</div>` : '';
-    const right = `<div style="text-align:right">
-                    <div style="font-weight:700">${tx.amount} ${tx.coin}</div>
-                    <div style="height:8px"></div>
-                    <button class="btn-approve" onclick="approveTx('${tx._id}', true)">Approve</button>
-                    <button class="btn-decline" onclick="declineTx('${tx._id}')">Decline</button>
-                    <div class="small muted" style="margin-top:6px">User: ${tx.userId?.username || tx.userId}</div>
-                    ${walletAddr}
-                   </div>`;
-    wrap.insertAdjacentHTML('beforeend', elItem('Withdraw: '+tx._id, `User: ${tx.userId?.username || 'N/A'} • ${new Date(tx.createdAt).toLocaleString()}`, right));
-  });
-}
-
-async function loadUsers(){
-  const res = await callAdmin('/api/admin/users');
-  const wrap = $('usersList');
-  wrap.innerHTML = '';
-  if (!res || !res.users) { wrap.innerHTML = '<div class="small muted">No data or unauthorized</div>'; return; }
-  res.users.forEach(u=>{
-    const right = `<div style="text-align:right">
-                    <div style="font-weight:700">${(u.balance||0).toFixed ? (Number(u.balance||0).toFixed(2)) : (u.balances?.USD ? Number(u.balances.USD).toFixed(2) : '0.00')} USD</div>
-                    <div style="height:8px"></div>
-                    <button class="btn" onclick="inspectUser('${u._id}')">View TX</button>
-                  </div>`;
-    wrap.insertAdjacentHTML('beforeend', elItem(u.username+' • '+ (u.email || ''), `Created: ${new Date(u.createdAt).toLocaleString()}`, right));
-  });
-}
-
-async function loadRecentTx(){
-  const res = await callAdmin('/api/admin/all-transactions');
-  const wrap = $('recentTx');
-  wrap.innerHTML = '';
-  if (!res || !res.tx) { wrap.innerHTML = '<div class="small muted">No transactions or unauthorized</div>'; return; }
-  const list = res.tx.slice(0, 100);
-  list.forEach(t=>{
-    const status = t.status || 'PENDING';
-    const badgeClass = status === 'CONFIRMED' ? 'pill confirmed' : status === 'DECLINED' ? 'pill declined' : 'pill pending';
-    const row = `<div style="padding:8px;border-bottom:1px dashed rgba(255,255,255,0.03);">
-                  <div style="display:flex;justify-content:space-between;align-items:center">
-                    <div><strong>${t.type}</strong> • ${t.coin} • ${t.amount}</div>
-                    <div class="${badgeClass}">${status}</div>
-                  </div>
-                  <div class="small muted">User: ${t.userId?.username || t.userId} • ${new Date(t.createdAt).toLocaleString()}</div>
-                 </div>`;
-    wrap.insertAdjacentHTML('beforeend', row);
-  });
-}
-
-// approve tx (deposit or withdraw). If isWithdraw param true -> call approve-withdraw
-async function approveTx(txId, isWithdraw=false){
-  if (!confirm("Approve transaction " + txId + " ?")) return;
-  try {
-    if (isWithdraw) {
-      const tx_hash = prompt("Enter blockchain tx hash (optional)","");
-      const res = await callAdmin('/api/admin/approve-withdraw','POST',{ txId, tx_hash });
-      alert(res && res.ok ? 'Withdraw approved' : JSON.stringify(res));
-    } else {
-      const res = await callAdmin('/api/admin/approve-deposit','POST',{ txId });
-      alert(res && res.ok ? 'Deposit approved' : JSON.stringify(res));
+  // helper wrapper for admin calls
+  async function callAdmin(path, method='GET', body=null) {
+    if (!ADMIN_KEY) {
+      // open sign-in overlay instead of alerting
+      const s = $('signin');
+      if (s) s.style.display = 'flex';
+      return null;
     }
-  } catch (err) {
-    alert('Error approving: ' + err.message);
+    const opts = { method, headers: { 'Content-Type': 'application/json', 'x-admin-key': ADMIN_KEY } };
+    if (body) opts.body = JSON.stringify(body);
+    try {
+      const res = await fetch(path, opts);
+      // if unauthorized, show sign-in overlay
+      if (res.status === 401 || res.status === 403) {
+        $('signin').style.display = 'flex';
+        return null;
+      }
+      const text = await res.text();
+      try { return JSON.parse(text); } catch (e) { return text; }
+    } catch (err) {
+      console.error("callAdmin error", err);
+      alert("Network error: " + err.message);
+      return null;
+    }
   }
-  refreshAll();
-}
 
-// decline tx
-async function declineTx(txId){
-  if (!confirm("Decline transaction " + txId + " ?")) return;
-  const res = await callAdmin('/api/admin/decline-transaction','POST',{ txId });
-  alert(res && res.ok ? 'Transaction declined' : JSON.stringify(res));
-  refreshAll();
-}
-
-// inspect user's transactions
-async function inspectUser(userId){
-  const res = await callAdmin('/api/admin/user-transactions/'+userId);
-  if (!res) {
-    $('userTxHistory').innerText = 'Endpoint /api/admin/user-transactions/:userId not available or returned error.';
-    return;
+  // small element helper
+  function elItem(title, subtitle, rightHtml='') {
+    return `<div class="item"><div>
+              <div class="user-row"><strong>${title}</strong></div>
+              <div class="small muted">${subtitle}</div>
+            </div>
+            <div class="actions">${rightHtml}</div></div>`;
   }
-  $('userTxHistory').innerText = JSON.stringify(res, null, 2);
-}
 
-// generic inspect (tx or user)
-document.getElementById('btnInspect').onclick = async ()=>{
-  const v = $('txInspect').value.trim();
-  if (!v) return alert('Enter txId or userId');
-  // try get all tx and find id quickly
-  const all = await callAdmin('/api/admin/all-transactions');
-  if (all && all.tx){
-    const found = all.tx.find(t => t._id === v || t._id == v);
-    if (found) { $('userTxHistory').innerText = JSON.stringify(found, null, 2); return; }
+  // ---------------- Pending Membership Purchases ----------------
+  async function loadPendingMemberships(){
+    const res = await callAdmin('/api/admin/pending-deposits');
+    const wrap = $('pendingMemberships');
+    if (!wrap) return;
+    wrap.innerHTML = '';
+    if (!res || !res.pending) {
+      wrap.innerHTML = '<div class="small muted">No data or unauthorized</div>';
+      return;
+    }
+
+    const memPending = res.pending.filter(tx => tx.meta && tx.meta.isMembership);
+    if (!memPending.length) {
+      wrap.innerHTML = '<div class="small muted">No pending membership purchases</div>';
+      return;
+    }
+
+    memPending.forEach(tx=>{
+      const tier = tx.meta?.membershipTier || '—';
+      const right = `<div style="text-align:right">
+                      <div style="font-weight:700">${tx.amount} ${tx.coin}</div>
+                      <div style="height:8px"></div>
+                      <button class="btn-approve" onclick="approveTx('${tx._id}')">Approve</button>
+                      <button class="btn-decline" onclick="declineTx('${tx._id}')">Decline</button>
+                      <div class="small muted" style="margin-top:6px">User: ${tx.userId?.username || tx.userId}</div>
+                     </div>`;
+      wrap.insertAdjacentHTML('beforeend', `<div style="margin-bottom:8px">${elItem('Membership Purchase: '+tx._id, `Tier: ${tier} • User: ${tx.userId?.username || 'N/A'} • ${new Date(tx.createdAt).toLocaleString()}`, right)}</div>`);
+    });
   }
-  // fallback: user transactions
-  const userRes = await callAdmin('/api/admin/user-transactions/'+v);
-  $('userTxHistory').innerText = JSON.stringify(userRes, null, 2);
-};
 
-// refresh all panels (now includes membership loaders)
-async function refreshAll(){
-  await Promise.all([
-    loadPendingMemberships(),
-    loadAllMemberships(),
-    loadPendingDeposits(),
-    loadPendingWithdraws(),
-    loadUsers(),
-    loadRecentTx()
-  ]);
-}
+  // ---------------- All Memberships ----------------
+  async function loadAllMemberships(){
+    const wrap = $('allMemberships');
+    if (!wrap) return;
+    wrap.innerHTML = '';
+    const res = await callAdmin('/api/admin/all-memberships'); // optional
+    if (res && res.memberships) {
+      res.memberships.forEach(m=>{
+        const right = `<div style="text-align:right">
+                        <div style="font-weight:700">${m.tier}</div>
+                        <div class="small muted" style="margin-top:6px">User: ${m.userId?.username || m.userId}</div>
+                      </div>`;
+        wrap.insertAdjacentHTML('beforeend', elItem(`${m.tier} • ${m.userId?.username || m.userId}`, `Status: ${m.status} • DaysPaid: ${m.daysPaid}/${m.durationDays} • Start: ${new Date(m.startDate).toLocaleString()}`, right));
+      });
+      return;
+    }
 
-// wire buttons
-document.getElementById('btnRefresh').onclick = refreshAll;
-document.getElementById('approveTxBtn').onclick = async ()=>{
-  const txId = $('approveTxInput').value.trim();
-  if (!txId) return alert('Enter txId');
-  // try to detect if tx is withdraw by fetching all tx
-  const all = await callAdmin('/api/admin/all-transactions');
-  if (all && all.tx){
-    const found = all.tx.find(t => t._id === txId || t._id == txId);
-    if (found && found.type === 'WITHDRAW') { await approveTx(txId, true); return; }
+    wrap.innerHTML = `<div class="small muted">Backend does not expose <code>/api/admin/all-memberships</code>. To enable full view add that endpoint.</div>
+                      <div style="height:8px"></div>
+                      <div><button class="btn" id="tryRebuild">Try fallback (best-effort)</button></div>`;
+    const btn = document.getElementById('tryRebuild');
+    if (btn) btn.onclick = attemptMembershipRebuild;
   }
-  await approveTx(txId, false);
-};
-document.getElementById('declineTxBtn').onclick = async ()=>{
-  const txId = $('declineTxInput').value.trim();
-  if (!txId) return alert('Enter txId');
-  await declineTx(txId);
-};
 
-// SIGN IN / overlay
-document.getElementById('signinBtn').onclick = ()=>{
-  const k = $('signinKey').value.trim();
-  if (!k) return alert('Enter admin key');
-  ADMIN_KEY = k;
-  $('adminLabel').innerText = 'Admin (session)';
-  $('adminKeyShow').value = '(session key)';
-  document.getElementById('signin').style.display = 'none';
-  refreshAll();
-};
-document.getElementById('cancelBtn').onclick = ()=>{ document.getElementById('signin').style.display = 'none'; };
-document.getElementById('openSign').onclick = ()=>{
-  const k = $('adminKeyShow').value.trim();
-  if (k) { $('signinKey').value = k; }
-  document.getElementById('signin').style.display = 'flex';
-};
-// auto-open if adminKeyShow prefilled
-if ($('adminKeyShow').value.trim()) document.getElementById('openSign').click();
+  async function attemptMembershipRebuild(){
+    const wrap = $('allMemberships');
+    if (!wrap) return;
+    wrap.innerHTML = '<div class="small muted">Attempting fallback: scanning recent transactions...</div>';
+    const txRes = await callAdmin('/api/admin/all-transactions');
+    if (!txRes || !txRes.tx) {
+      wrap.innerHTML = '<div class="small muted">Unable to fetch transactions for fallback.</div>';
+      return;
+    }
+    const membershipTx = txRes.tx.filter(t => (t.type === 'DEPOSIT' && t.meta?.isMembership) || t.type === 'MEMBERSHIP_PAYOUT');
+    if (!membershipTx.length) {
+      wrap.innerHTML = '<div class="small muted">No membership-like transactions found in recent transactions.</div>';
+      return;
+    }
+    const map = {};
+    membershipTx.forEach(t=>{
+      const user = t.userId?.username || t.userId || 'unknown';
+      const tier = t.meta?.membershipTier || (t.meta?.membershipId ? ('tx-'+String(t.meta.membershipId).slice(0,6)) : 'unknown');
+      const key = `${user}::${tier}`;
+      map[key] = map[key] || { user, tier, txs: [] };
+      map[key].txs.push(t);
+    });
+    wrap.innerHTML = '';
+    Object.values(map).forEach(m=>{
+      const sub = m.txs.map(x => `${x.type} • ${x.amount} ${x.coin} • ${new Date(x.createdAt).toLocaleString()}`).join('\n');
+      wrap.insertAdjacentHTML('beforeend', `<div style="margin-bottom:8px">${elItem(m.tier + ' • ' + m.user, `<pre style="white-space:pre-wrap;margin:0;font-size:12px">${sub}</pre>`,`<div class="small muted">Reconstructed</div>`)}</div>`);
+    });
+  }
 
-// initial load (but require sign-in)
-(function init(){
-  // If adminKeyShow has something prefilled, use it
-  if ($('adminKeyShow').value.trim()) {
-    ADMIN_KEY = $('adminKeyShow').value.trim();
-    $('adminLabel').innerText = 'Admin (session)';
-    document.getElementById('signin').style.display = 'none';
+  // ---------------- Other loaders ----------------
+  async function loadPendingDeposits(){
+    const res = await callAdmin('/api/admin/pending-deposits');
+    const wrap = $('pendingDeposits');
+    if (!wrap) return;
+    wrap.innerHTML = '';
+    if (!res || !res.pending) { wrap.innerHTML = '<div class="small muted">No data or unauthorized</div>'; return; }
+    res.pending.forEach(tx=>{
+      const isMembership = tx.meta && tx.meta.isMembership;
+      const memBadge = isMembership ? `<div class="small muted" style="margin-bottom:6px">🔰 Membership: ${tx.meta.membershipTier || '—'}</div>` : '';
+      const right = `<div style="text-align:right">
+                      <div style="font-weight:700">${tx.amount} ${tx.coin}</div>
+                      <div style="height:8px"></div>
+                      <button class="btn-approve" onclick="approveTx('${tx._id}')">Approve</button>
+                      <button class="btn-decline" onclick="declineTx('${tx._id}')">Decline</button>
+                      <div class="small muted" style="margin-top:6px">User: ${tx.userId?.username || tx.userId}</div>
+                     </div>`;
+      wrap.insertAdjacentHTML('beforeend', `<div style="margin-bottom:8px">${memBadge}${elItem('Deposit: '+tx._id, `User: ${tx.userId?.username || 'N/A'} • ${new Date(tx.createdAt).toLocaleString()}`, right)}</div>`);
+    });
+  }
+
+  async function loadPendingWithdraws(){
+    const res = await callAdmin('/api/admin/pending-withdraws');
+    const wrap = $('pendingWithdraws');
+    if (!wrap) return;
+    wrap.innerHTML = '';
+    if (!res || !res.pending) { wrap.innerHTML = '<div class="small muted">No data or unauthorized</div>'; return; }
+    res.pending.forEach(tx=>{
+      const walletAddr = tx.meta?.wallet ? `<div class="small muted" style="margin-top:4px">Wallet: ${tx.meta.wallet}</div>` : '';
+      const right = `<div style="text-align:right">
+                      <div style="font-weight:700">${tx.amount} ${tx.coin}</div>
+                      <div style="height:8px"></div>
+                      <button class="btn-approve" onclick="approveTx('${tx._id}', true)">Approve</button>
+                      <button class="btn-decline" onclick="declineTx('${tx._id}')">Decline</button>
+                      <div class="small muted" style="margin-top:6px">User: ${tx.userId?.username || tx.userId}</div>
+                      ${walletAddr}
+                     </div>`;
+      wrap.insertAdjacentHTML('beforeend', elItem('Withdraw: '+tx._id, `User: ${tx.userId?.username || 'N/A'} • ${new Date(tx.createdAt).toLocaleString()}`, right));
+    });
+  }
+
+  async function loadUsers(){
+    const res = await callAdmin('/api/admin/users');
+    const wrap = $('usersList');
+    if (!wrap) return;
+    wrap.innerHTML = '';
+    if (!res || !res.users) { wrap.innerHTML = '<div class="small muted">No data or unauthorized</div>'; return; }
+    res.users.forEach(u=>{
+      const usd = (u.balances && u.balances.USD != null) ? Number(u.balances.USD).toFixed(2) : ((u.balance||0).toFixed ? (Number(u.balance||0).toFixed(2)) : '0.00');
+      const right = `<div style="text-align:right">
+                      <div style="font-weight:700">${usd} USD</div>
+                      <div style="height:8px"></div>
+                      <button class="btn" onclick="inspectUser('${u._id}')">View TX</button>
+                    </div>`;
+      wrap.insertAdjacentHTML('beforeend', elItem(u.username+' • '+ (u.email || ''), `Created: ${new Date(u.createdAt).toLocaleString()}`, right));
+    });
+  }
+
+  async function loadRecentTx(){
+    const res = await callAdmin('/api/admin/all-transactions');
+    const wrap = $('recentTx');
+    if (!wrap) return;
+    wrap.innerHTML = '';
+    if (!res || !res.tx) { wrap.innerHTML = '<div class="small muted">No transactions or unauthorized</div>'; return; }
+    const list = res.tx.slice(0, 100);
+    list.forEach(t=>{
+      const status = t.status || 'PENDING';
+      const badgeClass = status === 'CONFIRMED' ? 'pill confirmed' : status === 'DECLINED' ? 'pill declined' : 'pill pending';
+      const row = `<div style="padding:8px;border-bottom:1px dashed rgba(255,255,255,0.03);">
+                    <div style="display:flex;justify-content:space-between;align-items:center">
+                      <div><strong>${t.type}</strong> • ${t.coin} • ${t.amount}</div>
+                      <div class="${badgeClass}">${status}</div>
+                    </div>
+                    <div class="small muted">User: ${t.userId?.username || t.userId} • ${new Date(t.createdAt).toLocaleString()}</div>
+                   </div>`;
+      wrap.insertAdjacentHTML('beforeend', row);
+    });
+  }
+
+  // Expose approve/decline to window so inline onclick works
+  window.approveTx = async function(txId, isWithdraw=false){
+    if (!confirm("Approve transaction " + txId + " ?")) return;
+    try {
+      if (isWithdraw) {
+        const tx_hash = prompt("Enter blockchain tx hash (optional)","");
+        const res = await callAdmin('/api/admin/approve-withdraw','POST',{ txId, tx_hash });
+        alert(res && res.ok ? 'Withdraw approved' : JSON.stringify(res));
+      } else {
+        const res = await callAdmin('/api/admin/approve-deposit','POST',{ txId });
+        alert(res && res.ok ? 'Deposit approved' : JSON.stringify(res));
+      }
+    } catch (err) {
+      alert('Error approving: ' + err.message);
+    }
     refreshAll();
-  } else {
-    // show overlay
-    document.getElementById('signin').style.display = 'flex';
+  };
+
+  window.declineTx = async function(txId){
+    if (!confirm("Decline transaction " + txId + " ?")) return;
+    const res = await callAdmin('/api/admin/decline-transaction','POST',{ txId });
+    alert(res && res.ok ? 'Transaction declined' : JSON.stringify(res));
+    refreshAll();
+  };
+
+  window.inspectUser = async function(userId){
+    const res = await callAdmin('/api/admin/user-transactions/'+userId);
+    if (!res) {
+      $('userTxHistory').innerText = 'Endpoint /api/admin/user-transactions/:userId not available or returned error.';
+      return;
+    }
+    $('userTxHistory').innerText = JSON.stringify(res, null, 2);
+  };
+
+  // generic inspect (tx or user)
+  $('btnInspect').onclick = async ()=>{
+    const v = $('txInspect').value.trim();
+    if (!v) return alert('Enter txId or userId');
+    const all = await callAdmin('/api/admin/all-transactions');
+    if (all && all.tx){
+      const found = all.tx.find(t => t._id === v || t._id == v);
+      if (found) { $('userTxHistory').innerText = JSON.stringify(found, null, 2); return; }
+    }
+    const userRes = await callAdmin('/api/admin/user-transactions/'+v);
+    $('userTxHistory').innerText = JSON.stringify(userRes, null, 2);
+  };
+
+  // refresh all panels
+  async function refreshAll(){
+    await Promise.all([
+      loadPendingMemberships(),
+      loadAllMemberships(),
+      loadPendingDeposits(),
+      loadPendingWithdraws(),
+      loadUsers(),
+      loadRecentTx()
+    ]);
   }
-})();
+
+  // wire buttons
+  $('btnRefresh').onclick = refreshAll;
+  $('approveTxBtn').onclick = async ()=>{
+    const txId = $('approveTxInput').value.trim();
+    if (!txId) return alert('Enter txId');
+    const all = await callAdmin('/api/admin/all-transactions');
+    if (all && all.tx){
+      const found = all.tx.find(t => t._id === txId || t._id == txId);
+      if (found && found.type === 'WITHDRAW') { await window.approveTx(txId, true); return; }
+    }
+    await window.approveTx(txId, false);
+  };
+  $('declineTxBtn').onclick = async ()=>{
+    const txId = $('declineTxInput').value.trim();
+    if (!txId) return alert('Enter txId');
+    await window.declineTx(txId);
+  };
+
+  // SIGN IN / overlay
+  $('signinBtn').onclick = ()=>{
+    const k = $('signinKey').value.trim();
+    if (!k) return alert('Enter admin key');
+    ADMIN_KEY = k;
+    $('adminLabel').innerText = 'Admin (session)';
+    $('adminKeyShow').value = '(session key)';
+    $('signin').style.display = 'none';
+    refreshAll();
+  };
+  $('cancelBtn').onclick = ()=>{ $('signin').style.display = 'none'; };
+  $('openSign').onclick = ()=>{
+    const k = $('adminKeyShow').value.trim();
+    if (k) { $('signinKey').value = k; }
+    $('signin').style.display = 'flex';
+  };
+
+  // auto-open if adminKeyShow prefilled
+  if ($('adminKeyShow').value.trim()) $('openSign').click();
+
+  // initial load (show signin overlay by default)
+  (function init(){
+    // show overlay so admin must sign in
+    $('signin').style.display = 'flex';
+  })();
+});
 </script>
 </body>
 </html>
