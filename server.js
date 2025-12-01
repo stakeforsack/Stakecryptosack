@@ -317,7 +317,7 @@ app.post("/api/verify-payment", needAuth, async (req, res) => {
 // ---------------- Withdraw request (creates pending withdraw tx) ----------------
 app.post("/api/withdraw", needAuth, async (req, res) => {
   try {
-    const { coin, amount } = req.body;
+    const { coin, amount, wallet } = req.body;
     if (!coin || !amount || amount <= 0) return res.status(400).json({ error: "Invalid withdrawal" });
 
     const ALLOWED = ["BTC", "ETH", "USDT", "BNB", "ADA"];
@@ -330,12 +330,16 @@ app.post("/api/withdraw", needAuth, async (req, res) => {
     const currentBalance = Number(user.balances[coin] || 0);
     if (amount > currentBalance) return res.status(400).json({ error: "Insufficient balance" });
 
+    const meta = {};
+    if (wallet) meta.wallet = String(wallet);
+
     const tx = await Transaction.create({
       userId: user._id,
       type: "WITHDRAW",
       coin,
       amount,
       status: "PENDING",
+      meta,
     });
 
     res.json({ ok: true, txId: tx._id.toString() });
