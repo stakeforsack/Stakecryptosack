@@ -4,9 +4,10 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Withdraw | CryptoYieldPro</title>
+
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+
   <style>
-    /* (your existing CSS kept exactly as before) */
     :root {
       --accent: #a855f7;
       --accent2: #5eead4;
@@ -18,15 +19,16 @@
       --error: #ff6b6b;
       --success: #7ef6b8;
     }
+
     body {
       margin: 0;
       background: linear-gradient(180deg,var(--bg1),var(--bg2));
       font-family: Inter, sans-serif;
       color: #fff;
-      -webkit-font-smoothing: antialiased;
       min-height: 100vh;
       padding-bottom: 80px;
     }
+
     .back-btn {
       position: fixed;
       top: 18px;
@@ -36,15 +38,16 @@
       border-radius: 10px;
       border: 1px solid rgba(255,255,255,0.1);
       font-weight: 600;
-      color: #fff;
       cursor: pointer;
       backdrop-filter: blur(6px);
       z-index: 30;
     }
+
     .wrap {
       width: 92%;
       margin: 80px auto 0;
     }
+
     .card {
       background: var(--glass);
       padding: 24px;
@@ -52,12 +55,14 @@
       border: 1px solid rgba(255,255,255,0.06);
       backdrop-filter: blur(12px);
       box-shadow: 0 4px 18px rgba(0,0,0,0.5);
-      animation: slideUp .5s ease;
+      animation: fadeIn .5s ease;
     }
-    @keyframes slideUp {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(15px); }
+      to   { opacity: 1; transform: translateY(0); }
     }
+
     h2 {
       font-size: 1.7rem;
       font-weight: 800;
@@ -68,7 +73,9 @@
       color: transparent;
       margin-bottom: 22px;
     }
+
     label { display:block; margin-bottom:6px; font-size:.9rem; color:var(--muted); font-weight:600; }
+
     input, select {
       width: 90%;
       padding: 14px;
@@ -78,8 +85,10 @@
       color: #fff;
       font-size: 1rem;
       outline: none;
+      margin-bottom: 12px;
     }
     input:focus, select:focus { border-color: var(--accent); }
+
     .balance-box {
       background: #0e0e13;
       padding: 16px;
@@ -91,9 +100,10 @@
       font-weight: 700;
       color: var(--accent2);
     }
+
     .primary-btn {
-      margin-top: 16px;
       width: 100%;
+      margin-top: 10px;
       padding: 15px;
       border-radius: 12px;
       background: linear-gradient(90deg,var(--accent),var(--accent2));
@@ -104,18 +114,44 @@
       transition: 0.25s;
       font-size: 1rem;
     }
-    .primary-btn[disabled] { opacity: 0.6; cursor: not-allowed; transform: none; }
-    .primary-btn:hover { transform: scale(1.03); }
-    .error, .success {
-      margin-top: 12px;
-      padding: 12px;
-      border-radius: 12px;
-      font-weight: 600;
+    .primary-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .status-box {
+      margin-top: 18px;
+      padding: 16px;
+      border-radius: 14px;
+      background: rgba(126,246,184,0.1);
+      border: 1px solid rgba(126,246,184,0.2);
+      color: var(--success);
+      font-weight: 700;
       display: none;
     }
-    .error { background: rgba(255,107,107,0.12); color: var(--error); }
-    .success { background: rgba(126,246,184,0.12); color: var(--success); }
-    /* bottom navbar */
+
+    .processing {
+      margin-top: 20px;
+      padding: 18px;
+      border-radius: 14px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.1);
+      text-align: center;
+      display: none;
+      animation: fadeIn .4s ease;
+    }
+
+    .spinner {
+      width: 26px;
+      height: 26px;
+      border: 3px solid rgba(255,255,255,0.2);
+      border-top-color: var(--accent2);
+      border-radius: 50%;
+      margin: 0 auto 10px;
+      animation: spin 0.9s linear infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* bottom nav */
     .bottom-nav {
       position: fixed;
       bottom: 12px;
@@ -128,18 +164,19 @@
       border: 1px solid rgba(255,255,255,0.04);
       backdrop-filter: blur(10px);
       border-radius: 20px;
-      z-index: 999;
     }
-    .nav-item { text-align:center; color:var(--muted); font-size:0.8rem; text-decoration:none; font-weight:600; }
-    .nav-item img { width:22px; height:22px; }
+    .nav-item { text-align:center; font-size:0.8rem; color:var(--muted); }
     .nav-item.active { color: var(--accent); }
+    .nav-item img { width:22px; }
   </style>
 </head>
+
 <body>
 <div class="back-btn" onclick="location.href='home.html'">← Back</div>
 
 <div class="wrap">
-  <div class="card">
+  <div class="card" id="formCard">
+
     <h2>Withdraw Funds</h2>
 
     <div class="balance-box">
@@ -148,6 +185,7 @@
     </div>
 
     <form id="withdrawForm" onsubmit="return false;">
+
       <label>Select Currency</label>
       <select id="currency">
         <option value="USDT">USDT</option>
@@ -157,22 +195,50 @@
         <option value="ADA">ADA</option>
       </select>
 
-      <label style="margin-top:18px;">Wallet Address</label>
+      <label>Wallet Address</label>
       <input id="wallet" placeholder="Enter your wallet address">
 
-      <label style="margin-top:18px;">Amount</label>
-      <input id="amount" type="number" min="0" step="any" placeholder="0.00">
+      <label>Amount</label>
+      <input id="amount" type="number" placeholder="0.00">
 
       <button class="primary-btn" id="submitBtn" type="button">Withdraw</button>
 
-      <div id="error" class="error"></div>
-      <div id="success" class="success"></div>
+      <div class="status-box" id="successBox"></div>
+      <div class="error" id="error"></div>
+
     </form>
 
   </div>
+
+  <!-- PROCESSING BOX -->
+  <div class="processing" id="processingBox">
+    <div class="spinner"></div>
+    <div style="font-weight:700;">Processing Withdrawal...</div>
+  </div>
+
+  <!-- PENDING RESULT -->
+  <div class="card" style="display:none;" id="pendingCard">
+    <h2 style="margin-bottom:10px;">Request Submitted</h2>
+    <p style="color:var(--muted); font-size:0.9rem; margin-bottom:20px;">Your withdrawal request is now <b style="color:var(--accent2)">PENDING</b>.  
+      Admin will approve it shortly.</p>
+
+    <div style="background:#0d0d12; padding:14px; border-radius:12px; border:1px solid rgba(255,255,255,0.06); margin-bottom:10px;">
+      <b>Amount:</b> <span id="p_amount"></span>
+    </div>
+
+    <div style="background:#0d0d12; padding:14px; border-radius:12px; border:1px solid rgba(255,255,255,0.06); margin-bottom:10px;">
+      <b>Wallet:</b> <span id="p_wallet"></span>
+    </div>
+
+    <div style="background:#0d0d12; padding:14px; border-radius:12px; border:1px solid rgba(255,255,255,0.06);">
+      <b>Transaction ID:</b> <span id="p_txid"></span>
+    </div>
+
+  </div>
+
 </div>
 
-<!-- Bottom navigation -->
+<!-- bottom navigation -->
 <nav class="bottom-nav">
   <a class="nav-item" href="home.html"><img src="/img/house.png"><br>Home</a>
   <a class="nav-item" href="trade.html"><img src="/img/trade.png"><br>Trade</a>
@@ -181,7 +247,6 @@
 </nav>
 
 <script>
-/* ---------------- Client: Withdraw form handler ---------------- */
 (function () {
   const balanceEl = document.getElementById("balance");
   const currencyEl = document.getElementById("currency");
@@ -189,23 +254,24 @@
   const amountEl = document.getElementById("amount");
   const submitBtn = document.getElementById("submitBtn");
   const errorBox = document.getElementById("error");
-  const successBox = document.getElementById("success");
+  const successBox = document.getElementById("successBox");
+
+  const formCard = document.getElementById("formCard");
+  const processingBox = document.getElementById("processingBox");
+  const pendingCard = document.getElementById("pendingCard");
+
+  const p_amount = document.getElementById("p_amount");
+  const p_wallet = document.getElementById("p_wallet");
+  const p_txid   = document.getElementById("p_txid");
 
   async function loadBalance() {
     try {
-      const res = await fetch(`/api/balances`, { credentials: "include" });
-      if (res.status === 401) {
-        balanceEl.textContent = "Please login";
-        setTimeout(()=> window.location.href = "/login.html", 800);
-        return;
-      }
+      const res = await fetch(`/api/balances`, { credentials:"include" });
       const data = await res.json();
-      if (!data.ok) throw new Error("Failed to load balances");
       const coin = currencyEl.value;
       const value = Number(data.balances[coin] || 0);
       balanceEl.textContent = `${value.toFixed(6)} ${coin}`;
-    } catch (err) {
-      console.error("Balance error:", err);
+    } catch {
       balanceEl.textContent = "Error";
     }
   }
@@ -213,15 +279,9 @@
   currencyEl.addEventListener("change", loadBalance);
   window.addEventListener("DOMContentLoaded", loadBalance);
 
-  function showError(txt) {
+  function showError(msg){
     errorBox.style.display = "block";
-    errorBox.innerText = txt;
-    successBox.style.display = "none";
-  }
-  function showSuccess(txt) {
-    successBox.style.display = "block";
-    successBox.innerText = txt;
-    errorBox.style.display = "none";
+    errorBox.innerHTML = msg;
   }
 
   submitBtn.addEventListener("click", async () => {
@@ -229,62 +289,50 @@
     successBox.style.display = "none";
 
     const coin = currencyEl.value;
-    const wallet = (walletEl.value || "").trim();
+    const wallet = walletEl.value.trim();
     const amount = Number(amountEl.value);
 
-    // basic client validation
-    if (!wallet) {
-      showError("Please enter a wallet address.");
-      return;
-    }
-    if (!amount || isNaN(amount) || amount <= 0) {
-      showError("Please enter a valid amount.");
-      return;
-    }
+    if(!wallet) return showError("Enter wallet address.");
+    if(!amount || amount<=0) return showError("Enter valid amount.");
 
-    // check available balance quickly
-    const balText = balanceEl.textContent || "";
-    const balNum = Number((balText.split(" ")[0] || "0").replace(/,/g, ""));
-    if (!isNaN(balNum) && amount > balNum) {
-      showError("Insufficient balance.");
-      return;
-    }
-
-    // disable UI
     submitBtn.disabled = true;
     submitBtn.innerText = "Submitting...";
+
+    formCard.style.display = "none";
+    processingBox.style.display = "block";
+
     try {
-      const res = await fetch("/api/withdraw", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ coin, amount, wallet })
+      const res = await fetch("/api/withdraw",{
+        method:"POST",
+        credentials:"include",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({ coin, amount, wallet })
       });
 
       const json = await res.json();
-      if (!res.ok) {
-        showError(json.error || json.message || "Withdraw failed");
-        return;
-      }
+      if(!res.ok){ throw new Error(json.error || "Submit failed"); }
 
-      // success — show message and optionally redirect or update balance
-      showSuccess("Withdrawal request submitted. Admin will review it.");
-      // update displayed balance (optimistic: subtract requested amount)
-      const newBal = Math.max(0, (balNum || 0) - amount);
-      balanceEl.textContent = `${newBal.toFixed(6)} ${coin}`;
+      processingBox.style.display = "none";
 
-      // optionally clear form
-      amountEl.value = "";
-      // keep wallet filled so user can reuse
-    } catch (err) {
-      console.error("Withdraw submit error:", err);
-      showError("Network/server error while submitting.");
-    } finally {
+      p_amount.innerText = amount+" "+coin;
+      p_wallet.innerText = wallet;
+      p_txid.innerText = json.txId;
+
+      pendingCard.style.display = "block";
+    }
+    catch(err) {
+      processingBox.style.display = "none";
+      formCard.style.display = "block";
+      showError(err.message);
+    }
+    finally{
       submitBtn.disabled = false;
       submitBtn.innerText = "Withdraw";
     }
   });
+
 })();
 </script>
+
 </body>
 </html>
