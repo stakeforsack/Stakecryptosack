@@ -46,16 +46,21 @@
 
     .banner-slider {
       display: flex;
-      width: 400%;
+      width: 100%;
       height: 100%;
-      transition: transform 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      transition: none;
     }
 
     .banner-slider img {
-      width: 25%;
+      width: 100%;
       height: 100%;
       object-fit: cover;
       filter: brightness(1.05) contrast(1.08);
+      display: none;
+    }
+
+    .banner-slider img.active {
+      display: block;
     }
 
     /* ---------------- Account Balance Card ---------------- */
@@ -180,7 +185,6 @@
   <!-- Banner Slider -->
   <div class="banner-container">
     <div class="banner-slider" id="bannerSlider">
-      <img src="/img/banner_3.png" />
       <img src="/img/banner_1.png" />
       <img src="/img/banner_2.png" />
       <img src="/img/banner_3.png" />
@@ -273,88 +277,28 @@
 <script src="/js/market-prices.js"></script>
 
 <script>
-/* Banner Slider with infinite loop - fixed */
+/* Simple Banner Slider */
 const slider = document.getElementById("bannerSlider");
-let currentIndex = 1;
-const totalSlides = 3;
-let isAnimating = false;
+const bannerImages = slider.querySelectorAll("img");
+let currentIndex = 0;
 
-let autoSlide = setInterval(() => {
-  if (!isAnimating) nextSlide();
-}, 6500);
+// Show first banner on load
+bannerImages[0].classList.add("active");
 
-function nextSlide() {
-  if (isAnimating) return;
-  isAnimating = true;
-  
-  currentIndex++;
-  slider.style.transition = 'transform 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
-  slider.style.transform = `translateX(-${currentIndex * 100}%)`;
-  
-  if (currentIndex === totalSlides + 1) {
-    setTimeout(() => {
-      slider.style.transition = 'none';
-      currentIndex = 1;
-      slider.style.transform = `translateX(-${currentIndex * 100}%)`;
-      isAnimating = false;
-    }, 1200);
-  } else {
-    setTimeout(() => {
-      isAnimating = false;
-    }, 1200);
-  }
+function showBanner(index) {
+  // Remove active class from all
+  bannerImages.forEach(img => img.classList.remove("active"));
+  // Add active to current
+  bannerImages[index].classList.add("active");
 }
 
-function prevSlide() {
-  if (isAnimating) return;
-  isAnimating = true;
-  
-  currentIndex--;
-  slider.style.transition = 'transform 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
-  slider.style.transform = `translateX(-${currentIndex * 100}%)`;
-  
-  if (currentIndex === 0) {
-    setTimeout(() => {
-      slider.style.transition = 'none';
-      currentIndex = totalSlides;
-      slider.style.transform = `translateX(-${currentIndex * 100}%)`;
-      isAnimating = false;
-    }, 1200);
-  } else {
-    setTimeout(() => {
-      isAnimating = false;
-    }, 1200);
-  }
+function nextBanner() {
+  currentIndex = (currentIndex + 1) % bannerImages.length;
+  showBanner(currentIndex);
 }
 
-let startX = 0;
-let endX = 0;
-let isSwiping = false;
-
-slider.addEventListener("touchstart", e => {
-  isSwiping = true;
-  clearInterval(autoSlide);
-  startX = e.touches[0].clientX;
-  endX = startX;
-});
-
-slider.addEventListener("touchmove", e => {
-  endX = e.touches[0].clientX;
-});
-
-slider.addEventListener("touchend", () => {
-  isSwiping = false;
-  let diff = startX - endX;
-
-  if (Math.abs(diff) > 50 && !isAnimating) {
-    if (diff > 0) nextSlide();
-    else prevSlide();
-  }
-
-  autoSlide = setInterval(() => {
-    if (!isAnimating) nextSlide();
-  }, 6500);
-});
+// Auto cycle every 5 seconds (4-5 sec as you requested)
+setInterval(nextBanner, 5000);
 
 // Fetch profile data
 async function loadProfile() {
