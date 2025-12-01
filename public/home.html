@@ -273,14 +273,20 @@
 <script src="/js/market-prices.js"></script>
 
 <script>
-/* Banner Slider with infinite loop */
+/* Banner Slider with infinite loop - fixed */
 const slider = document.getElementById("bannerSlider");
 let currentIndex = 1;
 const totalSlides = 3;
+let isAnimating = false;
 
-let autoSlide = setInterval(() => nextSlide(), 6500);
+let autoSlide = setInterval(() => {
+  if (!isAnimating) nextSlide();
+}, 6500);
 
 function nextSlide() {
+  if (isAnimating) return;
+  isAnimating = true;
+  
   currentIndex++;
   slider.style.transition = 'transform 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
   slider.style.transform = `translateX(-${currentIndex * 100}%)`;
@@ -290,11 +296,19 @@ function nextSlide() {
       slider.style.transition = 'none';
       currentIndex = 1;
       slider.style.transform = `translateX(-${currentIndex * 100}%)`;
+      isAnimating = false;
+    }, 1200);
+  } else {
+    setTimeout(() => {
+      isAnimating = false;
     }, 1200);
   }
 }
 
 function prevSlide() {
+  if (isAnimating) return;
+  isAnimating = true;
+  
   currentIndex--;
   slider.style.transition = 'transform 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
   slider.style.transform = `translateX(-${currentIndex * 100}%)`;
@@ -304,16 +318,24 @@ function prevSlide() {
       slider.style.transition = 'none';
       currentIndex = totalSlides;
       slider.style.transform = `translateX(-${currentIndex * 100}%)`;
+      isAnimating = false;
+    }, 1200);
+  } else {
+    setTimeout(() => {
+      isAnimating = false;
     }, 1200);
   }
 }
 
 let startX = 0;
 let endX = 0;
+let isSwiping = false;
 
 slider.addEventListener("touchstart", e => {
+  isSwiping = true;
   clearInterval(autoSlide);
   startX = e.touches[0].clientX;
+  endX = startX;
 });
 
 slider.addEventListener("touchmove", e => {
@@ -321,14 +343,17 @@ slider.addEventListener("touchmove", e => {
 });
 
 slider.addEventListener("touchend", () => {
+  isSwiping = false;
   let diff = startX - endX;
 
-  if (Math.abs(diff) > 50) {
+  if (Math.abs(diff) > 50 && !isAnimating) {
     if (diff > 0) nextSlide();
     else prevSlide();
   }
 
-  autoSlide = setInterval(() => nextSlide(), 6500);
+  autoSlide = setInterval(() => {
+    if (!isAnimating) nextSlide();
+  }, 6500);
 });
 
 // Fetch profile data
