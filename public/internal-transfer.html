@@ -28,6 +28,20 @@
       color:#fff;
     }
 
+        .back-btn {
+      position: fixed;
+      top: 18px;
+      left: 18px;
+      background: rgba(255,255,255,0.08);
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.1);
+      font-weight: 600;
+      cursor: pointer;
+      backdrop-filter: blur(6px);
+      z-index: 30;
+    }
+
     .wrap{max-width:900px;margin:24px auto;padding:18px}
     .card{
       background:var(--card);
@@ -101,6 +115,7 @@
 </head>
 
 <body>
+  <div class="back-btn" onclick="location.href='home.html'">← Back</div>
 
 <audio id="transferSound" src="https://assets.mixkit.co/active_storage/sfx/2891/2891-preview.mp3"></audio>
 
