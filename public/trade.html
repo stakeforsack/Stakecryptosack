@@ -27,6 +27,20 @@
       padding-bottom: 100px;
     }
 
+    .back-btn {
+      position: fixed;
+      top: 18px;
+      left: 18px;
+      background: rgba(255,255,255,0.08);
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.1);
+      font-weight: 600;
+      cursor: pointer;
+      backdrop-filter: blur(6px);
+      z-index: 30;
+    }
+
     h1 {
       font-size: 1.8rem;
       font-weight: 800;
@@ -35,12 +49,14 @@
       background-clip: text;
       color: transparent;
       margin-bottom: 4px;
+      margin-left: 1120px;
     }
 
     .sub {
       color: var(--muted);
       margin-bottom: 14px;
       font-size: 0.9rem;
+      margin-left: 1120px;
     }
 
     .coins {
@@ -157,6 +173,8 @@
 </head>
 
 <body>
+
+  <div class="back-btn" onclick="location.href='home.html'">← Back</div>
 
   <h1>Markets & Live Chart</h1>
   <div class="sub">Tap a coin to view its chart & price action.</div>
