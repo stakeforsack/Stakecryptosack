@@ -276,19 +276,18 @@
 
 <script src="/js/market-prices.js"></script>
 
+<script src="/js/market-prices.js"></script>
+
 <script>
-/* Simple Banner Slider */
+/* ---------------- Banner Slider ---------------- */
 const slider = document.getElementById("bannerSlider");
 const bannerImages = slider.querySelectorAll("img");
 let currentIndex = 0;
 
-// Show first banner on load
 bannerImages[0].classList.add("active");
 
 function showBanner(index) {
-  // Remove active class from all
   bannerImages.forEach(img => img.classList.remove("active"));
-  // Add active to current
   bannerImages[index].classList.add("active");
 }
 
@@ -297,27 +296,49 @@ function nextBanner() {
   showBanner(currentIndex);
 }
 
-// Auto cycle every 5 seconds (4-5 sec as you requested)
 setInterval(nextBanner, 5000);
 
-// Fetch profile data
+/* =============== LOAD PROFILE (NEW BACKEND FORMAT) ================= */
 async function loadProfile() {
   try {
     const res = await fetch('/api/profile', { credentials: 'include' });
-    if (!res.ok) return;
-    const j = await res.json();
-    if (j.user) {
-      document.getElementById('balanceValue').innerText = '$' + (Number(j.user.balance || 0)).toFixed(2);
-      const m = j.user.membership || j.user.currentMembership;
-      if (m) {
-        document.getElementById('membershipBadge').innerText = m.tier || 'Member';
-      }
+    if (res.status === 401) return; // user logged out
+
+    const data = await res.json();
+    const user = data.user || {};
+
+    /* ----------- TOTAL USD BALANCE ----------- */
+    const usdRes = await fetch("/api/total-usd", { credentials: "include" });
+    const usdData = await usdRes.json();
+
+    const totalUSD = Number(usdData.totalUSD || 0);
+    document.getElementById("balanceValue").innerText =
+      "$" + totalUSD.toLocaleString(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 6
+      });
+
+    /* ----------- MEMBERSHIP BADGE (NEW SYSTEM) ----------- */
+    const activeMembership = (user.memberships || [])
+      .find(m => m.status === "ACTIVE");
+
+    if (activeMembership) {
+      document.getElementById("membershipBadge").innerText = activeMembership.tier;
+      document.getElementById("membershipBadge").style.display = "inline-block";
+    } else {
+      document.getElementById("membershipBadge").innerText = "None";
+      document.getElementById("membershipBadge").style.display = "inline-block";
     }
-  } catch(e) { /* ignore */ }
+
+  } catch (e) {
+    console.log("Home profile load error:", e);
+  }
 }
+
 loadProfile();
 setInterval(loadProfile, 8000);
 </script>
+
 
 </body>
 </html>
