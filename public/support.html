@@ -22,6 +22,38 @@
     overflow-x:hidden;
   }
 
+  /* HEADER */
+  .header {
+    height:60px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    position:relative;
+    background:linear-gradient(90deg,#0f0f12,#09090c,#0f0f12);
+    border-bottom:1px solid rgba(255,255,255,0.05);
+    animation:hdrFlow 6s ease infinite;
+    font-weight:600;
+    letter-spacing:.4px;
+    color:#a855f7;
+  }
+
+  @keyframes hdrFlow {
+    0% { background-position:0%; }
+    50% { background-position:100%; }
+    100% { background-position:0%; }
+  }
+
+  /* BACK BUTTON */
+  .back-btn {
+    position:absolute;
+    left:16px;
+    color:var(--muted);
+    text-decoration:none;
+    font-size:.9rem;
+    transition:.25s ease;
+  }
+  .back-btn:hover { color:var(--accent); transform:translateX(-3px); }
+
   /* Smooth fade-in */
   .fade { animation: fadeIn .8s ease forwards; opacity:0 }
   @keyframes fadeIn { to { opacity:1; transform:translateY(0);} }
@@ -38,7 +70,7 @@
     text-align:center;
     margin-bottom:20px;
     background:linear-gradient(90deg,var(--accent),var(--accent2));
-    -webkit-background-clip:text;
+    -webkit-background-clip:text;background-clip:text;
     color:transparent;
   }
 
@@ -118,6 +150,7 @@
     cursor:pointer;
     box-shadow:0 10px 30px rgba(0,0,0,0.5);
     animation:float 3s ease-in-out infinite;
+    font-size:28px;
   }
 
   @keyframes float {
@@ -148,7 +181,7 @@
     padding:14px;
     font-weight:700;
     background:linear-gradient(90deg,var(--accent),var(--accent2));
-    -webkit-background-clip:text;
+    -webkit-background-clip:text;background-clip:text;
     color:transparent;
     border-bottom:1px solid rgba(255,255,255,0.06);
   }
@@ -175,6 +208,7 @@
     border:1px solid rgba(255,255,255,0.05);
     color:#fff;
   }
+
   .chat-input button{
     background:var(--accent);
     border:none;
@@ -191,6 +225,7 @@
     margin-bottom:10px;
     animation:fadeIn .3s ease;
   }
+
   .msg-user {
     background:#5eead4;
     color:#000;
@@ -204,6 +239,12 @@
 </head>
 
 <body>
+
+<!-- HEADER -->
+<header class="header">
+  <a class="back-btn" href="account.html">← Back</a>
+  Support Center
+</header>
 
 <div class="wrap fade">
   <h1>Customer Support</h1>
@@ -229,9 +270,7 @@
 </div>
 
 <!-- Floating Chatbot Button -->
-<div class="chat-btn" id="chatToggle">
-  💬
-</div>
+<div class="chat-btn" id="chatToggle">💬</div>
 
 <!-- Chat Panel -->
 <div class="chat-panel" id="chatPanel">
@@ -282,7 +321,6 @@ function sendMsg(){
     chatBody.scrollTop = chatBody.scrollHeight;
   },700);
 }
-
 </script>
 
 </body>
