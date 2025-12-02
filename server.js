@@ -694,6 +694,26 @@ app.get("/api/transactions", needAuth, async (req, res) => {
   }
 });
 
+// ---------------- Logout ----------------
+app.post("/api/logout", (req, res) => {
+  req.session.destroy((err) => {
+    if (err) {
+      console.error("Logout error:", err);
+      return res.status(500).json({ error: "Logout failed" });
+    }
+
+    res.clearCookie("connect.sid", {
+      path: "/",
+      httpOnly: true,
+      sameSite: "none",
+      secure: true
+    });
+
+    return res.json({ ok: true });
+  });
+});
+
+
 // ---------------- Unknown API routes ----------------
 app.use("/api/*", (req, res) => res.status(404).json({ error: "API endpoint not found" }));
 
