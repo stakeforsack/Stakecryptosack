@@ -164,90 +164,71 @@ app.post("/api/internal-transfer", needAuth, async (req, res) => {
   try {
     let { recipient, amount, coin } = req.body;
 
-    // Clean values
-    recipient = (recipient || "").trim();
+    recipient = (recipient || "").trim().toLowerCase();
     amount = Number(amount);
+    coin = (coin || "").toUpperCase();
 
-    // Validate
-    if (!recipient) {
-      return res.status(400).json({ ok: false, error: "Recipient required" });
-    }
-    if (!amount || amount <= 0) {
-      return res.status(400).json({ ok: false, error: "Invalid amount" });
-    }
+    if (!recipient) return res.status(400).json({ ok: false, error: "Recipient required" });
+    if (!amount || amount <= 0) return res.status(400).json({ ok: false, error: "Invalid amount" });
 
     const ALLOWED_COINS = ["USDT", "BTC", "ETH", "BNB", "ADA"];
     if (!ALLOWED_COINS.includes(coin)) {
       return res.status(400).json({ ok: false, error: "Invalid coin type" });
     }
 
-    // Fetch sender
     const sender = await User.findById(req.session.userId);
     if (!sender) return res.status(404).json({ ok: false, error: "Sender not found" });
 
-    // Initialize balances if missing
-    sender.balances = sender.balances || {
-      BTC: 0, ETH: 0, USDT: 0, BNB: 0, ADA: 0, USD: 0
-    };
+    sender.username = sender.username || "";
+    sender.balances = sender.balances || { BTC:0,ETH:0,USDT:0,BNB:0,ADA:0,USD:0 };
 
-    // Prevent sending to yourself
-    if (sender.username.toLowerCase() === recipient.toLowerCase()) {
+    if (sender.username.toLowerCase() === recipient) {
       return res.status(400).json({ ok: false, error: "You cannot transfer to yourself" });
     }
 
-    // Fetch receiver
-    const receiver = await User.findOne({ username: recipient });
+    // Case-insensitive username search
+    const receiver = await User.findOne({
+      username: { $regex: new RegExp("^" + recipient + "$", "i") }
+    });
+
     if (!receiver) return res.status(404).json({ ok: false, error: "Recipient not found" });
 
-    receiver.balances = receiver.balances || {
-      BTC: 0, ETH: 0, USDT: 0, BNB: 0, ADA: 0, USD: 0
-    };
+    receiver.balances = receiver.balances || { BTC:0,ETH:0,USDT:0,BNB:0,ADA:0,USD:0 };
 
     const senderBal = Number(sender.balances[coin] || 0);
     if (senderBal < amount) {
       return res.status(400).json({ ok: false, error: "Insufficient balance" });
     }
 
-    // Transfer
     sender.balances[coin] = senderBal - amount;
     receiver.balances[coin] = Number(receiver.balances[coin] || 0) + amount;
 
     await sender.save();
     await receiver.save();
 
-    // Sender Log
     await Transaction.create({
       userId: sender._id,
       type: "TRANSFER",
       coin,
       amount,
       status: "CONFIRMED",
-      meta: {
-        direction: "SENT",
-        to: receiver.username,
-        toUserId: receiver._id
-      }
+      meta: { direction: "SENT", to: receiver.username, toUserId: receiver._id }
     });
 
-    // Receiver Log
     await Transaction.create({
       userId: receiver._id,
       type: "TRANSFER",
       coin,
       amount,
       status: "CONFIRMED",
-      meta: {
-        direction: "RECEIVED",
-        from: sender.username,
-        fromUserId: sender._id
-      }
+      meta: { direction: "RECEIVED", from: sender.username, fromUserId: sender._id }
     });
 
-    return res.json({ ok: true, message: "Transfer successful" });
+    return res.json({ ok: true });
 
   } catch (err) {
     console.error("🔥 INTERNAL TRANSFER ERROR:", err);
-    return res.status(500).json({ ok: false, error: "Server crashed during transfer" });
+    return res.status(500).json({ ok: false, error: "Server transfer crash" });
   }
 });
 
