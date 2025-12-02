@@ -362,59 +362,82 @@
     }
 
 
-    function displayTransactions() {
-      const container = document.getElementById('txContainer');
-      
-      let filtered = allTransactions;
-      
-      if (currentFilter !== 'all') {
-        filtered = allTransactions.filter(tx => {
-          if (currentFilter === 'CONFIRMED' || currentFilter === 'PENDING') {
-            return tx.status === currentFilter;
-          }
-          return tx.type === currentFilter;
-        });
+function displayTransactions() {
+  const container = document.getElementById('txContainer');
+
+  let filtered = allTransactions;
+
+  if (currentFilter !== 'all') {
+    filtered = allTransactions.filter(tx => {
+      if (currentFilter === 'CONFIRMED' || currentFilter === 'PENDING') {
+        return tx.status === currentFilter;
       }
+      return tx.type === currentFilter;
+    });
+  }
 
-      if (filtered.length === 0) {
-        container.innerHTML = `
-          <div class="empty-state">
-            <p>No transactions found</p>
-          </div>
-        `;
-        return;
+  if (filtered.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <p>No transactions found</p>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = filtered.map(tx => {
+    const date = new Date(tx.createdAt);
+    const dateStr = date.toLocaleDateString();
+    const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    let displayType = tx.type;
+    let sign = '+';
+    let typeClass = '';
+    let extraDetail = '';
+
+    // === INTERNAL TRANSFER FIX ===
+    if (tx.type === "TRANSFER") {
+      typeClass = "transfer";
+
+      if (tx.meta?.direction === "SENT") {
+        displayType = "Transfer Sent";
+        sign = "-";
+        extraDetail = ` → ${tx.meta?.to || ''}`;
       }
-
-      container.innerHTML = filtered.map(tx => {
-        const date = new Date(tx.createdAt);
-        const dateStr = date.toLocaleDateString();
-        const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        
-        const typeClass = tx.type === 'WITHDRAW' ? 'withdraw' : tx.type === 'TRANSFER' ? 'transfer' : '';
-        const statusClass = tx.status.toLowerCase();
-        const icon = getIcon(tx.type);
-        let sign = '+';
-        if (tx.type === 'WITHDRAW') sign = '-';
-        if (tx.type === 'TRANSFER' && tx.amount < 0) sign = '-';
-
-
-        return `
-          <div class="tx-item ${typeClass} ${statusClass}">
-            <div class="tx-info">
-              <div class="tx-icon">${icon}</div>
-              <div class="tx-details">
-                <h4>${tx.type}</h4>
-                <p>${tx.coin} • ${dateStr} ${timeStr}</p>
-              </div>
-            </div>
-            <div class="tx-right">
-              <div class="tx-amount">${sign} ${tx.amount}</div>
-              <div class="tx-status ${statusClass}">${tx.status}</div>
-            </div>
-          </div>
-        `;
-      }).join('');
+      else if (tx.meta?.direction === "RECEIVED") {
+        displayType = "Transfer Received";
+        sign = "+";
+        extraDetail = ` ← ${tx.meta?.from || ''}`;
+      }
     }
+
+    // Withdraw = negative
+    if (tx.type === "WITHDRAW") {
+      typeClass = 'withdraw';
+      sign = "-";
+    }
+
+    const statusClass = tx.status.toLowerCase();
+    const icon = getIcon(tx.type);
+
+    return `
+      <div class="tx-item ${typeClass} ${statusClass}">
+        <div class="tx-info">
+          <div class="tx-icon">${icon}</div>
+          <div class="tx-details">
+            <h4>${displayType}${extraDetail}</h4>
+            <p>${tx.coin} • ${dateStr} ${timeStr}</p>
+          </div>
+        </div>
+        <div class="tx-right">
+          <div class="tx-amount">${sign} ${tx.amount}</div>
+          <div class="tx-status ${statusClass}">${tx.status}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
 
     function filterTransactions(type) {
       currentFilter = type;
