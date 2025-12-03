@@ -14,7 +14,6 @@
       --bg1: #050509;
       --bg2: #0b0b11;
       --card: rgba(255,255,255,0.03);
-      --glass: rgba(255,255,255,0.05);
       --muted: #9aa3b2;
       --success: #7ef6b8;
       --danger: #ff6b6b;
@@ -34,118 +33,82 @@
       padding-bottom: 90px;
     }
 
-    /* ---------------- Banner Slider (FINAL FIXED) ---------------- */
+    /* Banner */
     .banner-container {
       margin-top: 14px;
       width: 100%;
       height: 140px;
       border-radius: 16px;
       overflow: hidden;
-      position: relative;
     }
-
-    .banner-slider {
-      display: flex;
-      width: 100%;
-      height: 100%;
-      transition: none;
-    }
-
     .banner-slider img {
       width: 100%;
       height: 100%;
       object-fit: cover;
-      filter: brightness(1.05) contrast(1.08);
       display: none;
     }
-
     .banner-slider img.active {
       display: block;
     }
 
-    /* ---------------- Account Balance Card ---------------- */
+    /* Balance */
     .balance-card {
       background: var(--card);
       margin-top: 20px;
       padding: 18px;
       border-radius: 16px;
-      border: 1px solid rgba(255,255,255,0.05);
     }
-
     .balance-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
-
     .balance-value {
       font-size: 1.8rem;
       font-weight: 800;
-      color: #fff;
+      color: white;
     }
-
     .badge {
       padding: 6px 12px;
-      background: linear-gradient(90deg, var(--accent), var(--accent2));
-      color: #041;
-      font-weight: 800;
       border-radius: 999px;
-      font-size: 0.8rem;
+      font-weight: 800;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      color: black;
     }
 
-    /* ---------------- Action Buttons ---------------- */
+    /* Actions */
     .actions {
       margin-top: 16px;
       display: grid;
       grid-template-columns: repeat(4, 1fr);
       gap: 10px;
     }
-
     .action-btn {
       background: var(--card);
-      border: 1px solid rgba(255,255,255,0.06);
       border-radius: 14px;
       padding: 12px 6px;
       text-align: center;
-      font-size: 0.85rem;
-      color: #fff;
+      color: white;
       font-weight: 600;
+      border: 1px solid rgba(255,255,255,0.06);
     }
-
     .action-btn img {
       width: 32px;
       height: 32px;
       margin-bottom: 4px;
     }
 
-    /* ---------------- Market List ---------------- */
-    .market-section {
-      margin-top: 22px;
-    }
-
-    .market-section h2 {
-      margin-bottom: 8px;
-      font-size: 1.1rem;
-      color: #fff;
-      font-weight: 700;
-    }
-
+    /* Market */
     .market-row {
       background: var(--card);
-      border: 1px solid rgba(255,255,255,0.04);
       padding: 12px;
       border-radius: 14px;
+      margin-bottom: 10px;
       display: flex;
       justify-content: space-between;
-      margin-bottom: 10px;
     }
 
-    .coin-name { font-weight: 700; }
-    .price { font-weight: 700; }
-    .change.positive { color: var(--success); }
-    .change.negative { color: var(--danger); }
-
-    /* ---------------- Bottom Navigation ---------------- */
+    /* Bottom nav */
     .bottom-nav {
       position: fixed;
       bottom: 12px;
@@ -155,43 +118,32 @@
       gap: 26px;
       padding: 12px 20px;
       background: rgba(255,255,255,0.03);
-      border: 1px solid rgba(255,255,255,0.04);
-      backdrop-filter: blur(10px);
       border-radius: 20px;
-      z-index: 9999;
+      border: 1px solid rgba(255,255,255,0.04);
     }
-
     .nav-item {
       text-align: center;
       color: var(--muted);
-      font-size: 0.8rem;
     }
-
-    .nav-item img {
-      width: 22px;
-      height: 22px;
-    }
-
     .nav-item.active {
       color: var(--accent);
     }
-
   </style>
 </head>
 
 <body>
 <div class="wrap">
 
-  <!-- Banner Slider -->
+  <!-- Banner -->
   <div class="banner-container">
     <div class="banner-slider" id="bannerSlider">
-      <img src="/img/banner_1.png" />
-      <img src="/img/banner_2.png" />
-      <img src="/img/banner_3.png" />
+      <img src="/img/banner_1.png">
+      <img src="/img/banner_2.png">
+      <img src="/img/banner_3.png">
     </div>
   </div>
 
-  <!-- Account Balance -->
+  <!-- Balance -->
   <div class="balance-card">
     <div class="balance-row">
       <div>
@@ -204,69 +156,56 @@
 
   <!-- Actions -->
   <div class="actions">
-    <a class="action-btn" href="deposit.html">
-      <img src="/img/deposit.png" />
-      Deposit
-    </a>
-    <a class="action-btn" href="withdraw.html">
-      <img src="/img/withdraw.png" />
-      Withdraw
-    </a>
-    <a class="action-btn" href="upgrade.html">
-      <img src="/img/vip-card.png" />
-      Upgrade
-    </a>
-    <a class="action-btn" href="internal-transfer.html">
-      <img src="/img/money.png" />
-      Transfer
-    </a>
+    <a class="action-btn" href="deposit.html"><img src="/img/deposit.png">Deposit</a>
+    <a class="action-btn" href="withdraw.html"><img src="/img/withdraw.png">Withdraw</a>
+    <a class="action-btn" href="upgrade.html"><img src="/img/vip-card.png">Upgrade</a>
+    <a class="action-btn" href="internal-transfer.html"><img src="/img/money.png">Transfer</a>
   </div>
 
-  <!-- Market Section -->
+  <!-- Market -->
   <div class="market-section">
     <h2>Live Crypto Market</h2>
 
     <div class="market-row" data-coin="bitcoin">
-      <span class="coin-name">BTC/USDT</span>
+      <span>BTC/USDT</span>
       <span class="price" data-price-id="bitcoin">—</span>
       <span class="change" data-change-id="bitcoin"></span>
     </div>
 
     <div class="market-row" data-coin="ethereum">
-      <span class="coin-name">ETH/USDT</span>
+      <span>ETH/USDT</span>
       <span class="price" data-price-id="ethereum">—</span>
       <span class="change" data-change-id="ethereum"></span>
     </div>
 
     <div class="market-row" data-coin="binancecoin">
-      <span class="coin-name">BNB/USDT</span>
+      <span>BNB/USDT</span>
       <span class="price" data-price-id="binancecoin">—</span>
       <span class="change" data-change-id="binancecoin"></span>
     </div>
 
     <div class="market-row" data-coin="solana">
-      <span class="coin-name">SOL/USDT</span>
+      <span>SOL/USDT</span>
       <span class="price" data-price-id="solana">—</span>
       <span class="change" data-change-id="solana"></span>
     </div>
 
     <div class="market-row" data-coin="dogecoin">
-      <span class="coin-name">DOGE/USDT</span>
+      <span>DOGE/USDT</span>
       <span class="price" data-price-id="dogecoin">—</span>
       <span class="change" data-change-id="dogecoin"></span>
     </div>
 
     <div class="market-row" data-coin="tron">
-      <span class="coin-name">TRX/USDT</span>
+      <span>TRX/USDT</span>
       <span class="price" data-price-id="tron">—</span>
       <span class="change" data-change-id="tron"></span>
     </div>
 
   </div>
-
 </div>
 
-<!-- Bottom Navigation -->
+<!-- Bottom nav -->
 <nav class="bottom-nav">
   <a class="nav-item active" href="home.html"><img src="/img/house.png"><br>Home</a>
   <a class="nav-item" href="trade.html"><img src="/img/trade.png"><br>Trade</a>
@@ -274,71 +213,53 @@
   <a class="nav-item" href="account.html"><img src="/img/myaccount.png"><br>Account</a>
 </nav>
 
-<script src="/js/market-prices.js"></script>
-
-<script src="/js/market-prices.js"></script>
+<!-- Load market prices -->
+<script src="/js/market-prices.js" defer></script>
 
 <script>
-/* ---------------- Banner Slider ---------------- */
+/* Banner */
 const slider = document.getElementById("bannerSlider");
-const bannerImages = slider.querySelectorAll("img");
-let currentIndex = 0;
+const imgs = slider.querySelectorAll("img");
+let idx = 0;
 
-bannerImages[0].classList.add("active");
+imgs[0].classList.add("active");
 
-function showBanner(index) {
-  bannerImages.forEach(img => img.classList.remove("active"));
-  bannerImages[index].classList.add("active");
-}
+setInterval(() => {
+  imgs.forEach(i => i.classList.remove("active"));
+  idx = (idx + 1) % imgs.length;
+  imgs[idx].classList.add("active");
+}, 5000);
 
-function nextBanner() {
-  currentIndex = (currentIndex + 1) % bannerImages.length;
-  showBanner(currentIndex);
-}
-
-setInterval(nextBanner, 5000);
-
-/* =============== LOAD PROFILE (NEW BACKEND FORMAT) ================= */
+/* Profile / Balance */
 async function loadProfile() {
   try {
-    const res = await fetch('/api/profile', { credentials: 'include' });
-    if (res.status === 401) return; // user logged out
+    const r1 = await fetch("/api/profile", { credentials: "include" });
+    const r2 = await fetch("/api/total-usd", { credentials: "include" });
 
-    const data = await res.json();
-    const user = data.user || {};
+    if (r1.status === 401) return;
 
-    /* ----------- TOTAL USD BALANCE ----------- */
-    const usdRes = await fetch("/api/total-usd", { credentials: "include" });
-    const usdData = await usdRes.json();
+    const profile = await r1.json();
+    const usd = await r2.json();
 
-    const totalUSD = Number(usdData.totalUSD || 0);
+    const total = Number(usd.totalUSD || 0);
+
     document.getElementById("balanceValue").innerText =
-      "$" + totalUSD.toLocaleString(undefined, {
+      "$" + total.toLocaleString(undefined, {
         minimumFractionDigits: 2,
         maximumFractionDigits: 6
       });
 
-    /* ----------- MEMBERSHIP BADGE (NEW SYSTEM) ----------- */
-    const activeMembership = (user.memberships || [])
-      .find(m => m.status === "ACTIVE");
+    const active = (profile.user?.memberships || []).find(m => m.status === "ACTIVE");
+    document.getElementById("membershipBadge").innerText = active ? active.tier : "None";
 
-    if (activeMembership) {
-      document.getElementById("membershipBadge").innerText = activeMembership.tier;
-      document.getElementById("membershipBadge").style.display = "inline-block";
-    } else {
-      document.getElementById("membershipBadge").innerText = "None";
-      document.getElementById("membershipBadge").style.display = "inline-block";
-    }
-
-  } catch (e) {
-    console.log("Home profile load error:", e);
+  } catch(e) {
+    console.log("Profile load error:", e);
   }
 }
 
 loadProfile();
-setInterval(loadProfile, 8000);
+setInterval(loadProfile, 15000);
 </script>
-
 
 </body>
 </html>
