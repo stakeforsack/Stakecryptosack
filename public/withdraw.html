@@ -87,7 +87,6 @@
       outline: none;
       margin-bottom: 12px;
     }
-    input:focus, select:focus { border-color: var(--accent); }
 
     .balance-box {
       background: #0e0e13;
@@ -114,18 +113,8 @@
       transition: 0.25s;
       font-size: 1rem;
     }
-    .primary-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
-    .status-box {
-      margin-top: 18px;
-      padding: 16px;
-      border-radius: 14px;
-      background: rgba(126,246,184,0.1);
-      border: 1px solid rgba(126,246,184,0.2);
-      color: var(--success);
-      font-weight: 700;
-      display: none;
-    }
+    .primary-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
     .processing {
       margin-top: 20px;
@@ -147,11 +136,8 @@
       margin: 0 auto 10px;
       animation: spin 0.9s linear infinite;
     }
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* bottom nav */
     .bottom-nav {
       position: fixed;
       bottom: 12px;
@@ -165,6 +151,7 @@
       backdrop-filter: blur(10px);
       border-radius: 20px;
     }
+
     .nav-item { text-align:center; font-size:0.8rem; color:var(--muted); }
     .nav-item.active { color: var(--accent); }
     .nav-item img { width:22px; }
@@ -172,6 +159,7 @@
 </head>
 
 <body>
+
 <div class="back-btn" onclick="location.href='home.html'">← Back</div>
 
 <div class="wrap">
@@ -203,24 +191,25 @@
 
       <button class="primary-btn" id="submitBtn" type="button">Withdraw</button>
 
-      <div class="status-box" id="successBox"></div>
       <div class="error" id="error"></div>
 
     </form>
 
   </div>
 
-  <!-- PROCESSING BOX -->
+  <!-- PROCESSING -->
   <div class="processing" id="processingBox">
     <div class="spinner"></div>
     <div style="font-weight:700;">Processing Withdrawal...</div>
   </div>
 
-  <!-- PENDING RESULT -->
+  <!-- Pending Card -->
   <div class="card" style="display:none;" id="pendingCard">
     <h2 style="margin-bottom:10px;">Request Submitted</h2>
-    <p style="color:var(--muted); font-size:0.9rem; margin-bottom:20px;">Your withdrawal request is now <b style="color:var(--accent2)">PENDING</b>.  
-      Admin will approve it shortly.</p>
+    <p style="color:var(--muted); font-size:0.9rem; margin-bottom:20px;">
+      Your withdrawal request is now 
+      <b style="color:var(--accent2)">PENDING</b>.
+    </p>
 
     <div style="background:#0d0d12; padding:14px; border-radius:12px; border:1px solid rgba(255,255,255,0.06); margin-bottom:10px;">
       <b>Amount:</b> <span id="p_amount"></span>
@@ -233,12 +222,10 @@
     <div style="background:#0d0d12; padding:14px; border-radius:12px; border:1px solid rgba(255,255,255,0.06);">
       <b>Transaction ID:</b> <span id="p_txid"></span>
     </div>
-
   </div>
 
 </div>
 
-<!-- bottom navigation -->
 <nav class="bottom-nav">
   <a class="nav-item" href="home.html"><img src="/img/house.png"><br>Home</a>
   <a class="nav-item" href="trade.html"><img src="/img/trade.png"><br>Trade</a>
@@ -254,7 +241,6 @@
   const amountEl = document.getElementById("amount");
   const submitBtn = document.getElementById("submitBtn");
   const errorBox = document.getElementById("error");
-  const successBox = document.getElementById("successBox");
 
   const formCard = document.getElementById("formCard");
   const processingBox = document.getElementById("processingBox");
@@ -281,12 +267,11 @@
 
   function showError(msg){
     errorBox.style.display = "block";
-    errorBox.innerHTML = msg;
+    errorBox.innerText = msg;
   }
 
   submitBtn.addEventListener("click", async () => {
     errorBox.style.display = "none";
-    successBox.style.display = "none";
 
     const coin = currencyEl.value;
     const wallet = walletEl.value.trim();

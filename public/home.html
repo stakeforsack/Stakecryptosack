@@ -33,7 +33,6 @@
       padding-bottom: 90px;
     }
 
-    /* ---------------- Banner Slider ---------------- */
     .banner-container {
       margin-top: 14px;
       width: 100%;
@@ -54,7 +53,6 @@
       display: block;
     }
 
-    /* ---------------- Account Balance ---------------- */
     .balance-card {
       background: var(--card);
       margin-top: 20px;
@@ -84,7 +82,6 @@
       font-size: 0.8rem;
     }
 
-    /* ---------------- Actions ---------------- */
     .actions {
       margin-top: 16px;
       display: grid;
@@ -109,7 +106,6 @@
       margin-bottom: 4px;
     }
 
-    /* ---------------- Market ---------------- */
     .market-section {
       margin-top: 22px;
     }
@@ -124,10 +120,9 @@
       margin-bottom: 10px;
     }
 
-    .change.positive { color: var(--success); }
-    .change.negative { color: var(--danger); }
+    .positive { color: var(--success) !important; }
+    .negative { color: var(--danger) !important; }
 
-    /* ---------------- Bottom Navigation ---------------- */
     .bottom-nav {
       position: fixed;
       bottom: 12px;
@@ -168,7 +163,6 @@
 <body>
 <div class="wrap">
 
-  <!-- Banner Slider -->
   <div class="banner-container">
     <div class="banner-slider" id="bannerSlider">
       <img src="/img/banner_1.png" />
@@ -177,7 +171,6 @@
     </div>
   </div>
 
-  <!-- Account Balance -->
   <div class="balance-card">
     <div class="balance-row">
       <div>
@@ -188,7 +181,6 @@
     </div>
   </div>
 
-  <!-- Actions -->
   <div class="actions">
     <a class="action-btn" href="deposit.html">
       <img src="/img/deposit.png" />
@@ -208,7 +200,6 @@
     </a>
   </div>
 
-  <!-- Market Section -->
   <div class="market-section">
     <h2>Live Crypto Market</h2>
 
@@ -240,7 +231,6 @@
 
 </div>
 
-<!-- Bottom Navigation -->
 <nav class="bottom-nav">
   <a class="nav-item active" href="home.html"><img src="/img/house.png"><span>Home</span></a>
   <a class="nav-item" href="trade.html"><img src="/img/trade.png"><span>Trade</span></a>
@@ -265,17 +255,16 @@ setInterval(() => {
 /* ---------------- Load Profile ---------------- */
 async function loadProfile() {
   try {
-    const res = await fetch("/api/total-usd", { credentials: "include" });
+    const res = await fetch("/api/total-usdt", { credentials: "include" });
     const totalData = await res.json();
 
-    const totalUSD = Number(totalData.totalUSD || 0);
+    const totalUSDT = Number(totalData.totalUSDT || 0);
     document.getElementById("balanceValue").innerText =
-      "$" + totalUSD.toLocaleString(undefined, {
+      "$" + totalUSDT.toLocaleString(undefined, {
         minimumFractionDigits: 2,
         maximumFractionDigits: 6
       });
 
-    /* Membership Badge */
     const profileRes = await fetch("/api/profile", { credentials: "include" });
     const prof = await profileRes.json();
     const active = (prof.user?.memberships || []).find(m => m.status === "ACTIVE");
@@ -283,13 +272,14 @@ async function loadProfile() {
     document.getElementById("membershipBadge").innerText =
       active ? active.tier : "None";
 
-  } catch (e) {
-    console.log(e);
-  }
+  } catch (e) {}
 }
 
 loadProfile();
 setInterval(loadProfile, 15000);
+
+/* ---------------- Market Prices Start ---------------- */
+MarketPrices.start(["bitcoin","ethereum","binancecoin","solana"], 8000);
 </script>
 
 </body>

@@ -109,18 +109,10 @@
 </div>
 
 <nav class="bottom-nav">
-  <a href="home.html" class="nav-item">
-    <img src="/img/house.png"><span>Home</span>
-  </a>
-  <a href="trade.html" class="nav-item">
-    <img src="/img/trade.png"><span>Trade</span>
-  </a>
-  <a href="internal-transfer.html" class="nav-item">
-    <img src="/img/transfer.png"><span>Transfer</span>
-  </a>
-  <a href="account.html" class="nav-item active">
-    <img src="/img/myaccount.png"><span>Account</span>
-  </a>
+  <a href="home.html" class="nav-item"><img src="/img/house.png"><span>Home</span></a>
+  <a href="trade.html" class="nav-item"><img src="/img/trade.png"><span>Trade</span></a>
+  <a href="internal-transfer.html" class="nav-item"><img src="/img/transfer.png"><span>Transfer</span></a>
+  <a href="account.html" class="nav-item active"><img src="/img/myaccount.png"><span>Account</span></a>
 </nav>
 
 <script>
@@ -142,16 +134,17 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("username").textContent = uname;
     document.getElementById("avatar").textContent = uname[0].toUpperCase();
 
-    // membership badge
-    if(user.membership && user.membership.tier){
+    // membership badge (NEW LOGIC)
+    const active = (user.memberships || []).find(m => m.status === "ACTIVE");
+    if(active){
       document.getElementById("vipBadge").style.display = "inline-block";
-      document.getElementById("vipBadge").textContent = user.membership.tier;
+      document.getElementById("vipBadge").textContent = active.tier;
     }
 
-    // 🔥 NEW TOTAL BALANCE SYSTEM (sync with home)
-    const res2 = await fetch("/api/total-usd",{credentials:"include"});
+    // NEW: TOTAL BALANCE IN USDT (Backend updated)
+    const res2 = await fetch("/api/total-usdt",{credentials:"include"});
     const t = await res2.json();
-    const total = Number(t.totalUSD || 0);
+    const total = Number(t.totalUSDT || 0);
 
     document.getElementById("totalBalance").textContent =
       total.toLocaleString(undefined,{

@@ -110,6 +110,51 @@ function requireAdmin(req, res, next) {
 // ---------------- Health ----------------
 app.get("/api/health", (req, res) => res.json({ ok: true }));
 
+// ---------------- Helpers ----------------
+function defaultBalances() {
+  // USD removed — using USDT as stablecoin ledger
+  return { BTC: 0, ETH: 0, USDT: 0, BNB: 0, ADA: 0 };
+}
+
+/**
+ * ensureBalances(user)
+ * - makes sure user.balances exists and migrates any legacy USD into USDT.
+ * - returns true if migration performed (saved), false otherwise.
+ */
+async function ensureBalancesAndMigrateUSD(user) {
+  let changed = false;
+  if (!user.balances) {
+    user.balances = defaultBalances();
+    changed = true;
+  } else {
+    // if legacy USD field exists (from older schema), migrate it into USDT
+    // and remove/zero the USD value (we won't persist USD field in new balances, but some docs may have it)
+    if (typeof user.balances.USD !== "undefined" && Number(user.balances.USD || 0) > 0) {
+      const legacyUsd = Number(user.balances.USD || 0);
+      user.balances.USDT = Number(user.balances.USDT || 0) + legacyUsd;
+      user.balances.USD = 0;
+      changed = true;
+    }
+    // ensure all expected coin keys exist
+    const defaults = defaultBalances();
+    for (const k of Object.keys(defaults)) {
+      if (typeof user.balances[k] === "undefined") {
+        user.balances[k] = defaults[k];
+        changed = true;
+      }
+    }
+  }
+  if (changed) {
+    try {
+      await user.save();
+    } catch (e) {
+      // continue; don't crash on save failure
+      console.warn("Balance migration save failed:", e.message || e);
+    }
+  }
+  return changed;
+}
+
 // ---------------- Register ----------------
 app.post("/api/register", async (req, res) => {
   try {
@@ -124,7 +169,7 @@ app.post("/api/register", async (req, res) => {
       email,
       username,
       password: hash,
-      balances: { BTC: 0, ETH: 0, USDT: 0, BNB: 0, ADA: 0, USD: 0 },
+      balances: defaultBalances(),
     });
 
     req.session.userId = user._id.toString();
@@ -180,7 +225,7 @@ app.post("/api/internal-transfer", needAuth, async (req, res) => {
     if (!sender) return res.status(404).json({ ok: false, error: "Sender not found" });
 
     sender.username = sender.username || "";
-    sender.balances = sender.balances || { BTC:0,ETH:0,USDT:0,BNB:0,ADA:0,USD:0 };
+    await ensureBalancesAndMigrateUSD(sender);
 
     if (sender.username.toLowerCase() === recipient) {
       return res.status(400).json({ ok: false, error: "You cannot transfer to yourself" });
@@ -193,7 +238,7 @@ app.post("/api/internal-transfer", needAuth, async (req, res) => {
 
     if (!receiver) return res.status(404).json({ ok: false, error: "Recipient not found" });
 
-    receiver.balances = receiver.balances || { BTC:0,ETH:0,USDT:0,BNB:0,ADA:0,USD:0 };
+    await ensureBalancesAndMigrateUSD(receiver);
 
     const senderBal = Number(sender.balances[coin] || 0);
     if (senderBal < amount) {
@@ -244,11 +289,8 @@ app.get("/api/profile", needAuth, async (req, res) => {
     // fetch all memberships for the user (most recent first)
     const memberships = await Membership.find({ userId: user._id }).sort({ createdAt: -1 }).lean();
 
-    if (!user.balances) {
-      const legacy = Number(user.balance || 0) || 0;
-      user.balances = { BTC: 0, ETH: 0, USDT: legacy, BNB: 0, ADA: 0, USD: 0 };
-      user.save().catch(() => {});
-    }
+    // ensure balances exist and migrate any USD => USDT
+    await ensureBalancesAndMigrateUSD(user);
 
     res.json({
       ok: true,
@@ -324,7 +366,8 @@ app.post("/api/withdraw", needAuth, async (req, res) => {
     const user = await User.findById(req.session.userId);
     if (!user) return res.status(404).json({ error: "User not found" });
 
-    user.balances = user.balances || { BTC: 0, ETH: 0, USDT: 0, BNB: 0, ADA: 0, USD: 0 };
+    await ensureBalancesAndMigrateUSD(user);
+
     const currentBalance = Number(user.balances[coin] || 0);
     if (amount > currentBalance) return res.status(400).json({ error: "Insufficient balance" });
 
@@ -352,14 +395,10 @@ app.post("/api/withdraw", needAuth, async (req, res) => {
 // ---------------- GET /api/balances ----------------
 app.get("/api/balances", needAuth, async (req, res) => {
   try {
-    const user = await User.findById(req.session.userId).select("balances balance");
+    const user = await User.findById(req.session.userId).select("balances");
     if (!user) return res.status(404).json({ error: "User not found" });
 
-    if (!user.balances) {
-      const legacy = Number(user.balance || 0) || 0;
-      user.balances = { BTC: 0, ETH: 0, USDT: legacy, BNB: 0, ADA: 0, USD: 0 };
-      user.save().catch(() => {});
-    }
+    await ensureBalancesAndMigrateUSD(user);
 
     return res.json({ ok: true, balances: user.balances });
   } catch (err) {
@@ -367,16 +406,18 @@ app.get("/api/balances", needAuth, async (req, res) => {
   }
 });
 
-// ---------------- NEW: GET /api/total-usd ----------------
-app.get("/api/total-usd", needAuth, async (req, res) => {
+// ---------------- NEW: GET /api/total-usdt ----------------
+// returns the total across coins converted to USD equivalent (but expressed as USDT)
+// Breakdown contains per-coin USD-equivalent values (under coin keys).
+app.get("/api/total-usdt", needAuth, async (req, res) => {
   try {
     const user = await User.findById(req.session.userId).select("balances").lean();
     if (!user || !user.balances) {
-      return res.json({ ok: true, totalUSD: 0, breakdown: {} });
+      return res.json({ ok: true, totalUSDT: 0, breakdown: {} });
     }
 
     const balances = user.balances;
-    const coins = ["BTC", "ETH", "BNB", "ADA", "USDT", "USD"];
+    const coins = ["BTC", "ETH", "BNB", "ADA", "USDT"];
     const cgMap = {
       BTC: "bitcoin",
       ETH: "ethereum",
@@ -393,7 +434,7 @@ app.get("/api/total-usd", needAuth, async (req, res) => {
     const priceRes = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0" } });
     const prices = await priceRes.json();
 
-    let totalUSD = 0;
+    let totalUSDT = 0;
     let breakdown = {};
 
     for (const coin of coins) {
@@ -402,8 +443,7 @@ app.get("/api/total-usd", needAuth, async (req, res) => {
 
       let usdValue = 0;
 
-      if (coin === "USD") usdValue = amount;
-      else if (coin === "USDT") usdValue = amount;
+      if (coin === "USDT") usdValue = amount;
       else {
         const cgId = cgMap[coin];
         const rate = prices[cgId]?.usd || 0;
@@ -411,17 +451,24 @@ app.get("/api/total-usd", needAuth, async (req, res) => {
       }
 
       breakdown[coin] = Number(usdValue.toFixed(6));
-      totalUSD += usdValue;
+      totalUSDT += usdValue;
     }
 
     res.json({
       ok: true,
-      totalUSD: Number(totalUSD.toFixed(6)),
+      totalUSDT: Number(totalUSDT.toFixed(6)),
       breakdown,
     });
   } catch (err) {
-    res.status(500).json({ ok: false, error: "Failed to calculate total USD" });
+    console.error("total-usdt error:", err);
+    res.status(500).json({ ok: false, error: "Failed to calculate total USDT" });
   }
+});
+
+// keep alias for backwards compatibility (old frontends hitting /api/total-usd will continue working)
+app.get("/api/total-usd", needAuth, async (req, res) => {
+  // Delegate to /api/total-usdt behavior
+  return app._router.handle(req, res, () => {}, "get", "/api/total-usdt");
 });
 
 // ---------------- DAILY MEMBERSHIP COLLECT (now per membershipId) ----------------
@@ -459,20 +506,17 @@ app.post("/api/membership/collect", needAuth, async (req, res) => {
     const user = await User.findById(req.session.userId);
     if (!user) return res.status(404).json({ error: "User not found" });
 
-    // ensure balances exist
-    user.balances = user.balances || {
-      BTC: 0, ETH: 0, USDT: 0, BNB: 0, ADA: 0, USD: 0
-    };
+    // ensure balances exist and migrate if needed
+    await ensureBalancesAndMigrateUSD(user);
 
-    // credit USDT + USD
+    // credit USDT only (removed USD ledger)
     user.balances.USDT = Number(user.balances.USDT || 0) + payout;
-    user.balances.USD = Number(user.balances.USD || 0) + payout;
 
     // update membership
     membership.daysPaid = (membership.daysPaid || 0) + 1;
     membership.lastPayout = new Date();
 
-    // completion + bonus — each membership gets its own bonus (Q2: A)
+    // completion + bonus — each membership gets its own bonus
     if (membership.daysPaid >= membership.durationDays) {
       membership.status = "COMPLETED";
 
@@ -480,7 +524,6 @@ app.post("/api/membership/collect", needAuth, async (req, res) => {
         const bonus = Number(membership.bonusAtMonthEnd || 0);
 
         user.balances.USDT += bonus;
-        user.balances.USD += bonus;
 
         membership.bonusPaid = true;
 
@@ -499,7 +542,7 @@ app.post("/api/membership/collect", needAuth, async (req, res) => {
     await membership.save();
     await user.save();
 
-    // log daily payout
+    // log daily payout (USDT)
     await Transaction.create({
       userId: user._id,
       type: "MEMBERSHIP_PAYOUT",
@@ -580,7 +623,7 @@ app.post("/api/admin/approve-deposit", requireAdmin, async (req, res) => {
     const user = await User.findById(tx.userId);
     if (!user) return res.status(404).json({ error: "User not found for tx" });
 
-    user.balances = user.balances || { BTC: 0, ETH: 0, USDT: 0, BNB: 0, ADA: 0, USD: 0 };
+    await ensureBalancesAndMigrateUSD(user);
 
     if (tx.meta?.isMembership && tx.meta.membershipTier) {
       const tcfg = TIERS[tx.meta.membershipTier];
@@ -646,6 +689,8 @@ app.post("/api/admin/approve-withdraw", requireAdmin, async (req, res) => {
 
     const user = await User.findById(tx.userId);
     if (!user) return res.status(404).json({ error: "User not found" });
+
+    await ensureBalancesAndMigrateUSD(user);
 
     const current = Number(user.balances[tx.coin] || 0);
     if (tx.amount > current) {

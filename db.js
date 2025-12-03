@@ -21,8 +21,8 @@ const balancesSchema = new mongoose.Schema(
     ETH: { type: Number, default: 0 },
     USDT: { type: Number, default: 0 },
     BNB: { type: Number, default: 0 },
-    ADA: { type: Number, default: 0 },
-    USD: { type: Number, default: 0 }, // internal USD ledger
+    ADA: { type: Number, default: 0 }
+    // USD REMOVED SAFELY ✔
   },
   { _id: false }
 );
@@ -39,14 +39,15 @@ const userSchema = new mongoose.Schema(
     // Multi-coin balances
     balances: { type: balancesSchema, default: () => ({}) },
 
-    // LEGACY FIELDS (kept only to avoid crash for old accounts)
+    // LEGACY FIELDS (keep to avoid crash)
     membership: { type: String, default: "NONE" },
     membershipActivatedAt: { type: Date, default: null }
   },
   { timestamps: true }
 );
 
-export const User = mongoose.models.User || mongoose.model("User", userSchema);
+export const User =
+  mongoose.models.User || mongoose.model("User", userSchema);
 
 // ----------------------
 // TRANSACTION SCHEMA
@@ -111,10 +112,10 @@ const membershipSchema = new mongoose.Schema(
       default: "ACTIVE",
     },
 
-    durationDays: { type: Number, required: true }, // e.g. 5 / 7 / 30 days
+    durationDays: { type: Number, required: true },
     daysPaid: { type: Number, default: 0 },
 
-    dailyAmount: { type: Number, required: true }, // daily earning USD
+    dailyAmount: { type: Number, required: true }, // daily earning USDT ✔
     bonusAtMonthEnd: { type: Number, default: 0 },
 
     lastPayout: { type: Date, default: null },

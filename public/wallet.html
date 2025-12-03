@@ -76,7 +76,7 @@
       font-weight: 700;
     }
 
-    .coin-usd {
+    .coin-usdt {
       margin-top: 6px;
       font-size: 0.88rem;
       color: #bbb;
@@ -139,31 +139,36 @@
           ETH: "🔷",
           USDT: "🟩",
           BNB: "🟨",
-          ADA: "🟥",
-          USD: "💵"
+          ADA: "🟥"
         };
 
-        const coinList = ["BTC", "ETH", "USDT", "BNB", "ADA", "USD"];
+        // USD removed completely
+        const coinList = ["BTC", "ETH", "USDT", "BNB", "ADA"];
+
         const prices = await getPrices();
         const grid = document.getElementById("walletGrid");
 
         coinList.forEach(coin => {
           const bal = Number(balances[coin] || 0);
 
-          let usdValue = bal;
-          if (coin === "BTC") usdValue *= prices.bitcoin?.usd || 0;
-          if (coin === "ETH") usdValue *= prices.ethereum?.usd || 0;
-          if (coin === "BNB") usdValue *= prices.binancecoin?.usd || 0;
-          if (coin === "ADA") usdValue *= prices.cardano?.usd || 0;
-          if (coin === "USDT") usdValue = bal;
-          if (coin === "USD") usdValue = bal;
+          // Convert to USDT (same as USD)
+          let usdtValue = bal;
+
+          if (coin === "BTC") usdtValue *= prices.bitcoin?.usd || 0;
+          if (coin === "ETH") usdtValue *= prices.ethereum?.usd || 0;
+          if (coin === "BNB") usdtValue *= prices.binancecoin?.usd || 0;
+          if (coin === "ADA") usdtValue *= prices.cardano?.usd || 0;
+          if (coin === "USDT") usdtValue = bal; // 1:1
 
           grid.innerHTML += `
             <div class="wallet-card">
               <div class="coin-icon">${icons[coin]}</div>
               <div class="coin-name">${coin}</div>
               <div class="coin-balance">${bal.toFixed(6)}</div>
-              <div class="coin-usd">$${usdValue.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
+              <div class="coin-usdt">${usdtValue.toLocaleString(undefined,{
+                minimumFractionDigits:2,
+                maximumFractionDigits:2
+              })} USDT</div>
             </div>
           `;
         });
