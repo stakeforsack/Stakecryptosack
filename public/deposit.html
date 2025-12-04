@@ -27,7 +27,6 @@
       min-height: 100vh;
     }
 
-    /* --- BACK BUTTON --- */
     .back-btn {
       position: fixed;
       top: 18px;
@@ -41,10 +40,6 @@
       cursor: pointer;
       backdrop-filter: blur(6px);
       z-index: 50;
-    }
-
-    .back-btn:hover {
-      background: rgba(255,255,255,0.15);
     }
 
     .container {
@@ -104,11 +99,6 @@
       transition: .2s;
     }
 
-    button:hover:not(:disabled) {
-      transform: scale(1.02);
-      box-shadow: 0 4px 18px rgba(168,85,247,0.2);
-    }
-
     .error {
       margin-top: 12px;
       background: rgba(255,75,75,0.15);
@@ -118,15 +108,8 @@
       display: none;
     }
 
-    /* Payment Section */
-    .payment-section {
-      display: none;
-      margin-top: 28px;
-      padding-top: 20px;
-      border-top: 1px solid rgba(255,255,255,0.08);
-    }
-
-    .payment-section.active { display: block; }
+    .payment-section { display:none; margin-top:28px; padding-top:20px; border-top:1px solid rgba(255,255,255,0.08); }
+    .payment-section.active { display:block; }
 
     .status-box {
       padding: 16px;
@@ -167,14 +150,11 @@
       margin-top: 12px;
     }
 
-    .copy-btn:hover { background: #4ed4c1; }
-
   </style>
 </head>
 
 <body>
 
-  <!-- BACK BUTTON -->
   <div class="back-btn" onclick="location.href='home.html'">← Back</div>
 
   <div class="container">
@@ -182,13 +162,20 @@
     <h2>Deposit Funds</h2>
 
     <form id="depositForm">
+
       <label>Select Cryptocurrency</label>
       <select id="coin" required>
         <option value="">Select Coin</option>
         <option value="BTC">Bitcoin (BTC)</option>
         <option value="ETH">Ethereum (ETH)</option>
         <option value="USDT">Tether (USDT)</option>
-        <option value="BNB">Binance Coin (BNB)</option>
+        <option value="XRP">XRP (XRP)</option>
+      </select>
+
+      <!-- 🔥 NEW CHAIN SELECTOR -->
+      <label style="margin-top:16px;">Select Network</label>
+      <select id="chain" required>
+        <option value="">Select Chain</option>
       </select>
 
       <label style="margin-top:16px;">Amount</label>
@@ -210,7 +197,7 @@
       <p style="margin-top:15px;color:var(--muted)">Transaction ID:</p>
       <div id="txId" style="font-family:monospace;opacity:.8;margin-bottom:10px;"></div>
 
-      <p style="margin-top:5px;">Send exactly <span id="exactAmount" style="font-weight:700"></span> <span id="coinSymbol"></span></p>
+      <p style="margin-top:5px;">Send exactly <span id="exactAmount"></span> <span id="coinSymbol"></span></p>
 
       <div class="qr-code">
         <img id="qrImage" src="" style="width:100%;height:100%;object-fit:contain;">
@@ -229,81 +216,122 @@
 
   </div>
 
-  <!-- Original script kept same -->
-  <script>
-    const baseUrl = window.location.origin;
+<script>
+const baseUrl = window.location.origin;
 
-    const cryptoData = {
-      BTC: { address: 'YOUR_BTC_ADDRESS_HERE', qrCode: `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=bitcoin:YOUR_BTC_ADDRESS_HERE` },
-      ETH: { address: 'YOUR_ETH_ADDRESS_HERE', qrCode: `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=ethereum:YOUR_ETH_ADDRESS_HERE` },
-      USDT: { address: 'YOUR_USDT_ADDRESS_HERE', qrCode: `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=ethereum:YOUR_USDT_ADDRESS_HERE` },
-      BNB: { address: 'YOUR_BNB_ADDRESS_HERE', qrCode: `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=bnb:YOUR_BNB_ADDRESS_HERE` }
-    };
+// ⚡ NETWORK OPTIONS
+const chainOptions = {
+  BTC: ["Bitcoin"],
+  ETH: ["ERC20"],
+  USDT: ["TRC20", "ERC20", "BEP20"],
+  XRP: ["XRP"]
+};
 
-    let currentTxId = null;
-    let currentCoin = null;
+// ⚡ PLACEHOLDER ADDRESSES YOU WILL EDIT
+const cryptoData = {
+  BTC: {
+    Bitcoin: { address: "YOUR_BTC_ADDRESS", qr: "YOUR_BTC_QR" }
+  },
+  ETH: {
+    ERC20: { address: "YOUR_ETH_ERC20_ADDRESS", qr: "YOUR_ETH_ERC20_QR" }
+  },
+  USDT: {
+    TRC20: { address: "YOUR_USDT_TRC20_ADDRESS", qr: "YOUR_USDT_TRC20_QR" },
+    ERC20: { address: "YOUR_USDT_ERC20_ADDRESS", qr: "YOUR_USDT_ERC20_QR" },
+    BEP20: { address: "YOUR_USDT_BEP20_ADDRESS", qr: "YOUR_USDT_BEP20_QR" }
+  },
+  XRP: {
+    XRP: { address: "YOUR_XRP_ADDRESS", qr: "YOUR_XRP_QR" }
+  }
+};
 
-    const paymentSection = document.getElementById("paymentSection");
+const coinEl = document.getElementById("coin");
+const chainEl = document.getElementById("chain");
 
-    async function copyAddress() {
-      const addr = document.getElementById("addressBox").textContent;
-      await navigator.clipboard.writeText(addr);
-      alert("Address copied!");
-    }
+coinEl.addEventListener("change", () => {
+  const coin = coinEl.value;
+  chainEl.innerHTML = `<option value="">Select Chain</option>`;
 
-    function goBack() {
-      paymentSection.classList.remove("active");
-      document.getElementById("depositForm").style.display = "block";
-    }
-
-    const form = document.getElementById("depositForm");
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-
-      const coin = document.getElementById("coin").value;
-      const amount = document.getElementById("amount").value;
-
-      const res = await fetch(`${baseUrl}/api/deposit`, {
-        method: "POST",
-        headers: {"Content-Type":"application/json"},
-        credentials: "include",
-        body: JSON.stringify({coin, amount: parseFloat(amount)})
-      });
-
-      const data = await res.json();
-      currentTxId = data.txId;
-      currentCoin = coin;
-
-      const info = cryptoData[coin];
-      document.getElementById("exactAmount").textContent = amount;
-      document.getElementById("coinSymbol").textContent = coin;
-      document.getElementById("addressBox").textContent = info.address;
-      document.getElementById("qrImage").src = info.qrCode;
-      document.getElementById("txId").textContent = data.txId;
-
-      form.style.display = "none";
-      paymentSection.classList.add("active");
+  if (chainOptions[coin]) {
+    chainOptions[coin].forEach(c => {
+      chainEl.innerHTML += `<option value="${c}">${c}</option>`;
     });
+  }
+});
 
-    async function checkPaymentStatus() {
-      const res = await fetch(`${baseUrl}/api/verify-payment`, {
-        method: "POST",
-        headers: {"Content-Type":"application/json"},
-        credentials: "include",
-        body: JSON.stringify({txId: currentTxId})
-      });
+// FORM SUBMIT
+let currentTxId = null;
 
-      const data = await res.json();
-      const statusValue = document.getElementById("statusValue");
+document.getElementById("depositForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
 
-      if (data.status === "CONFIRMED") {
-        statusValue.textContent = "Payment Confirmed!";
-        statusValue.style.color = "#7ef6b8";
-      } else {
-        statusValue.textContent = "Awaiting Confirmation…";
-      }
-    }
-  </script>
+  const coin = coinEl.value;
+  const chain = chainEl.value;
+  const amount = document.getElementById("amount").value;
+
+  if (!chain) {
+    document.getElementById("error").textContent = "Please select network!";
+    document.getElementById("error").style.display = "block";
+    return;
+  }
+
+  const res = await fetch(`${baseUrl}/api/deposit`, {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    credentials: "include",
+    body: JSON.stringify({ coin, chain, amount: parseFloat(amount) })
+  });
+
+  const data = await res.json();
+  currentTxId = data.txId;
+
+  const info = cryptoData[coin][chain];
+
+  document.getElementById("exactAmount").textContent = amount;
+  document.getElementById("coinSymbol").textContent = coin;
+  document.getElementById("addressBox").textContent = info.address;
+
+  document.getElementById("qrImage").src = info.qr;
+
+  document.getElementById("txId").textContent = currentTxId;
+
+  document.getElementById("depositForm").style.display = "none";
+  document.getElementById("paymentSection").classList.add("active");
+});
+
+// Copy address
+async function copyAddress() {
+  const addr = document.getElementById("addressBox").textContent;
+  await navigator.clipboard.writeText(addr);
+  alert("Address copied!");
+}
+
+// Back
+function goBack() {
+  document.getElementById("paymentSection").classList.remove("active");
+  document.getElementById("depositForm").style.display = "block";
+}
+
+// Check status
+async function checkPaymentStatus() {
+  const res = await fetch(`${baseUrl}/api/verify-payment`, {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    credentials: "include",
+    body: JSON.stringify({ txId: currentTxId })
+  });
+
+  const data = await res.json();
+  const statusValue = document.getElementById("statusValue");
+
+  if (data.status === "CONFIRMED") {
+    statusValue.textContent = "Payment Confirmed!";
+    statusValue.style.color = "#7ef6b8";
+  } else {
+    statusValue.textContent = "Awaiting Confirmation…";
+  }
+}
+</script>
 
 </body>
 </html>

@@ -44,6 +44,25 @@
   .pill.confirmed { background:#052e11; color:#7ef6b8 }
   .pill.declined { background:#2b0f0f; color:#ff8b8b }
   @media (max-width:980px){ .grid{grid-template-columns:1fr} .right{order:-1} .card{padding:12px} }
+
+  /* ------ DETAILS MODAL ------ */
+  .modalOverlay { position: fixed; inset:0; background: rgba(0,0,0,0.6); display:none; align-items:center; justify-content:center; z-index:2000; padding:20px; }
+  .modal { width:100%; max-width:920px; background: #07070b; border-radius:12px; padding:18px; border:1px solid rgba(255,255,255,0.04); box-shadow:0 30px 80px rgba(0,0,0,0.8); color:#eaf3ff; }
+  .modalHeader { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; }
+  .modalTitle { font-size:18px; font-weight:800; color:var(--accent); }
+  .modalBody { display:grid; grid-template-columns: 1fr 360px; gap:14px; max-height:70vh; overflow:auto; }
+  .modalLeft { background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.005)); padding:12px; border-radius:10px; border:1px solid rgba(255,255,255,0.02); }
+  .modalRight { background: #050507; padding:12px; border-radius:10px; border:1px solid rgba(255,255,255,0.02); }
+  .kv { display:flex; justify-content:space-between; padding:8px 10px; border-bottom:1px dashed rgba(255,255,255,0.02); }
+  .kv strong { color:#fff }
+  .modalFooter { display:flex; gap:8px; justify-content:flex-end; margin-top:12px; }
+  .btn-neutral { background:#222; color:#fff; border:none; padding:10px 12px; border-radius:8px; cursor:pointer; }
+  .btn-danger { background:#ff5c5c; color:#fff; border:none; padding:10px 12px; border-radius:8px; cursor:pointer; }
+  .btn-success { background:linear-gradient(90deg,#22c55e,#16a34a); color:#021; border:none; padding:10px 12px; border-radius:8px; cursor:pointer; font-weight:700; }
+  .modalRight pre { white-space:pre-wrap; font-size:13px; color:#cfe8ff; background:transparent; border:none; padding:0; margin:0; }
+  .modal .small { font-size:13px; color:var(--muted); margin-bottom:8px; display:block; }
+  .detailsActions { display:flex; gap:8px; margin-top:8px; }
+  @media (max-width:920px){ .modalBody { grid-template-columns:1fr; } .modalRight { order:2 } }
 </style>
 </head>
 <body>
@@ -61,13 +80,13 @@
   <div class="grid">
     <div class="left">
 
-      <!-- ⭐ NEW: Pending Membership Purchases -->
+      <!-- Pending Membership Purchases -->
       <div class="card">
         <h3>Pending Membership Purchases</h3>
         <div id="pendingMemberships" class="list"><div class="small muted">Loading...</div></div>
       </div>
 
-      <!-- ⭐ NEW: All Memberships -->
+      <!-- All Memberships -->
       <div class="card">
         <h3>All Memberships</h3>
         <div id="allMemberships" class="list"><div class="small muted">Loading...</div></div>
@@ -139,16 +158,54 @@
   </div>
 </div>
 
+<!-- DETAILS MODAL -->
+<div id="detailsModal" class="modalOverlay">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modalHeader">
+      <div>
+        <div id="modalTitle" class="modalTitle">Details</div>
+        <div id="modalSub" class="small muted">—</div>
+      </div>
+      <div>
+        <button class="btn-neutral" id="openInInspector">Open in Inspector</button>
+        <button class="btn-neutral" id="closeModal">Close</button>
+      </div>
+    </div>
+
+    <div class="modalBody">
+      <div class="modalLeft">
+        <div id="leftContent">
+          <div class="small muted">Loading details...</div>
+        </div>
+      </div>
+
+      <div class="modalRight">
+        <div class="small muted">Raw JSON / Meta</div>
+        <pre id="rightJson">—</pre>
+        <div style="height:10px"></div>
+        <div class="small muted">Admin Actions</div>
+        <div class="detailsActions">
+          <button id="approveBtn" class="btn-success">Approve</button>
+          <button id="declineBtn" class="btn-danger">Decline</button>
+          <button id="copyBtn" class="btn-neutral">Copy ID</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modalFooter" style="margin-top:12px">
+      <div class="small muted" id="modalFooterNote">Loaded at <span id="modalLoadedAt">—</span></div>
+    </div>
+  </div>
+</div>
+
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-  // Admin logic — runs after DOM ready
   let ADMIN_KEY = "";          // stored in memory for this session (not saved)
   const $ = id => document.getElementById(id);
 
   // helper wrapper for admin calls
   async function callAdmin(path, method='GET', body=null) {
     if (!ADMIN_KEY) {
-      // open sign-in overlay instead of alerting
       const s = $('signin');
       if (s) s.style.display = 'flex';
       return null;
@@ -157,7 +214,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (body) opts.body = JSON.stringify(body);
     try {
       const res = await fetch(path, opts);
-      // if unauthorized, show sign-in overlay
       if (res.status === 401 || res.status === 403) {
         $('signin').style.display = 'flex';
         return null;
@@ -171,7 +227,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // small element helper
   function elItem(title, subtitle, rightHtml='') {
     return `<div class="item"><div>
               <div class="user-row"><strong>${title}</strong></div>
@@ -180,7 +235,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="actions">${rightHtml}</div></div>`;
   }
 
-  // ---------------- Pending Membership Purchases ----------------
+  // ---------------- Load panels ----------------
   async function loadPendingMemberships(){
     const res = await callAdmin('/api/admin/pending-deposits');
     const wrap = $('pendingMemberships');
@@ -204,23 +259,26 @@ document.addEventListener('DOMContentLoaded', () => {
                       <div style="height:8px"></div>
                       <button class="btn-approve" onclick="approveTx('${tx._id}')">Approve</button>
                       <button class="btn-decline" onclick="declineTx('${tx._id}')">Decline</button>
+                      <div style="height:8px"></div>
+                      <button class="btn-neutral" onclick="showDetails('${tx._id}','DEPOSIT')">Details</button>
                       <div class="small muted" style="margin-top:6px">User: ${tx.userId?.username || tx.userId}</div>
                      </div>`;
       wrap.insertAdjacentHTML('beforeend', `<div style="margin-bottom:8px">${elItem('Membership Purchase: '+tx._id, `Tier: ${tier} • User: ${tx.userId?.username || 'N/A'} • ${new Date(tx.createdAt).toLocaleString()}`, right)}</div>`);
     });
   }
 
-  // ---------------- All Memberships ----------------
   async function loadAllMemberships(){
     const wrap = $('allMemberships');
     if (!wrap) return;
     wrap.innerHTML = '';
-    const res = await callAdmin('/api/admin/all-memberships'); // optional
+    const res = await callAdmin('/api/admin/all-memberships'); // optional; may not exist
     if (res && res.memberships) {
       res.memberships.forEach(m=>{
         const right = `<div style="text-align:right">
                         <div style="font-weight:700">${m.tier}</div>
                         <div class="small muted" style="margin-top:6px">User: ${m.userId?.username || m.userId}</div>
+                        <div style="height:8px"></div>
+                        <button class="btn-neutral" onclick="showDetails('${m._id}','MEMBERSHIP')">Details</button>
                       </div>`;
         wrap.insertAdjacentHTML('beforeend', elItem(`${m.tier} • ${m.userId?.username || m.userId}`, `Status: ${m.status} • DaysPaid: ${m.daysPaid}/${m.durationDays} • Start: ${new Date(m.startDate).toLocaleString()}`, right));
       });
@@ -263,7 +321,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // ---------------- Other loaders ----------------
   async function loadPendingDeposits(){
     const res = await callAdmin('/api/admin/pending-deposits');
     const wrap = $('pendingDeposits');
@@ -278,9 +335,11 @@ document.addEventListener('DOMContentLoaded', () => {
                       <div style="height:8px"></div>
                       <button class="btn-approve" onclick="approveTx('${tx._id}')">Approve</button>
                       <button class="btn-decline" onclick="declineTx('${tx._id}')">Decline</button>
+                      <div style="height:8px"></div>
+                      <button class="btn-neutral" onclick="showDetails('${tx._id}','DEPOSIT')">Details</button>
                       <div class="small muted" style="margin-top:6px">User: ${tx.userId?.username || tx.userId}</div>
                      </div>`;
-      wrap.insertAdjacentHTML('beforeend', `<div style="margin-bottom:8px">${memBadge}${elItem('Deposit: '+tx._id, `User: ${tx.userId?.username || 'N/A'} • ${new Date(tx.createdAt).toLocaleString()}`, right)}</div>`);
+      wrap.insertAdjacentHTML('beforeend', `${memBadge}${elItem('Deposit: '+tx._id, `User: ${tx.userId?.username || 'N/A'} • ${new Date(tx.createdAt).toLocaleString()}`, right)}`);
     });
   }
 
@@ -297,6 +356,8 @@ document.addEventListener('DOMContentLoaded', () => {
                       <div style="height:8px"></div>
                       <button class="btn-approve" onclick="approveTx('${tx._id}', true)">Approve</button>
                       <button class="btn-decline" onclick="declineTx('${tx._id}')">Decline</button>
+                      <div style="height:8px"></div>
+                      <button class="btn-neutral" onclick="showDetails('${tx._id}','WITHDRAW')">Details</button>
                       <div class="small muted" style="margin-top:6px">User: ${tx.userId?.username || tx.userId}</div>
                       ${walletAddr}
                      </div>`;
@@ -316,6 +377,8 @@ document.addEventListener('DOMContentLoaded', () => {
                       <div style="font-weight:700">${usd} USD</div>
                       <div style="height:8px"></div>
                       <button class="btn" onclick="inspectUser('${u._id}')">View TX</button>
+                      <div style="height:8px"></div>
+                      <button class="btn-neutral" onclick="showDetails('${u._id}','USER')">Details</button>
                     </div>`;
       wrap.insertAdjacentHTML('beforeend', elItem(u.username+' • '+ (u.email || ''), `Created: ${new Date(u.createdAt).toLocaleString()}`, right));
     });
@@ -337,12 +400,13 @@ document.addEventListener('DOMContentLoaded', () => {
                       <div class="${badgeClass}">${status}</div>
                     </div>
                     <div class="small muted">User: ${t.userId?.username || t.userId} • ${new Date(t.createdAt).toLocaleString()}</div>
+                    <div style="margin-top:8px"><button class="btn-neutral" onclick="showDetails('${t._id}','TX')">Details</button></div>
                    </div>`;
       wrap.insertAdjacentHTML('beforeend', row);
     });
   }
 
-  // Expose approve/decline to window so inline onclick works
+  // Approve/Decline helpers exposed globally for inline buttons
   window.approveTx = async function(txId, isWithdraw=false){
     if (!confirm("Approve transaction " + txId + " ?")) return;
     try {
@@ -380,11 +444,13 @@ document.addEventListener('DOMContentLoaded', () => {
   $('btnInspect').onclick = async ()=>{
     const v = $('txInspect').value.trim();
     if (!v) return alert('Enter txId or userId');
+    // try tx search first
     const all = await callAdmin('/api/admin/all-transactions');
     if (all && all.tx){
       const found = all.tx.find(t => t._id === v || t._id == v);
-      if (found) { $('userTxHistory').innerText = JSON.stringify(found, null, 2); return; }
+      if (found) { showDetails(v,'TX'); return; }
     }
+    // user fallback
     const userRes = await callAdmin('/api/admin/user-transactions/'+v);
     $('userTxHistory').innerText = JSON.stringify(userRes, null, 2);
   };
@@ -401,15 +467,210 @@ document.addEventListener('DOMContentLoaded', () => {
     ]);
   }
 
-  // wire buttons
+  // ---------------- DETAILS MODAL LOGIC ----------------
+  const modalOverlay = document.getElementById('detailsModal');
+  const leftContent = document.getElementById('leftContent');
+  const rightJson = document.getElementById('rightJson');
+  const modalTitle = document.getElementById('modalTitle');
+  const modalSub = document.getElementById('modalSub');
+  const modalLoadedAt = document.getElementById('modalLoadedAt');
+  const approveBtn = document.getElementById('approveBtn');
+  const declineBtn = document.getElementById('declineBtn');
+  const copyBtn = document.getElementById('copyBtn');
+  const openInspectorBtn = document.getElementById('openInInspector');
+
+  let currentDetail = { id:null, type:null, data:null };
+
+  window.showDetails = async function(id, type='TX') {
+    // type: TX / DEPOSIT / WITHDRAW / MEMBERSHIP / USER
+    modalOverlay.style.display = 'flex';
+    modalTitle.innerText = `${type} Details`;
+    modalSub.innerText = id;
+    leftContent.innerHTML = '<div class="small muted">Fetching details…</div>';
+    rightJson.textContent = '—';
+    modalLoadedAt.innerText = new Date().toLocaleString();
+
+    // Try to fetch info intelligently:
+    try {
+      let payload = null;
+
+      // attempt direct endpoints where available
+      if (type === 'USER') {
+        const u = await callAdmin('/api/admin/users');
+        // if users list available, find the user
+        if (u && u.users) {
+          const found = u.users.find(x => (x._id === id || x._id == id));
+          payload = found || null;
+        }
+        // also fetch user transactions if available
+        const txs = await callAdmin('/api/admin/user-transactions/'+id);
+        payload = { user: payload, transactions: txs || null };
+      } else {
+        // Try all-transactions and pending lists
+        const all = await callAdmin('/api/admin/all-transactions');
+        if (all && all.tx) {
+          const found = all.tx.find(t => t._id === id || t._id == id);
+          if (found) payload = found;
+        }
+        // If still not found, try pending deposits or withdraws endpoints
+        if (!payload) {
+          const pendDeposits = await callAdmin('/api/admin/pending-deposits');
+          if (pendDeposits && pendDeposits.pending) {
+            const f = pendDeposits.pending.find(t => t._id === id || t._id == id);
+            if (f) payload = f;
+          }
+        }
+        if (!payload) {
+          const pendWithdraws = await callAdmin('/api/admin/pending-withdraws');
+          if (pendWithdraws && pendWithdraws.pending) {
+            const f = pendWithdraws.pending.find(t => t._id === id || t._id == id);
+            if (f) payload = f;
+          }
+        }
+        // As last resort, if it's a membership id try fallback reconstruct (best-effort)
+        if (!payload && type === 'MEMBERSHIP') {
+          const txs = await callAdmin('/api/admin/all-transactions');
+          if (txs && txs.tx) {
+            const match = txs.tx.find(t => String(t.meta?.membershipId || '') === String(id) || t._id === id);
+            if (match) payload = match;
+          }
+        }
+      }
+
+      // show results
+      currentDetail = { id, type, data: payload };
+
+      // Build left panel
+      let leftHtml = '';
+      if (!payload) {
+        leftHtml = `<div class="small muted">No detailed backend record found for ${id}. You can inspect raw transactions or the user in inspector.</div>
+                    <div style="height:8px"></div>
+                    <button class="btn-neutral" onclick="refreshAndShow('${id}','${type}')">Try Refresh & Retry</button>`;
+        leftContent.innerHTML = leftHtml;
+        rightJson.textContent = 'No data';
+        return;
+      }
+
+      // If payload looks like a user object
+      if (payload.username || payload.email) {
+        leftHtml += `<div class="kv"><strong>Username</strong><span>${payload.username || '—'}</span></div>`;
+        leftHtml += `<div class="kv"><strong>Email</strong><span>${payload.email || '—'}</span></div>`;
+        leftHtml += `<div class="kv"><strong>Created</strong><span>${new Date(payload.createdAt || payload.updatedAt || Date.now()).toLocaleString()}</span></div>`;
+        leftHtml += `<div class="kv"><strong>Balances</strong><span>${JSON.stringify(payload.balances || {})}</span></div>`;
+        // fetch txs as well if available in nested results
+        if (payload.transactions) {
+          leftHtml += `<div style="height:8px"></div><div class="small muted">Transactions (preview)</div>`;
+          const preview = Array.isArray(payload.transactions) ? payload.transactions.slice(0,12) : [];
+          preview.forEach(t => {
+            leftHtml += `<div class="kv"><strong>${t.type}</strong><span>${t.amount} ${t.coin} • ${t.status || '—'}</span></div>`;
+          });
+        }
+      } else {
+        // treat as transaction-like payload
+        leftHtml += `<div class="kv"><strong>Type</strong><span>${payload.type || payload.txType || '—'}</span></div>`;
+        leftHtml += `<div class="kv"><strong>Coin</strong><span>${payload.coin || '—'}</span></div>`;
+        leftHtml += `<div class="kv"><strong>Amount</strong><span>${payload.amount || '—'}</span></div>`;
+        leftHtml += `<div class="kv"><strong>Status</strong><span>${payload.status || '—'}</span></div>`;
+        leftHtml += `<div class="kv"><strong>User</strong><span>${payload.userId?.username || payload.userId || '—'}</span></div>`;
+        leftHtml += `<div class="kv"><strong>Created</strong><span>${new Date(payload.createdAt || Date.now()).toLocaleString()}</span></div>`;
+
+        // show meta details (wallet, membership info, tx_hash etc)
+        if (payload.meta && Object.keys(payload.meta).length) {
+          leftHtml += `<div style="height:8px"></div><div class="small muted">Meta</div>`;
+          Object.entries(payload.meta).forEach(([k,v])=>{
+            leftHtml += `<div class="kv"><strong>${k}</strong><span>${typeof v === 'object' ? JSON.stringify(v) : String(v)}</span></div>`;
+          });
+        }
+      }
+
+      // Add a details button for user if userId present
+      if (payload.userId && payload.userId._id) {
+        leftHtml += `<div style="height:8px"></div><button class="btn" onclick="showDetails('${payload.userId._id}','USER')">Open User Details</button>`;
+      } else if (payload.userId) {
+        // userId might be ID string or object
+        const uid = typeof payload.userId === 'string' ? payload.userId : (payload.userId._id || '');
+        if (uid) leftHtml += `<div style="height:8px"></div><button class="btn" onclick="showDetails('${uid}','USER')">Open User Details</button>`;
+      }
+
+      leftContent.innerHTML = leftHtml;
+      rightJson.textContent = JSON.stringify(payload, null, 2);
+
+      // Set current modal buttons data attributes
+      approveBtn.dataset.txid = payload._id || id;
+      declineBtn.dataset.txid = payload._id || id;
+      copyBtn.dataset.copy = payload._id || id;
+      openInspectorBtn.dataset.inspect = payload._id || id;
+
+    } catch (err) {
+      leftContent.innerHTML = `<div class="small muted">Error fetching details: ${err.message}</div>`;
+      rightJson.textContent = String(err);
+    }
+  };
+
+  // helper to refresh panels then retry show
+  window.refreshAndShow = async function(id, type){
+    await refreshAll();
+    window.showDetails(id, type);
+  };
+
+  // modal buttons
+  $('closeModal').onclick = ()=> { modalOverlay.style.display = 'none'; };
+  $('openInInspector').onclick = ()=>{
+    const id = openInspectorBtn.dataset.inspect;
+    if (id) {
+      $('txInspect').value = id;
+      $('btnInspect').click();
+      modalOverlay.style.display = 'none';
+    }
+  };
+
+  approveBtn.onclick = async ()=>{
+    const txId = approveBtn.dataset.txid;
+    if (!txId) return alert('No tx id');
+    // determine if withdraw or deposit by checking currently loaded data
+    const d = currentDetail.data || {};
+    let isWithdraw = false;
+    if (d.type === 'WITHDRAW' || String(d.type).toLowerCase().includes('withdraw')) isWithdraw = true;
+    if (!confirm("Approve " + txId + " ?")) return;
+    if (isWithdraw) {
+      const tx_hash = prompt("Enter blockchain tx hash (optional)","");
+      const r = await callAdmin('/api/admin/approve-withdraw','POST',{ txId, tx_hash });
+      alert(r && r.ok ? 'Withdraw approved' : JSON.stringify(r));
+    } else {
+      const r = await callAdmin('/api/admin/approve-deposit','POST',{ txId });
+      alert(r && r.ok ? 'Deposit approved' : JSON.stringify(r));
+    }
+    refreshAll();
+    modalOverlay.style.display = 'none';
+  };
+
+  declineBtn.onclick = async ()=>{
+    const txId = declineBtn.dataset.txid;
+    if (!txId) return alert('No tx id');
+    if (!confirm("Decline " + txId + " ?")) return;
+    const r = await callAdmin('/api/admin/decline-transaction','POST',{ txId });
+    alert(r && r.ok ? 'Declined' : JSON.stringify(r));
+    refreshAll();
+    modalOverlay.style.display = 'none';
+  };
+
+  copyBtn.onclick = ()=>{
+    const txt = copyBtn.dataset.copy || '';
+    if (!txt) return;
+    navigator.clipboard.writeText(txt).then(()=> alert('Copied ID to clipboard'));
+  };
+
+  // Refresh wiring
   $('btnRefresh').onclick = refreshAll;
+
+  // Approve/decline quick buttons
   $('approveTxBtn').onclick = async ()=>{
     const txId = $('approveTxInput').value.trim();
     if (!txId) return alert('Enter txId');
     const all = await callAdmin('/api/admin/all-transactions');
     if (all && all.tx){
       const found = all.tx.find(t => t._id === txId || t._id == txId);
-      if (found && found.type === 'WITHDRAW') { await window.approveTx(txId, true); return; }
+      if (found && String(found.type).toUpperCase() === 'WITHDRAW') { await window.approveTx(txId, true); return; }
     }
     await window.approveTx(txId, false);
   };
@@ -441,9 +702,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // initial load (show signin overlay by default)
   (function init(){
-    // show overlay so admin must sign in
     $('signin').style.display = 'flex';
   })();
+
 });
 </script>
 </body>
