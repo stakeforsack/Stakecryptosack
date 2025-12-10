@@ -219,6 +219,26 @@
 <script>
 const baseUrl = window.location.origin;
 
+
+// 🔐 Check login before allowing deposit page
+async function ensureLoggedIn() {
+  try {
+    const res = await fetch("/api/profile", { credentials: "include" });
+    if (res.status === 401) {
+      // Not logged in -> redirect
+      window.location.href = "login.html";
+      return false;
+    }
+    return true;
+  } catch {
+    window.location.href = "login.html";
+    return false;
+  }
+}
+
+ensureLoggedIn();
+
+
 // ⚡ NETWORK OPTIONS
 const chainOptions = {
   BTC: ["Bitcoin"],
@@ -264,6 +284,12 @@ let currentTxId = null;
 
 document.getElementById("depositForm").addEventListener("submit", async (e) => {
   e.preventDefault();
+
+  const logged = await ensureLoggedIn();
+  if (!logged) {
+    alert("Please log in to make a deposit.");
+    return;
+  }
 
   const coin = coinEl.value;
   const chain = chainEl.value;
