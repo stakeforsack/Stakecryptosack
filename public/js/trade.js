@@ -1,328 +1,258 @@
-// trade.js — improved, mobile-friendly, animated, and robust
-// Assumes: Chart.js is loaded and HTML has elements with IDs used in original layout.
+// trade.js — updated to be mobile-friendly, remove order UI, hide chart x-axis labels,
+// and reduce price polling to avoid spamming CoinGecko.
+//
+// Replace your current trade.js with this file (keeps existing endpoints / behavior).
 
 const COINS = [
-  { id: "bitcoin", symbol: "BTC", name: "Bitcoin", img: "/img/btc.png" },
-  { id: "ethereum", symbol: "ETH", name: "Ethereum", img: "/img/eth.png" },
-  { id: "tether", symbol: "USDT", name: "Tether", img: "/img/usdt.png" },
-  { id: "cardano", symbol: "ADA", name: "Cardano", img: "/img/ada.png" },
-  { id: "binancecoin", symbol: "BNB", name: "BNB", img: "/img/bnb.png" },
-  { id: "solana", symbol: "SOL", name: "Solana", img: "/img/sol.png" },
+  { id: 'bitcoin', symbol: 'BTC', name: 'Bitcoin', img: '/img/btc.png' },
+  { id: 'ethereum', symbol: 'ETH', name: 'Ethereum', img: '/img/eth.png' },
+  { id: 'tether', symbol: 'USDT', name: 'Tether', img: '/img/usdt.png' },
+  { id: 'cardano', symbol: 'ADA', name: 'Cardano', img: '/img/ada.png' },
+  { id: 'binancecoin', symbol: 'BNB', name: 'BNB', img: '/img/bnb.png' },
+  { id: 'solana', symbol: 'SOL', name: 'Solana', img: '/img/sol.png' }
 ];
 
-const coinsListEl = document.getElementById("coinsList") || document.querySelector(".coins");
-const chartArea = document.getElementById("chartBox") || document.getElementById("chartArea");
-const chartTitle = document.getElementById("chartTitle") || document.getElementById("chartTitle");
-const chartLoader = document.getElementById("chartLoader") || null;
-const priceCanvas = document.getElementById("priceChart");
-const timeframeButtons = document.querySelectorAll(".periods button");
+const coinsListEl = document.getElementById('coinsList');
+const chartBox = document.getElementById('chartBox');
+const chartTitle = document.getElementById('chartTitle');
+const chartLoader = document.getElementById('chartLoader');
+const priceCanvas = document.getElementById('priceChart');
 
 let priceChart = null;
 let selectedCoin = null;
 let liveInterval = null;
-let pricePollInterval = 5000; // 5s near-real-time updates
+let pricePollInterval = 15000; // 15s to reduce request rate
 const MAX_POINTS = 300;
 
-// Simple in-memory cache for fetched market_chart results to avoid hammering API
-const chartCache = {}; // { coinId: { fetchedAt: ts, prices: [...], raw: {...} } }
-const PRICE_REFRESH_MS = 10000; // refresh list prices every 10s
+// backoff on repeated 429s
+let consecutive429 = 0;
+let fetchIntervalHandle = null;
 
-// helpers
-function formatPriceForList(v) {
-  if (v === undefined || v === null || Number.isNaN(v)) return "—";
-  // choose decimals based on magnitude
-  if (v >= 1) return "$" + Number(v).toLocaleString(undefined, { maximumFractionDigits: 2 });
-  if (v >= 0.01) return "$" + Number(v).toLocaleString(undefined, { maximumFractionDigits: 4 });
-  return "$" + Number(v).toLocaleString(undefined, { maximumFractionDigits: 8 });
-}
-
-function formatPriceForChartTick(v) {
-  if (v === undefined || v === null) return "";
-  if (v >= 1) return "$" + Number(v).toLocaleString(undefined, { maximumFractionDigits: 2 });
-  if (v >= 0.01) return "$" + Number(v).toLocaleString(undefined, { maximumFractionDigits: 4 });
-  return "$" + Number(v).toLocaleString(undefined, { maximumFractionDigits: 8 });
-}
-
-function el(tag, cls, html) {
-  const d = document.createElement(tag);
-  if (cls) d.className = cls;
-  if (html !== undefined) d.innerHTML = html;
+function el(className, inner = '') {
+  const d = document.createElement('div');
+  d.className = className;
+  d.innerHTML = inner;
   return d;
 }
 
-// Render coin list (responsive)
 function renderCoins() {
-  if (!coinsListEl) return;
-  coinsListEl.innerHTML = "";
-  COINS.forEach((c) => {
-    const div = el("div", "coin");
+  coinsListEl.innerHTML = '';
+  COINS.forEach(c => {
+    const div = document.createElement('div');
+    div.className = 'coin';
     div.dataset.id = c.id;
-    div.setAttribute("role", "button");
-    div.setAttribute("aria-label", `${c.name} (${c.symbol})`);
     div.innerHTML = `
-      <img src="${c.img}" alt="${c.symbol}" onerror="this.style.display='none'">
-      <div class="name">${c.symbol}</div>
-      <div class="pair">${c.name}</div>
-      <div class="price" id="price-${c.id}">—</div>
-      <div id="chg-${c.id}" class="change">—</div>
+      <div class="img"><img src="${c.img}" alt="${c.symbol}"></div>
+      <div class="meta">
+        <div class="name">${c.symbol} · ${c.name}</div>
+        <div class="pair">${c.symbol} / USDT</div>
+      </div>
+      <div class="priceRow">
+        <div class="price" id="price-${c.id}">—</div>
+        <div id="chg-${c.id}" class="change">—</div>
+      </div>
     `;
-    div.addEventListener("click", () => openChart(c, "1D"));
+    div.addEventListener('click', () => openChart(c, div));
     coinsListEl.appendChild(div);
   });
 }
 
-// Fetch top-level prices for the list
+/**
+ * fetchPrices - fetches a compact price object and updates UI.
+ * Uses a gentle polling interval and backs off if CoinGecko returns 429.
+ */
 async function fetchPrices() {
-  const ids = COINS.map((c) => c.id).join(",");
+  const ids = COINS.map(c => c.id).join(',');
   try {
     const url = `https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd&include_24hr_change=true`;
     const res = await fetch(url);
-    if (!res.ok) throw new Error("Price API error");
+    if (res.status === 429) {
+      consecutive429++;
+      // exponential backoff: increase interval and skip update
+      const backoff = Math.min(60000, pricePollInterval * Math.pow(2, consecutive429));
+      console.warn('CoinGecko 429 — backing off to', backoff);
+      if (fetchIntervalHandle) clearInterval(fetchIntervalHandle);
+      fetchIntervalHandle = setInterval(fetchPrices, backoff);
+      return;
+    } else {
+      // clear backoff on success
+      if (consecutive429 > 0) {
+        consecutive429 = 0;
+        if (fetchIntervalHandle) { clearInterval(fetchIntervalHandle); fetchIntervalHandle = setInterval(fetchPrices, pricePollInterval); }
+      }
+    }
     const data = await res.json();
-
-    COINS.forEach((c) => {
+    COINS.forEach(c => {
       const pEl = document.getElementById(`price-${c.id}`);
       const chEl = document.getElementById(`chg-${c.id}`);
+      if (!pEl || !chEl) return;
       if (data[c.id] && data[c.id].usd != null) {
         const price = Number(data[c.id].usd);
-        pEl.textContent = formatPriceForList(price);
+        pEl.textContent = '$' + price.toLocaleString(undefined, { maximumFractionDigits: 8 });
         const ch = Number(data[c.id].usd_24h_change || 0);
-        chEl.textContent = (ch >= 0 ? "+" : "") + ch.toFixed(2) + "%";
-        chEl.className = "change " + (ch >= 0 ? "pos" : "neg");
-        // subtle pulse animation for update
-        pEl.animate([{ opacity: 0.4 }, { opacity: 1 }], { duration: 350 });
+        chEl.textContent = (ch >= 0 ? '+' : '') + ch.toFixed(2) + '%';
+        chEl.className = 'change ' + (ch >= 0 ? 'pos' : 'neg');
       } else {
-        if (pEl) pEl.textContent = "—";
-        if (chEl) chEl.textContent = "";
+        pEl.textContent = '—';
+        chEl.textContent = '';
       }
     });
   } catch (err) {
-    console.error("Price fetch error", err);
+    console.error('Price fetch error', err);
   }
 }
 
-// TIMEFRAMES in milliseconds (used to filter points)
+// TIMEFRAMES used to filter the Chart data returned (we request 1 day raw and filter client-side)
 const TIMEFRAMES = {
-  "1H": 60 * 60 * 1000,
-  "6H": 6 * 60 * 60 * 1000,
-  "1D": 24 * 60 * 60 * 1000,
+  '1H': 60 * 60 * 1000,
+  '6H': 6 * 60 * 60 * 1000,
+  '1D': 24 * 60 * 60 * 1000
 };
 
-// fetch chart (market_chart) and cache it
-async function fetchChartRaw(coinId, days = 1) {
-  const now = Date.now();
-  const cache = chartCache[coinId];
-  // reuse if fetched recently (30s) and days requested same (we store raw.days)
-  if (cache && cache.raw && cache.rawDays === days && now - (cache.fetchedAt || 0) < 30 * 1000) {
-    return cache.raw;
-  }
-
-  const url = `https://api.coingecko.com/api/v3/coins/${encodeURIComponent(
-    coinId
-  )}/market_chart?vs_currency=usd&days=${days}&interval=hourly`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error("Chart API error");
-  const raw = await res.json();
-
-  chartCache[coinId] = chartCache[coinId] || {};
-  chartCache[coinId].raw = raw;
-  chartCache[coinId].rawDays = days;
-  chartCache[coinId].fetchedAt = Date.now();
-  return raw;
-}
-
-// build label string from timestamp depending on timeframe
-function labelFromTimestamp(ms, timeframeKey) {
-  const d = new Date(ms);
-  if (timeframeKey === "1H" || timeframeKey === "6H") {
-    return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  }
-  // 1D or larger, show hours for 1D
-  return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-}
-
-// open chart for coin and timeframe (default 1D)
-async function openChart(coin, timeframeKey = "1D") {
+function openChart(coin, domNode) {
   selectedCoin = coin;
-  // visually mark active coin
-  document.querySelectorAll(".coin").forEach((el) => el.classList.toggle("active", el.dataset.id === coin.id));
+  document.querySelectorAll('.coin').forEach(x => x.classList.remove('active'));
+  if (domNode) domNode.classList.add('active');
 
-  if (chartArea) chartArea.style.display = "block";
-  if (chartTitle) chartTitle.textContent = `${coin.name} (${coin.symbol})`;
-
-  await loadChartData(coin.id, timeframeKey);
+  chartBox.style.display = 'block';
+  chartTitle.textContent = `${coin.name} (${coin.symbol})`;
+  loadChartData(coin.id, '1D');
 }
 
-// Main loader — pulls cached chart raw, filters by timeframe and draws Chart.js
-async function loadChartData(coinId, timeframeKey = "1D") {
-  if (!coinId || !priceCanvas) return;
-  // show loader element if provided
-  if (chartLoader) chartLoader.style.display = "block";
+// load chart data (we request 1 day and filter to timeframe)
+async function loadChartData(coinId, timeframeKey = '1D') {
+  if (!coinId) return;
+  chartLoader.style.display = 'block';
 
-  // clear previous live updates
-  if (liveInterval) {
-    clearInterval(liveInterval);
-    liveInterval = null;
-  }
+  // stop existing live updates
+  if (liveInterval) { clearInterval(liveInterval); liveInterval = null; }
 
   try {
-    // fetch raw (1 day is enough for 1D/6H/1H filtering)
-    const raw = await fetchChartRaw(coinId, 1);
-    if (!raw || !raw.prices) throw new Error("No chart data");
+    const url = `https://api.coingecko.com/api/v3/coins/${coinId}/market_chart?vs_currency=usd&days=1`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`Chart request failed: ${res.status}`);
+    const data = await res.json();
+    if (!data.prices || !Array.isArray(data.prices)) throw new Error('No chart data');
 
     const now = Date.now();
-    const tfMs = TIMEFRAMES[timeframeKey] || TIMEFRAMES["1D"];
-
-    // filter points to timeframe (if timeframe <= 24h)
-    const points = raw.prices.filter((p) => {
+    const tfMs = TIMEFRAMES[timeframeKey] || TIMEFRAMES['1D'];
+    const filtered = data.prices.filter(p => {
       const t = p[0];
-      return tfMs >= 24 * 60 * 60 * 1000 ? true : t >= now - tfMs;
+      // if timeframe is >= 24h, keep all
+      if (tfMs >= 24 * 60 * 60 * 1000) return true;
+      return (t >= now - tfMs);
     });
 
-    // if no points found (rare), fallback to raw.prices
-    const usePoints = points.length ? points : raw.prices;
-
-    const labels = usePoints.map((p) => labelFromTimestamp(p[0], timeframeKey));
-    const values = usePoints.map((p) => Number(p[1]));
-
-    // prepare gradient for chart line fill (works with canvas 2d)
-    const ctx = priceCanvas.getContext("2d");
-    // resize canvas container properly (the HTML should set canvas height via CSS)
-    // create gradient based on canvas height
-    const gradient = ctx.createLinearGradient(0, 0, 0, priceCanvas.height || 260);
-    gradient.addColorStop(0, "rgba(168,85,247,0.12)");
-    gradient.addColorStop(1, "rgba(168,85,247,0.02)");
+    // labels: we'll hide axis labels (you asked no date/time) — keep labels minimal for Chart internal mapping
+    const labels = filtered.map((p, i) => i); // simple index labels — we hide axis display
+    const values = filtered.map(p => Number(p[1]));
 
     // destroy old chart
     if (priceChart) {
-      try { priceChart.destroy(); } catch (e) { /* ignore */ }
+      try { priceChart.destroy(); } catch (e) {/* ignore */}
       priceChart = null;
     }
 
-    // Create new Chart.js instance
+    // create chart with x-axis hidden (no date/time) and compact tooltip
+    const ctx = priceCanvas.getContext('2d');
     priceChart = new Chart(ctx, {
-      type: "line",
+      type: 'line',
       data: {
         labels,
-        datasets: [
-          {
-            label: `${selectedCoin?.symbol || coinId} price (USD)`,
-            data: values,
-            borderColor: "#a855f7",
-            backgroundColor: gradient,
-            pointRadius: 0,
-            tension: 0.18,
-            borderWidth: 2,
-            hoverRadius: 4,
-            segment: {
-              // nice subtle transition on value change
-              borderDash: (ctx) => (ctx.p0DataIndex === 0 ? [] : []),
-            },
-          },
-        ],
+        datasets: [{
+          label: `${selectedCoin.symbol} price (USD)`,
+          data: values,
+          borderColor: '#a855f7',
+          backgroundColor: 'rgba(168,85,247,0.08)',
+          pointRadius: 0,
+          tension: 0.22,
+          borderWidth: 2,
+          fill: true,
+        }]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        animation: { duration: 300 },
-        interaction: { mode: "index", intersect: false },
+        animation: false,
         plugins: {
           legend: { display: false },
           tooltip: {
             callbacks: {
-              label: (context) => {
-                const v = context.parsed.y;
-                return formatPriceForChartTick(v);
-              },
-            },
-          },
+              title: () => '', // remove title (date/time)
+              label: (ctx) => {
+                const v = ctx.parsed.y;
+                return '$' + Number(v).toLocaleString(undefined, { maximumFractionDigits: 8 });
+              }
+            }
+          }
         },
         scales: {
           x: {
-            ticks: { color: "#9aa3b2", maxRotation: 0, autoSkip: true, maxTicksLimit: 10 },
-            grid: { display: false },
+            display: false, // hide x-axis (no dates / times)
+            grid: { display: false }
           },
           y: {
-            ticks: { color: "#9aa3b2", callback: formatPriceForChartTick },
-            grid: { color: "rgba(255,255,255,0.02)" },
-          },
+            ticks: {
+              callback: v => '$' + Number(v).toLocaleString(undefined, { maximumFractionDigits: 8 })
+            },
+            grid: { color: 'rgba(255,255,255,0.02)' }
+          }
         },
-      },
+        interaction: {
+          intersect: false,
+          mode: 'index'
+        }
+      }
     });
 
-    // hide loader
-    if (chartLoader) chartLoader.style.display = "none";
+    chartLoader.style.display = 'none';
 
-    // live poll the latest price and append to chart
+    // start live polling of single latest price to append smoothly
     liveInterval = setInterval(async () => {
       try {
         const pRes = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${coinId}&vs_currencies=usd`);
-        if (!pRes.ok) throw new Error("live price fetch failed");
+        if (!pRes.ok) return;
         const pData = await pRes.json();
         const newPrice = pData[coinId] && pData[coinId].usd;
         if (newPrice != null && priceChart) {
-          const nowLabel = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
-          priceChart.data.labels.push(nowLabel);
+          // push new point
+          priceChart.data.labels.push(priceChart.data.labels.length);
           priceChart.data.datasets[0].data.push(Number(newPrice));
-          // keep last MAX_POINTS points
+          // maintain max points
           while (priceChart.data.labels.length > MAX_POINTS) {
             priceChart.data.labels.shift();
             priceChart.data.datasets[0].data.shift();
           }
-          // update without heavy animation
-          priceChart.update("none");
+          priceChart.update('none'); // update without animation
         }
-      } catch (e) {
-        console.debug("Live update failed", e);
-      }
+      } catch (e) { console.error('Live update failed', e); }
     }, pricePollInterval);
+
   } catch (err) {
-    console.error("Chart load error", err);
-    if (chartLoader) chartLoader.style.display = "none";
-    // show a minimal error message inside chart area if present
-    if (chartArea) {
-      chartArea.style.display = "block";
-      chartTitle.textContent = `${selectedCoin?.name || coinId} — failed to load chart`;
-    }
+    console.error('Chart load error', err);
+    chartLoader.textContent = 'Failed to load chart';
   }
 }
 
-// timeframe button handler
-document.addEventListener("click", (e) => {
+// timeframe buttons (delegated)
+document.addEventListener('click', (e) => {
   if (!selectedCoin) return;
-  const id = e.target && e.target.id;
-  if (id === "btn1h") {
-    loadChartData(selectedCoin.id, "1H");
-    timeframeButtons.forEach((b) => b.classList.toggle("active", b.id === "btn1h"));
-  }
-  if (id === "btn6h") {
-    loadChartData(selectedCoin.id, "6H");
-    timeframeButtons.forEach((b) => b.classList.toggle("active", b.id === "btn6h"));
-  }
-  if (id === "btn1d") {
-    loadChartData(selectedCoin.id, "1D");
-    timeframeButtons.forEach((b) => b.classList.toggle("active", b.id === "btn1d"));
-  }
+  if (e.target.id === 'btn1h') loadChartData(selectedCoin.id, '1H');
+  if (e.target.id === 'btn6h') loadChartData(selectedCoin.id, '6H');
+  if (e.target.id === 'btn1d') loadChartData(selectedCoin.id, '1D');
 });
 
-// Resize canvas handle (helps maintain good look on mobile)
-function resizeCanvasToContainer() {
-  if (!priceCanvas) return;
-  const parent = priceCanvas.parentElement;
-  if (!parent) return;
-  const style = getComputedStyle(parent);
-  const height = Math.max(220, Math.min(420, parent.clientWidth * 0.55)); // responsive height
-  priceCanvas.style.height = height + "px";
-  if (priceChart) priceChart.resize();
-}
-window.addEventListener("resize", () => {
-  resizeCanvasToContainer();
-});
-
-// initial render + polls
+// INITIALIZE
 renderCoins();
-fetchPrices().catch(() => {});
-setInterval(fetchPrices, PRICE_REFRESH_MS);
+fetchPrices();
+// use a single poll interval handle so we can backoff gracefully
+if (fetchIntervalHandle) clearInterval(fetchIntervalHandle);
+fetchIntervalHandle = setInterval(fetchPrices, pricePollInterval);
 
-// ensure canvas sizing initially
-setTimeout(() => resizeCanvasToContainer(), 120);
+// Also start the shared MarketPrices script (if present) for other pages
+try {
+  if (window.MarketPrices && typeof window.MarketPrices.start === 'function') {
+    // start a light update for the smaller UI (keeps other parts synced)
+    window.MarketPrices.start(COINS.map(c => c.id), 20000);
+  }
+} catch (e) {}

@@ -1,512 +1,217 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
-<title>Trade • Advanced • CryptoYieldPro</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
+  <title>Trade • Live Charts</title>
 
-<!-- Chart.js -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<link rel="preload" href="/js/market-prices.js" as="script">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
 
-<style>
-  :root{
-    --bg:#040406;
-    --panel:#0b0b0f;
-    --muted:#98a3b3;
-    --accent:#a855f7;
-    --accent2:#5eead4;
-    --glass: rgba(255,255,255,0.03);
-    --success:#7ef6b8;
-    --danger:#ff7b8a;
-    --radius:14px;
-  }
-  *{box-sizing:border-box}
-  html,body{height:100%;margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,'Helvetica Neue',Arial;background:
-    radial-gradient(800px 400px at 15% 10%, rgba(168,85,247,0.03), transparent 8%),
-    radial-gradient(600px 360px at 90% 90%, rgba(94,234,212,0.02), transparent 6%),
-    linear-gradient(180deg,var(--bg),#07070a);color:#eaf3ff;overflow-x:hidden;padding-bottom:100px}
-  .wrap{max-width:1200px;margin:20px auto;padding:18px;display:flex;flex-direction:column;gap:14px}
+  <style>
+    :root {
+      --bg1: #050507;
+      --bg2: #0b0b12;
+      --card: rgba(255,255,255,0.03);
+      --border: rgba(255,255,255,0.06);
+      --accent: #a855f7;
+      --accent2: #5eead4;
+      --success: #74ffb0;
+      --danger: #ff5f77;
+      --muted: #9aa3b2;
+    }
 
-/* top bar */
-.topbar{display:flex;align-items:center;justify-content:space-between;gap:12px}
-.brand{font-weight:800;font-size:18px;color:var(--accent)}
-.controls{display:flex;gap:8px;align-items:center}
-.select, .btn { background: #07070a; border:1px solid rgba(255,255,255,0.04); color:#fff; padding:8px 10px; border-radius:10px; font-weight:700; cursor:pointer}
-.search{padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);background:#0b0b0f;color:#fff}
+    html,body{
+      height:100%;
+      margin:0;
+      font-family: "Inter", "Segoe UI", Roboto, sans-serif;
+      background: linear-gradient(180deg, var(--bg1), var(--bg2));
+      color:#eaf3ff;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
 
-/* layout */
-.grid{
-  display:grid;
-  grid-template-columns: 260px 1fr 360px;
-  gap:14px;
-  align-items:start;
-}
-@media (max-width:1100px){ .grid{grid-template-columns:1fr; } .chartPanel, .leftPanel, .rightPanel{width:100%} }
+    /* hide scrollbar for modern browsers */
+    body::-webkit-scrollbar { display: none; }
 
-/* left panel (markets) */
-.card{background:linear-gradient(180deg,var(--panel), rgba(255,255,255,0.01));border-radius:var(--radius);padding:12px;border:1px solid rgba(255,255,255,0.03);box-shadow:0 10px 40px rgba(0,0,0,0.6)}
-.leftPanel .coinList{display:grid;gap:10px;max-height:520px;overflow:auto;padding-right:6px}
-.coinItem{display:flex;align-items:center;justify-content:space-between;padding:10px;border-radius:10px;background:linear-gradient(180deg, rgba(255,255,255,0.006), transparent);cursor:pointer;border:1px solid transparent;transition:all .18s}
-.coinItem:hover{transform:translateY(-3px);border-color:rgba(168,85,247,0.08);box-shadow:0 8px 28px rgba(168,85,247,0.06)}
-.coinLeft{display:flex;gap:10px;align-items:center}
-.coinIcon{width:40px;height:40px;border-radius:8px;background:#0d0d10;display:flex;align-items:center;justify-content:center;font-weight:800}
-.coinMeta{display:flex;flex-direction:column}
-.coinName{font-weight:800}
-.coinPair{font-size:12px;color:var(--muted)}
-.coinRight{text-align:right}
-.coinPrice{font-weight:800}
-.coinChange.pos{color:var(--success)}
-.coinChange.neg{color:var(--danger)}
+    .wrap {
+      max-width: 980px;
+      margin: 18px auto 110px;
+      padding: 12px;
+    }
 
-/* center chart */
-.chartPanel{display:flex;flex-direction:column;gap:12px}
-.chartHeader{display:flex;justify-content:space-between;align-items:center;gap:8px}
-.chartHeader .title{font-weight:800;font-size:1.05rem}
-.indicators{display:flex;gap:8px}
-.indicators .pill{padding:6px 10px;border-radius:999px;background:rgba(255,255,255,0.02);font-weight:700;color:var(--muted);cursor:pointer}
-.chartCard{padding:12px;border-radius:12px;background:linear-gradient(180deg,rgba(255,255,255,0.01),transparent);border:1px solid rgba(255,255,255,0.03)}
-#priceChart{width:100%!important;height:360px!important;display:block}
+    .back-btn {
+      position: fixed;
+      top: 18px;
+      left: 18px;
+      background: rgba(255,255,255,0.06);
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.06);
+      font-weight: 700;
+      cursor: pointer;
+      z-index: 40;
+      color: #fff;
+      backdrop-filter: blur(6px);
+    }
 
-/* right panel (orderbook + orders) */
-.rightPanel .box{margin-bottom:12px}
-.orderPanel { display:flex; flex-direction:column; gap:10px; padding:12px; border-radius:12px; background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent); border:1px solid rgba(255,255,255,0.03) }
-.sideTabs{display:flex;gap:8px}
-.sideTabs button{flex:1;padding:10px;border-radius:10px;border:none;background:rgba(255,255,255,0.02);font-weight:800;color:var(--muted);cursor:pointer}
-.sideTabs button.active{background:linear-gradient(90deg,var(--accent),var(--accent2));color:#021}
-.input{padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);background:#050506;color:#fff}
-.orderRow{display:flex;gap:8px}
-.buyBtn{background:linear-gradient(90deg,#2bd68f,#0bb36a);color:#021;padding:10px;border-radius:10px;border:none;font-weight:800;cursor:pointer;flex:1}
-.sellBtn{background:linear-gradient(90deg,#ff8b8b,#ff5c5c);color:#021;padding:10px;border-radius:10px;border:none;font-weight:800;cursor:pointer;flex:1}
+    .header {
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      margin-bottom:10px;
+    }
 
-/* order book and recent trades */
-.book{display:flex;flex-direction:column;gap:8px;max-height:220px;overflow:auto;padding:8px;background:rgba(255,255,255,0.01);border-radius:10px}
-.bookRow{display:flex;justify-content:space-between;font-weight:700;padding:6px;border-radius:8px}
-.bookRow.ask{color:var(--danger)}
-.bookRow.bid{color:var(--success)}
+    .title {
+      display:flex;
+      flex-direction:column;
+    }
+    .title h1 {
+      font-size: 1.4rem;
+      margin: 0;
+      font-weight: 800;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      -webkit-background-clip:text; background-clip:text; color: transparent;
+    }
+    .title .sub {
+      color:var(--muted);
+      font-size:0.88rem;
+      margin-top:4px;
+    }
 
-/* footer small */
-.smallMuted{color:var(--muted);font-size:13px}
+    /* coins list */
+    .coins {
+      display:grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+    @media (max-width:720px){
+      .wrap { padding:12px 10px; margin:12px auto 120px; }
+      .coins { grid-template-columns: repeat(1, 1fr); }
+    }
+    .coin {
+      background: var(--card);
+      border: 1px solid var(--border);
+      padding: 12px;
+      border-radius: 12px;
+      display:flex;
+      gap:12px;
+      align-items:center;
+      transition: transform .18s ease, box-shadow .18s;
+      cursor:pointer;
+      min-height:64px;
+      overflow:hidden;
+    }
+    .coin.active { transform: translateY(-4px); box-shadow:0 8px 30px rgba(168,85,247,0.14); border-color: var(--accent); }
+    .coin .img {
+      width:44px; height:44px; flex:0 0 44px;
+      display:flex;align-items:center;justify-content:center;border-radius:10px;background:#0b0b0d;
+    }
+    .coin img { width:28px; height:28px; object-fit:contain; }
+    .coin .meta { flex:1; min-width:0; }
+    .coin .name { font-weight:700; font-size:0.98rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .coin .pair { font-size:0.78rem; color:var(--muted); margin-top:3px; }
+    .coin .priceRow{ display:flex; gap:10px; align-items:center; margin-left:auto; flex-direction:column; align-items:flex-end; }
+    .coin .price { font-weight:800; font-size:0.95rem; color:#fff; }
+    .change.pos { color:var(--success); font-weight:700; }
+    .change.neg { color:var(--danger); font-weight:700; }
 
-/* subtle motion */
-.fadeIn{animation:fadeIn .45s ease both}
-@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-</style>
+    /* chart box */
+    #chartBox{
+      margin-top:16px;
+      background:var(--card);
+      border-radius:14px;
+      border:1px solid var(--border);
+      padding:12px;
+      box-shadow:0 6px 26px rgba(0,0,0,0.45);
+      display:none;
+      overflow:hidden;
+    }
+    #chartTitle { font-weight:800; font-size:1.05rem; margin:6px 0; }
+    #chartWrap { width:100%; height:280px; position:relative; }
+
+    /* loader */
+    .loader { font-size:0.9rem; color:var(--muted); }
+
+    /* periods */
+    .periods { margin-top:10px; display:flex; gap:8px; flex-wrap:wrap; }
+    .periods button {
+      padding:8px 10px; border-radius:8px; border:none; background:transparent; color:var(--muted);
+      cursor:pointer; font-weight:700;
+      border:1px solid transparent;
+    }
+    .periods button.active { background:linear-gradient(90deg,var(--accent),var(--accent2)); color:#041; border:1px solid rgba(0,0,0,0.08); }
+
+    /* bottom nav - kept same style but ensure no overlap */
+    .bottom-nav {
+      position: fixed;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(255,255,255,0.04);
+      backdrop-filter: blur(18px);
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 22px;
+      padding: 8px 14px;
+      display: flex;
+      gap: 18px;
+      z-index: 999;
+    }
+    .nav-item { text-align:center; font-size:0.82rem; color:var(--muted); text-decoration:none; display:flex;flex-direction:column; align-items:center; gap:4px; }
+    .nav-item img{ width:20px; height:20px; }
+
+    /* small responsive tweaks */
+    @media (max-width:420px){
+      #chartWrap { height:220px; }
+      .coin .priceRow{ flex-direction:row; gap:12px; align-items:center; }
+      .coin .price { font-size:0.95rem; }
+    }
+  </style>
 </head>
 <body>
+  <div class="back-btn" onclick="location.href='home.html'">← Back</div>
 
-<div class="wrap">
-  <div class="top fadeIn">
-    <div class="brand">CryptoYieldPro • Advanced Trade</div>
-    <div class="controls">
-      <input class="search" id="symbolFilter" placeholder="Filter symbol (BTC, ETH...)" />
-      <select id="timeframe" class="select">
-        <option value="1">1D</option>
-        <option value="7">7D</option>
-        <option value="30" selected>30D</option>
-      </select>
-      <button id="refreshBtn" class="btn">Refresh</button>
+  <div class="wrap">
+    <div class="header">
+      <div class="title">
+        <h1>Markets & Live Chart</h1>
+        <div class="sub">Tap a coin to view its price chart (no order book).</div>
+      </div>
     </div>
-  </div>
 
-  <div class="grid">
+    <div id="coinsList" class="coins" aria-live="polite">
+      <!-- coins rendered by trade.js -->
+    </div>
 
-    <!-- LEFT: Markets -->
-    <div class="leftPanel card fadeIn">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-        <div style="font-weight:800">Markets</div>
-        <div class="smallMuted">Live</div>
+    <div id="chartBox">
+      <div id="chartTitle">—</div>
+      <div id="chartWrap">
+        <canvas id="priceChart" width="800" height="400"></canvas>
       </div>
 
-      <div class="coinList" id="coinList">
-        <!-- coins injected here -->
+      <div class="periods" aria-hidden="false">
+        <button id="btn1h">1H</button>
+        <button id="btn6h">6H</button>
+        <button id="btn1d" class="active">1D</button>
       </div>
+
       <div style="height:8px"></div>
-      <div class="smallMuted">Tip: tap a coin to open chart & trade</div>
-    </div>
-
-    <!-- CENTER: Chart -->
-    <div class="chartPanel">
-      <div class="chartHeader">
-        <div>
-          <div class="title" id="chartTitle">Choose a market</div>
-          <div class="smallMuted" id="chartSub">Price & recent activity</div>
-        </div>
-        <div class="indicators">
-          <div class="pill" id="toggleMA">MA</div>
-          <div class="pill" id="toggleVol">Vol</div>
-        </div>
-      </div>
-
-      <div class="chartCard">
-        <canvas id="priceChart"></canvas>
-        <div style="display:flex;justify-content:center;margin-top:10px" class="periods" id="periodBtns">
-          <button data-period="1">1D</button>
-          <button data-period="7">7D</button>
-          <button data-period="30" class="active">30D</button>
-        </div>
-      </div>
-
-      <div class="card fadeIn">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div style="font-weight:800">Trade History</div>
-          <div class="smallMuted">Latest confirmed transactions</div>
-        </div>
-        <div id="recentTrades" class="book" style="margin-top:10px"></div>
-      </div>
-    </div>
-
-    <!-- RIGHT: Order book & order panel -->
-    <div class="rightPanel">
-      <div class="box orderPanel fadeIn">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div style="font-weight:800" id="orderMarket">—</div>
-          <div class="smallMuted" id="orderBalance">Bal: —</div>
-        </div>
-
-        <div class="sideTabs" role="tablist">
-          <button id="tabLimit" class="active">Limit</button>
-          <button id="tabMarket">Market</button>
-        </div>
-
-        <div style="display:flex;gap:8px;margin-top:8px">
-          <input placeholder="Price" class="input" id="orderPrice" />
-          <input placeholder="Amount" class="input" id="orderAmount" />
-        </div>
-
-        <div class="orderRow" style="margin-top:6px">
-          <button id="buyBtn" class="buyBtn">Buy</button>
-          <button id="sellBtn" class="sellBtn">Sell</button>
-        </div>
-
-        <div class="smallMuted" style="margin-top:8px">Note: Orders are UI-only unless you implement <code>/api/order</code>.</div>
-      </div>
-
-      <div class="box card fadeIn">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div style="font-weight:800">Order Book</div>
-          <div class="smallMuted">Top bids & asks</div>
-        </div>
-
-        <div style="display:flex;gap:6px;margin-top:8px">
-          <div style="flex:1">
-            <div class="smallMuted" style="margin-bottom:6px">Bids</div>
-            <div id="bids" class="book"></div>
-          </div>
-          <div style="flex:1">
-            <div class="smallMuted" style="margin-bottom:6px">Asks</div>
-            <div id="asks" class="book"></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="card fadeIn">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div style="font-weight:800">Account Orders</div>
-          <div class="smallMuted">Recent</div>
-        </div>
-        <div id="myOrders" class="book" style="margin-top:8px"></div>
-      </div>
+      <div id="chartLoader" class="loader" style="display:none;">Loading chart…</div>
     </div>
   </div>
 
-  <div class="smallMuted" style="text-align:center">Advanced mode • Animated • Mobile friendly</div>
-</div>
+  <!-- bottom nav -->
+  <nav class="bottom-nav" role="navigation" aria-label="main">
+    <a class="nav-item" href="home.html"><img src="/img/house.png"><div>Home</div></a>
+    <a class="nav-item active" href="trade.html"><img src="/img/trade.png"><div>Trade</div></a>
+    <a class="nav-item" href="internal-transfer.html"><img src="/img/transfer.png"><div>Transfer</div></a>
+    <a class="nav-item" href="account.html"><img src="/img/myaccount.png"><div>Account</div></a>
+  </nav>
 
-<!-- reuse your existing prices updater -->
-<script src="/js/market-prices.js"></script>
-
-<script>
-/* ----------------- helper UI/data ----------------- */
-const COINS = [
-  {id:'bitcoin', sym:'BTC', name:'Bitcoin'},
-  {id:'ethereum', sym:'ETH', name:'Ethereum'},
-  {id:'tether', sym:'USDT', name:'Tether'},
-  {id:'cardano', sym:'ADA', name:'Cardano'},
-  {id:'binancecoin', sym:'BNB', name:'Binance'},
-  {id:'solana', sym:'SOL', name:'Solana'}
-];
-
-const coinListEl = document.getElementById('coinList');
-const chartTitle = document.getElementById('chartTitle');
-const chartSub = document.getElementById('chartSub');
-const orderMarket = document.getElementById('orderMarket');
-const orderBalance = document.getElementById('orderBalance');
-const recentTradesEl = document.getElementById('recentTrades');
-const bidsEl = document.getElementById('bids');
-const asksEl = document.getElementById('asks');
-const myOrdersEl = document.getElementById('myOrders');
-
-let selectedCoin = null;
-let chartInstance = null;
-let latestPriceMap = {}; // id => price
-
-// render coin list
-function renderCoins(filter=''){
-  coinListEl.innerHTML = '';
-  const f = filter.trim().toLowerCase();
-  COINS.forEach(c=>{
-    if(f && !(c.sym.toLowerCase().includes(f) || c.name.toLowerCase().includes(f))) return;
-    const div = document.createElement('div');
-    div.className = 'coinItem';
-    div.dataset.coin = c.id;
-    div.innerHTML = `
-      <div class="coinLeft">
-        <div class="coinIcon">${c.sym[0]}</div>
-        <div class="coinMeta">
-          <div class="coinName">${c.name}</div>
-          <div class="coinPair">${c.sym}/USDT</div>
-        </div>
-      </div>
-      <div class="coinRight">
-        <div class="coinPrice" data-price-for="${c.id}">—</div>
-        <div class="coinChange" data-change-for="${c.id}"></div>
-      </div>
-    `;
-    div.addEventListener('click', ()=> selectCoin(c));
-    coinListEl.appendChild(div);
-  });
-}
-renderCoins();
-
-// start live price updater (uses your market-prices.js)
-MarketPrices.start(COINS.map(c=>c.id), 8000);
-
-// hook into MarketPrices updates by polling DOM (market-prices updates elements with data-price-id)
-// We'll also poll coingecko periodically to update latestPriceMap used for chart subtitle & orderbook
-async function fetchLatestPrices(){
-  try{
-    const ids = COINS.map(c=>c.id).join(',');
-    const r = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd&include_24hr_change=true`);
-    const data = await r.json();
-    COINS.forEach(c=>{
-      const p = data[c.id]?.usd || null;
-      const ch = data[c.id]?.usd_24h_change;
-      latestPriceMap[c.id] = p;
-      const priceEls = document.querySelectorAll(`[data-price-for="${c.id}"]`);
-      priceEls.forEach(el => el.textContent = p ? '$' + Number(p).toLocaleString(undefined,{maximumFractionDigits:8}) : '—');
-      const changeEls = document.querySelectorAll(`[data-change-for="${c.id}"]`);
-      changeEls.forEach(el => {
-        if(typeof ch === 'number'){
-          const sign = ch>=0?'+':'';
-          el.textContent = sign + ch.toFixed(2) + '%';
-          el.className = 'coinChange ' + (ch>=0 ? 'pos' : 'neg');
-        } else el.textContent = '';
-      });
-    });
-  }catch(e){ console.warn('price poll error', e) }
-}
-fetchLatestPrices();
-setInterval(fetchLatestPrices, 9000);
-
-// select coin (loads chart & update order panel)
-async function selectCoin(c){
-  selectedCoin = c;
-  chartTitle.textContent = `${c.name} (${c.sym}/USDT)`;
-  chartSub.textContent = `Fetching ${document.querySelector('#periodBtns .active')?.dataset?.period || 30} day history...`;
-  orderMarket.textContent = `${c.sym}/USDT`;
-  orderBalance.textContent = `Bal: -- ${c.sym}`;
-  // highlight selected
-  document.querySelectorAll('.coinItem').forEach(it => it.classList.toggle('active', it.dataset.coin === c.id));
-  // load chart
-  const days = document.querySelector('#periodBtns .active')?.dataset?.period || 30;
-  await loadChart(c.id, days);
-  // update mock orderbook & trades
-  populateMockOrderBook(c.id);
-  loadRecentTrades();
-}
-
-// load chart using your backend /api/chart/:coin?days=
-async function loadChart(coinId, days=30){
-  try{
-    const res = await fetch(`/api/chart/${coinId}?days=${days}`, { credentials: 'include' });
-    if(!res.ok) throw new Error('Chart endpoint failed');
-    const json = await res.json();
-    const prices = (json.prices || []).map(p => ({ t: new Date(p[0]), v: p[1] }));
-    const labels = prices.map(p => p.t.toLocaleString());
-    const data = prices.map(p => p.v);
-    chartSub.textContent = `${data.length} points • last ${new Date().toLocaleString()}`;
-    // create chart
-    const ctx = document.getElementById('priceChart');
-    if(chartInstance) chartInstance.destroy();
-    chartInstance = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels,
-        datasets: [{
-          label: coinId,
-          data,
-          borderColor: 'rgba(168,85,247,1)',
-          backgroundColor: createGradient(ctx, 'rgba(168,85,247,0.12)'),
-          fill: true,
-          tension: 0.25,
-          pointRadius: 0,
-          borderWidth: 2
-        }]
-      },
-      options: {
-        animation: { duration: 700 },
-        plugins: {
-          legend: { display: false },
-          tooltip: { mode: 'index', intersect: false }
-        },
-        interaction: { mode: 'index', intersect: false },
-        scales: {
-          x: { ticks: { color: '#9aa3b2' } },
-          y: { ticks: { color: '#9aa3b2' } }
-        }
-      }
-    });
-  }catch(err){
-    chartSub.textContent = 'Chart load error';
-    console.error('loadChart',err);
-  }
-}
-
-function createGradient(ctx, color){
-  const c = ctx.getContext('2d');
-  const g = c.createLinearGradient(0,0,0,400);
-  g.addColorStop(0, color);
-  g.addColorStop(1, 'rgba(168,85,247,0)');
-  return g;
-}
-
-// period buttons
-document.querySelectorAll('#periodBtns button').forEach(btn=>{
-  btn.addEventListener('click', async ()=>{
-    document.querySelectorAll('#periodBtns button').forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active');
-    if(selectedCoin) await loadChart(selectedCoin.id, btn.dataset.period);
-  });
-});
-
-// simple indicator toggles (placeholder - no complex calc)
-document.getElementById('toggleMA').addEventListener('click', (e)=>{
-  e.target.classList.toggle('active');
-  // placeholder for adding MA overlay in future
-  e.target.style.boxShadow = e.target.classList.contains('active') ? '0 6px 20px rgba(168,85,247,0.12)' : 'none';
-});
-document.getElementById('toggleVol').addEventListener('click', (e)=>{
-  e.target.classList.toggle('active');
-  e.target.style.boxShadow = e.target.classList.contains('active') ? '0 6px 20px rgba(94,234,212,0.12)' : 'none';
-});
-
-// mock order book population (we create near-market bids/asks from latestPriceMap)
-function populateMockOrderBook(coinId){
-  const mid = latestPriceMap[coinId] || 0;
-  bidsEl.innerHTML = ''; asksEl.innerHTML = '';
-  if(!mid){ bidsEl.innerHTML = '<div class="smallMuted">No market data</div>'; asksEl.innerHTML = ''; return; }
-  // create 8 levels
-  for(let i=8;i>0;i--){
-    const price = (mid * (1 - i*0.001)).toFixed(6);
-    const size = (Math.random()*3 + 0.1).toFixed(4);
-    const row = document.createElement('div');
-    row.className = 'bookRow bid';
-    row.innerHTML = `<div>${price}</div><div>${size}</div>`;
-    bidsEl.appendChild(row);
-  }
-  for(let i=1;i<=8;i++){
-    const price = (mid * (1 + i*0.001)).toFixed(6);
-    const size = (Math.random()*3 + 0.1).toFixed(4);
-    const row = document.createElement('div');
-    row.className = 'bookRow ask';
-    row.innerHTML = `<div>${price}</div><div>${size}</div>`;
-    asksEl.appendChild(row);
-  }
-}
-
-// recent trades: show confirmed transactions as trades (best-effort)
-async function loadRecentTrades(){
-  try{
-    const res = await fetch('/api/transactions', { credentials: 'include' });
-    if(!res.ok) return;
-    const json = await res.json();
-    const tx = (json.transactions || []).filter(t => t.status === 'CONFIRMED').slice(0,20);
-    recentTradesEl.innerHTML = '';
-    tx.forEach(t=>{
-      const div = document.createElement('div');
-      div.className = 'bookRow';
-      div.style.fontWeight = 700;
-      div.innerHTML = `<div style="font-size:13px">${t.coin} • ${t.amount}</div><div style="font-size:12px" class="smallMuted">${new Date(t.createdAt).toLocaleTimeString()}</div>`;
-      recentTradesEl.appendChild(div);
-    });
-  }catch(e){ console.warn('recent trades', e) }
-}
-
-// orders UI (local only unless /api/order implemented)
-document.getElementById('buyBtn').addEventListener('click', ()=>placeOrder('BUY'));
-document.getElementById('sellBtn').addEventListener('click', ()=>placeOrder('SELL'));
-
-async function placeOrder(side){
-  const price = document.getElementById('orderPrice').value.trim();
-  const amount = document.getElementById('orderAmount').value.trim();
-  if(!selectedCoin) return alert('Select market first');
-  if(!amount || Number(amount) <= 0) return alert('Enter amount');
-  // UI entry
-  const id = 'order-' + Date.now();
-  const div = document.createElement('div');
-  div.className = 'bookRow ' + (side === 'BUY' ? 'bid' : 'ask');
-  div.innerHTML = `<div>${side} ${selectedCoin.sym} • ${amount} @ ${price || 'market'}</div><div class="smallMuted">${new Date().toLocaleTimeString()}</div>`;
-  myOrdersEl.prepend(div);
-  // attempt to send to backend if endpoint exists (non-blocking)
-  try{
-    await fetch('/api/order', {
-      method: 'POST', credentials: 'include',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ market: selectedCoin.id, side, price: price || null, amount: Number(amount) })
-    });
-  }catch(e){
-    // silently ignore (endpoint likely not implemented)
-  }
-}
-
-// search filter
-document.getElementById('symbolFilter').addEventListener('input',(e)=> renderCoins(e.target.value));
-
-// refresh button
-document.getElementById('refreshBtn').addEventListener('click', async ()=>{
-  await fetchLatest();
-});
-
-// initial data fetch
-async function fetchLatest(){
-  await fetchLatestPrices();
-  if(selectedCoin) populateMockOrderBook(selectedCoin.id);
-  await loadRecentTrades();
-}
-fetchLatest();
-setInterval(fetchLatest, 15000);
-
-// click first coin by default after initial price poll
-setTimeout(()=> {
-  const first = COINS[0];
-  if(first) selectCoin(first);
-}, 500);
-
-/* small utility fetchLatestPrices (local copy to avoid repeated code if market-prices.js isn't loaded) */
-async function fetchLatestPrices(){
-  try{
-    const ids = COINS.map(c=>c.id).join(',');
-    const r = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd&include_24hr_change=true`);
-    const data = await r.json();
-    COINS.forEach(c=>{
-      const p = data[c.id]?.usd || null;
-      const ch = data[c.id]?.usd_24h_change;
-      latestPriceMap[c.id] = p;
-      const priceEls = document.querySelectorAll(`[data-price-for="${c.id}"]`);
-      priceEls.forEach(el => el.textContent = p ? '$' + Number(p).toLocaleString(undefined,{maximumFractionDigits:8}) : '—');
-      const changeEls = document.querySelectorAll(`[data-change-for="${c.id}"]`);
-      changeEls.forEach(el => {
-        if(typeof ch === 'number'){
-          const sign = ch>=0?'+':'';
-          el.textContent = sign + ch.toFixed(2) + '%';
-          el.className = 'coinChange ' + (ch>=0 ? 'pos' : 'neg');
-        } else el.textContent = '';
-      });
-    });
-  }catch(e){ console.warn('price poll error', e) }
-}
-</script>
-
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="/js/market-prices.js"></script>
+  <script src="/js/trade.js"></script>
 </body>
 </html>
