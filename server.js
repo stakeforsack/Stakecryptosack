@@ -758,6 +758,35 @@ app.post("/api/logout", (req, res) => {
   });
 });
 
+// ---------------- Chart Data (for Trade page) ----------------
+app.get("/api/chart/:coin", async (req, res) => {
+  try {
+    const { coin } = req.params;
+    const days = req.query.days || 30;
+
+    // build CoinGecko request
+    const url = `https://api.coingecko.com/api/v3/coins/${coin}/market_chart?vs_currency=usd&days=${days}`;
+
+    const response = await fetch(url, {
+      headers: { "User-Agent": "Mozilla/5.0" }
+    });
+
+    const data = await response.json();
+
+    if (!data || !data.prices) {
+      return res.status(500).json({ error: "Chart data unavailable" });
+    }
+
+    return res.json({
+      ok: true,
+      prices: data.prices
+    });
+
+  } catch (err) {
+    console.error("Chart API Error:", err);
+    return res.status(500).json({ error: "Chart fetch failed" });
+  }
+});
 
 // ---------------- Unknown API routes ----------------
 app.use("/api/*", (req, res) => res.status(404).json({ error: "API endpoint not found" }));
