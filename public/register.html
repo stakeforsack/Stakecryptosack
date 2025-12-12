@@ -196,6 +196,7 @@
     <h2>Create Account</h2>
 
     <form id="registerForm">
+
       <div class="form-group">
         <input type="email" id="email" placeholder=" " required />
         <label>Email</label>
@@ -211,17 +212,20 @@
         <label>Password</label>
       </div>
 
-      <!-- Terms checkbox -->
-      <label style="display:flex;align-items:center;gap:6px;font-size:0.85rem;margin-bottom:10px;">
-        <input type="checkbox" id="termsCheck">
-        <span>I agree to the <span class="terms-link">Terms & Conditions</span></span>
-      </label>
+      <!-- FIXED: Checkbox now appears BELOW password -->
+      <div style="margin: 10px 0 15px 2px; text-align:left;">
+        <label style="display:flex;align-items:center;gap:8px;font-size:0.9rem;">
+          <input type="checkbox" id="termsCheck" style="transform:scale(1.2);">
+          <span>I agree to the <span class="terms-link">Terms & Conditions</span></span>
+        </label>
+      </div>
 
       <div id="registerError" class="error"></div>
       <div id="registerSuccess" class="success"></div>
 
       <button type="submit">Create Account</button>
     </form>
+
 
     <div class="small" style="margin-top:12px;">
       Already have an account? <a href="login.html" style="color:#5eead4;">Login</a>
