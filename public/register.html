@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Register | GodStake</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
   <style>
     * {margin:0; padding:0; box-sizing:border-box;}
     body {
@@ -17,6 +18,8 @@
       overflow: hidden;
       color: #fff;
     }
+
+    /* floating lights bg */
     body::before, body::after {
       content: '';
       position: absolute;
@@ -29,43 +32,57 @@
       z-index: 0;
     }
     body::after { animation-delay: 7s; bottom: -80px; right: -80px; }
+
     @keyframes float {
       0% { transform: translate(0,0) rotate(0deg); }
       100% { transform: translate(50px,-50px) rotate(360deg); }
     }
 
+    /* card container */
     .card {
       position: relative;
-      z-index: 1;
+      z-index: 2;
       background: rgba(20,20,20,0.95);
-      border-radius: 20px;
       padding: 40px 30px;
       width: 100%;
       max-width: 400px;
+      border-radius: 20px;
       box-shadow: 0 20px 40px rgba(0,0,0,0.7);
       border: 1px solid rgba(255,255,255,0.1);
       backdrop-filter: blur(10px);
       animation: fadeIn 1s ease forwards;
       text-align: center;
     }
-    @keyframes fadeIn { 0%{opacity:0;transform:translateY(-20px);}100%{opacity:1;transform:translateY(0);} }
+
+    @keyframes fadeIn {
+      0% { opacity:0; transform:translateY(-20px); }
+      100% { opacity:1; transform:translateY(0); }
+    }
 
     .card h2 {
       font-size: 2rem;
-      color: #fff;
       margin-bottom: 30px;
-      position: relative;
-    }
-    .card h2::after {
-      content: '';
-      width: 60px;
-      height: 3px;
-      background: #a855f7;
-      display: block;
-      margin: 10px auto 0;
-      border-radius: 2px;
     }
 
+    /* glowing card border */
+    .card::before {
+      content: '';
+      position: absolute;
+      top: -10px; left: -10px; right: -10px; bottom: -10px;
+      background: linear-gradient(45deg,#5eead4,#a855f7,#ff5ca2,#5eead4);
+      z-index: -1;
+      filter: blur(20px);
+      border-radius: 25px;
+      animation: glow 6s linear infinite;
+    }
+
+    @keyframes glow {
+      0%{background-position:0% 50%;}
+      50%{background-position:100% 50%;}
+      100%{background-position:0% 50%;}
+    }
+
+    /* floating labels */
     .form-group { position: relative; margin-bottom: 25px; }
     input {
       width: 100%;
@@ -75,19 +92,19 @@
       border-radius: 10px;
       color: #fff;
       font-size: 1rem;
-      transition: border-color 0.3s, box-shadow 0.3s;
     }
-    input:focus { border-color: #a855f7; outline: none; box-shadow: 0 0 8px #a855f7; }
+    input:focus { border-color: #a855f7; outline: none; }
+
     label {
       position: absolute;
       top: 50%;
       left: 15px;
       color: #aaa;
+      background: rgba(20,20,20,1);
+      padding: 0 6px;
       transform: translateY(-50%);
+      transition: 0.3s;
       pointer-events: none;
-      transition: 0.3s ease all;
-      background: rgba(20,20,20,0.95);
-      padding: 0 5px;
     }
     input:focus + label,
     input:not(:placeholder-shown) + label {
@@ -104,144 +121,193 @@
       border-radius: 12px;
       background: linear-gradient(90deg,#a855f7,#5eead4);
       color: #fff;
-      font-weight: 600;
       font-size: 1rem;
+      font-weight: 600;
+      margin-top: 15px;
       cursor: pointer;
-      transition: 0.3s;
     }
-    button:hover { filter: brightness(1.1); transform: scale(1.02); }
-    button:disabled { opacity: 0.6; cursor: not-allowed; }
 
     .error, .success {
-      margin-top: 10px;
-      font-size: 0.9rem;
+      margin-top: 12px;
       display: none;
+      font-size: 0.9rem;
     }
     .error { color: #ff6b6b; }
     .success { color: #90ee90; }
 
-    .small {
-      font-size: 0.85rem;
-      color: #999;
-      margin-top: 15px;
+    /* ───────────────────────────── Terms Modal ───────────────────────────── */
+    .modal-bg {
+      position: fixed;
+      top:0; left:0; width:100%; height:100%;
+      background: rgba(0,0,0,0.75);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 999;
     }
-    .small a {
-      color: #5eead4;
-      text-decoration: none;
-      font-weight: 600;
-    }
-    .small a:hover { text-decoration: underline; }
 
-    .card::before {
-      content: '';
-      position: absolute;
-      top: -10px; left: -10px; right: -10px; bottom: -10px;
-      background: linear-gradient(45deg,#5eead4,#a855f7,#ff5ca2,#5eead4);
-      z-index: -1;
-      filter: blur(20px);
-      border-radius: 25px;
-      animation: glow 6s linear infinite;
+    .modal {
+      width: 90%;
+      max-width: 500px;
+      max-height: 80vh;
+      background: #111;
+      border-radius: 16px;
+      padding: 20px;
+      overflow-y: auto;
+      border: 1px solid rgba(255,255,255,0.1);
     }
-    @keyframes glow {
-      0%{background-position:0% 50%;}
-      50%{background-position:100% 50%;}
-      100%{background-position:0% 50%;}
+
+    .modal h3 {
+      font-size: 1.4rem;
+      margin-bottom: 10px;
+      color: #5eead4;
+    }
+
+    .modal p {
+      font-size: 0.9rem;
+      line-height: 1.5rem;
+      margin-bottom: 12px;
+      color: #ddd;
+    }
+
+    .closeModal {
+      margin-top: 15px;
+      width: 100%;
+      padding: 10px;
+      border: none;
+      border-radius: 10px;
+      background: #a855f7;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .terms-link {
+      color: #5eead4;
+      cursor: pointer;
+      text-decoration: underline;
     }
   </style>
 </head>
+
 <body>
+
   <div class="card">
     <h2>Create Account</h2>
+
     <form id="registerForm">
       <div class="form-group">
         <input type="email" id="email" placeholder=" " required />
-        <label for="email">Email</label>
+        <label>Email</label>
       </div>
+
       <div class="form-group">
         <input type="text" id="username" placeholder=" " required />
-        <label for="username">Username</label>
+        <label>Username</label>
       </div>
+
       <div class="form-group">
         <input type="password" id="password" placeholder=" " required />
-        <label for="password">Password</label>
+        <label>Password</label>
       </div>
+
+      <!-- Terms checkbox -->
+      <label style="display:flex;align-items:center;gap:6px;font-size:0.85rem;margin-bottom:10px;">
+        <input type="checkbox" id="termsCheck">
+        <span>I agree to the <span class="terms-link">Terms & Conditions</span></span>
+      </label>
+
       <div id="registerError" class="error"></div>
       <div id="registerSuccess" class="success"></div>
+
       <button type="submit">Create Account</button>
     </form>
-    <div class="small">Already have an account? <a href="login.html">Login</a></div>
+
+    <div class="small" style="margin-top:12px;">
+      Already have an account? <a href="login.html" style="color:#5eead4;">Login</a>
+    </div>
+  </div>
+
+  <!-- ─────────────────────────── TERMS MODAL ─────────────────────────── -->
+  <div class="modal-bg" id="termsModal">
+    <div class="modal">
+      <h3>Terms & Conditions</h3>
+
+      <p>By creating an account on GodStake, you agree that you are solely responsible for all actions performed under your account.</p>
+
+      <p>You understand that cryptocurrency values fluctuate and all investments carry financial risk.</p>
+
+      <p><b>GodStake, its developers, owners, and partners are NOT responsible for any of the following:</b></p>
+
+      <p>• Loss of funds due to market volatility  
+         • Sending funds to the wrong wallet address  
+         • Incorrect or failed payments  
+         • Technical issues caused by your device, internet, or third-party services  
+         • Loss due to scams or misleading information outside this website  
+      </p>
+
+      <p>By registering, you accept full responsibility for deposits, withdrawals, transactions, and investment decisions.</p>
+
+      <p>If you do not agree with these terms, do not create an account.</p>
+
+      <button class="closeModal">Close</button>
+    </div>
   </div>
 
   <script>
     const form = document.getElementById("registerForm");
     const errorEl = document.getElementById("registerError");
     const successEl = document.getElementById("registerSuccess");
-    const button = document.querySelector("button[type='submit']");
+    const termsCheck = document.getElementById("termsCheck");
 
-    // 🔹 Auto-redirect if already logged in
-    (async () => {
-      try {
-        const res = await fetch("/api/profile", {
-          method: "GET",
-          credentials: "include"
-        });
-        if (res.ok) {
-          const user = await res.json();
-          if (user && user.username) {
-            window.location.href = "/home.html";
-          }
-        }
-      } catch (e) {
-        console.log("Not logged in yet.");
-      }
-    })();
+    // Modal controls
+    const modal = document.getElementById("termsModal");
+    const openTerms = document.querySelector(".terms-link");
+    const closeBtn = document.querySelector(".closeModal");
 
-    // 🔹 Handle registration
+    openTerms.onclick = () => modal.style.display = "flex";
+    closeBtn.onclick = () => modal.style.display = "none";
+
+    // Prevent registering without accepting terms
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
-      errorEl.style.display = 'none';
-      successEl.style.display = 'none';
-      button.disabled = true;
-      button.textContent = 'Creating Account...';
+
+      if (!termsCheck.checked) {
+        errorEl.textContent = "You must accept the Terms & Conditions.";
+        errorEl.style.display = "block";
+        return;
+      }
+
+      errorEl.style.display = "none";
+      successEl.style.display = "none";
 
       const email = document.getElementById("email").value.trim();
       const username = document.getElementById("username").value.trim();
       const password = document.getElementById("password").value.trim();
 
       try {
-        const res = await fetch('/api/register', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include', // ✅ ensure cookies
+        const res = await fetch("/api/register", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          credentials: "include",
           body: JSON.stringify({ email, username, password })
         });
 
         const data = await res.json();
 
-        if (res.ok) {
-          successEl.textContent = "Account created successfully! Redirecting...";
-          successEl.style.display = 'block';
+        if (!res.ok) throw new Error(data.error || "Registration failed");
 
-          // Save user data locally
-          if (data.user) {
-            localStorage.setItem("userId", data.user.id);
-            localStorage.setItem("username", data.user.username);
-            localStorage.setItem("email", data.user.email);
-          }
+        successEl.textContent = "Account created successfully!";
+        successEl.style.display = "block";
 
-          // Redirect to index after delay
-          setTimeout(() => window.location.href = "/home.html", 1200);
-        } else {
-          throw new Error(data.error || "Registration failed");
-        }
+        setTimeout(() => window.location.href = "/home.html", 1200);
+
       } catch (err) {
-        console.error("Error:", err);
-        errorEl.textContent = err.message || "Server error. Please try again.";
-        errorEl.style.display = 'block';
-        button.disabled = false;
-        button.textContent = 'Create Account';
+        errorEl.textContent = err.message;
+        errorEl.style.display = "block";
       }
     });
   </script>
+
 </body>
 </html>
