@@ -82,20 +82,10 @@
       100%{background-position:0% 50%;}
     }
 
-    /* floating labels */
+    /* ONLY floating labels for inputs */
     .form-group { position: relative; margin-bottom: 25px; }
-    input {
-      width: 100%;
-      padding: 15px;
-      background: #0b0b0b;
-      border: 1px solid #333;
-      border-radius: 10px;
-      color: #fff;
-      font-size: 1rem;
-    }
-    input:focus { border-color: #a855f7; outline: none; }
 
-    label {
+    .form-group label {
       position: absolute;
       top: 50%;
       left: 15px;
@@ -106,8 +96,32 @@
       transition: 0.3s;
       pointer-events: none;
     }
-    input:focus + label,
-    input:not(:placeholder-shown) + label {
+
+    /* normal labels (like terms checkbox) */
+    .normal-label {
+      position: static !important;
+      transform: none !important;
+      background: none !important;
+      pointer-events: auto !important;
+      color: #ddd;
+      font-size: 0.9rem;
+    }
+
+    input {
+      width: 100%;
+      padding: 15px;
+      background: #0b0b0b;
+      border: 1px solid #333;
+      border-radius: 10px;
+      color: #fff;
+      font-size: 1rem;
+    }
+
+    input:focus { border-color: #a855f7; outline: none; }
+
+    /* floating animation */
+    .form-group input:focus + label,
+    .form-group input:not(:placeholder-shown) + label {
       top: -10px;
       left: 10px;
       font-size: 0.75rem;
@@ -135,7 +149,7 @@
     .error { color: #ff6b6b; }
     .success { color: #90ee90; }
 
-    /* ───────────────────────────── Terms Modal ───────────────────────────── */
+    /* TERMS MODAL */
     .modal-bg {
       position: fixed;
       top:0; left:0; width:100%; height:100%;
@@ -212,13 +226,11 @@
         <label>Password</label>
       </div>
 
-      <!-- FIXED: Checkbox now appears BELOW password -->
-      <div style="margin: 10px 0 15px 2px; text-align:left;">
-        <label style="display:flex;align-items:center;gap:8px;font-size:0.9rem;">
-          <input type="checkbox" id="termsCheck" style="transform:scale(1.2);">
-          <span>I agree to the <span class="terms-link">Terms & Conditions</span></span>
-        </label>
-      </div>
+      <!-- PERFECT position below password -->
+      <label class="normal-label" style="display:flex;align-items:center;gap:8px;margin:10px 0 15px;">
+        <input type="checkbox" id="termsCheck" style="transform:scale(1.2);">
+        I agree to the <span class="terms-link">Terms & Conditions</span>
+      </label>
 
       <div id="registerError" class="error"></div>
       <div id="registerSuccess" class="success"></div>
@@ -226,13 +238,12 @@
       <button type="submit">Create Account</button>
     </form>
 
-
     <div class="small" style="margin-top:12px;">
       Already have an account? <a href="login.html" style="color:#5eead4;">Login</a>
     </div>
   </div>
 
-  <!-- ─────────────────────────── TERMS MODAL ─────────────────────────── -->
+  <!-- TERMS MODAL -->
   <div class="modal-bg" id="termsModal">
     <div class="modal">
       <h3>Terms & Conditions</h3>
@@ -244,15 +255,13 @@
       <p><b>GodStake, its developers, owners, and partners are NOT responsible for any of the following:</b></p>
 
       <p>• Loss of funds due to market volatility  
-         • Sending funds to the wrong wallet address  
+         • Sending funds to the wrong wallet  
          • Incorrect or failed payments  
-         • Technical issues caused by your device, internet, or third-party services  
-         • Loss due to scams or misleading information outside this website  
+         • Technical issues on your device  
+         • Loss due to scams outside this website  
       </p>
 
       <p>By registering, you accept full responsibility for deposits, withdrawals, transactions, and investment decisions.</p>
-
-      <p>If you do not agree with these terms, do not create an account.</p>
 
       <button class="closeModal">Close</button>
     </div>
@@ -264,7 +273,6 @@
     const successEl = document.getElementById("registerSuccess");
     const termsCheck = document.getElementById("termsCheck");
 
-    // Modal controls
     const modal = document.getElementById("termsModal");
     const openTerms = document.querySelector(".terms-link");
     const closeBtn = document.querySelector(".closeModal");
@@ -272,7 +280,6 @@
     openTerms.onclick = () => modal.style.display = "flex";
     closeBtn.onclick = () => modal.style.display = "none";
 
-    // Prevent registering without accepting terms
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
 
@@ -292,13 +299,12 @@
       try {
         const res = await fetch("/api/register", {
           method: "POST",
-          headers: {"Content-Type": "application/json"},
+          headers: {"Content-Type":"application/json"},
           credentials: "include",
           body: JSON.stringify({ email, username, password })
         });
 
         const data = await res.json();
-
         if (!res.ok) throw new Error(data.error || "Registration failed");
 
         successEl.textContent = "Account created successfully!";
