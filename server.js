@@ -35,11 +35,11 @@ const isProd = process.env.NODE_ENV === "production";
 
 // membership tiers config (keep synced with frontend)
 const TIERS = {
-  V1: { price: 51, daily: 10, duration: 5, bonus: 50 },
-  V2: { price: 1498.5, daily: 100, duration: 7, bonus: 3000 },
-  V3: { price: 3001, daily: 10000, duration: 10, bonus: 90000 },
-  V4: { price: 29998.5, daily: 50000, duration: 15, bonus: 300000 },
-  V5: { price: 50001, daily: 75000, duration: 30, bonus: 500000 },
+  V1: { price: 51, daily: 14, duration: 5, bonus: 10 },
+  V2: { price: 150, daily: 20, duration: 10, bonus: 25 },
+  V3: { price: 1200, daily: 90, duration: 20, bonus: 100 },
+  V4: { price: 3000, daily: 200, duration: 20, bonus: 240 },
+  V5: { price: 10000, daily: 750, duration: 15, bonus: 500 },
 };
 
 // ---------------- CORS ----------------
